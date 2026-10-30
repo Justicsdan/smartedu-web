@@ -1,38 +1,8 @@
-# Dependencies
 node_modules
-.pnp
-.pnp.js
-
-# Build output
 dist
-dist-ssr
-*.local
-
-# Environment variables (CRITICAL - never commit secrets)
 .env
 .env.local
 .env.*.local
-.env.production
-.env.development
-
-# Logs
 *.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Editor / OS
 .DS_Store
-.vscode
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Vite / Build cache
 .vite
-.turbo
-.cache
