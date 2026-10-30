@@ -1,299 +1,263 @@
-import { BookOpen, Building2, ClipboardList, Download, GraduationCap, Mail, Pencil, Phone, Search, Trash2, Users } from 'lucide-react';
-
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-
-const SUPABASE_URL = 'https://tcjsmkhmfjigutfhjtem.supabase.co'
-const ANON_KEY = 'sb_publishable_zWDvjhEldcV8eutnlRypGA_LGpOUhkg'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
+import { Download, Pencil, Search, Trash2, Users, GraduationCap, BookOpen, Loader2, AlertCircle, CheckCircle, ClipboardList } from 'lucide-react'
 
 interface Teacher {
   id: string
   first_name: string
   last_name: string
   staff_id: string
-  gender: string
-  email: string
-  phone: string
-  department: string
-  qualification: string
-  passport_url: string
+  gender: string | null
+  email: string | null
+  phone: string | null
+  department: string | null
+  qualification: string | null
+  passport_url: string | null
   is_active: boolean
 }
 
-const PAGE_SIZE = 50
+function teacherName(t: Teacher): string {
+  return `${t.first_name ?? ''} ${t.last_name ?? ''}`.trim()
+}
 
 export default function TeachersPage() {
-  const navigate = useNavigate()
+  const { user } = useAuth()
+  const schoolId = user?.id || ''
+
   const [teachers, setTeachers] = useState<Teacher[]>([])
-  const [classTeachers, setClassTeachers] = useState<Record<string, string>>({}) // class_teacher_id -> class name
-  const [subjectAssignments, setSubjectAssignments] = useState<Record<string, number>>({}) // teacher_id -> count
+  const [classes, setClasses] = useState<any[]>([])
+  const [classSubjects, setClassSubjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE)
   const [isExporting, setIsExporting] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchTeachers()
-  }, [])
+    if (!schoolId) return
+    ;(async () => {
+      setLoading(true)
+      try {
+        const [tRes, cRes, csRes] = await Promise.all([
+          supabase.from('teachers')
+            .select('id, first_name, last_name, staff_id, gender, email, phone, department, qualification, passport_url, is_active')
+            .eq('school_id', schoolId)
+            .order('first_name'),
+          supabase.from('classes')
+            .select('id, name, section, class_teacher_id')
+            .eq('school_id', schoolId)
+            .order('name'),
+          supabase.from('class_subjects')
+            .select('id, teacher_id, class_id, subject_id')
+            .eq('school_id', schoolId),
+        ])
+        if (tRes.error) throw tRes.error
+        if (cRes.error) throw cRes.error
+        if (csRes.error) throw csRes.error
+        setTeachers((tRes.data || []) as Teacher[])
+        setClasses(cRes.data || [])
+        setClassSubjects(csRes.data || [])
+      } catch (e: any) {
+        setError(e.message || 'Failed to load teachers')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [schoolId])
 
-  const fetchTeachers = async () => {
-    try {
-      const user = JSON.parse(localStorage.getItem('smartedu_user') || '{}')
-      const schoolId = user.id || user.school_id
-      if (!schoolId) { setLoading(false); return }
-
-      const headers = { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` }
-
-      // Fetch teachers, classes, and class_subjects in parallel
-      const [tchRes, clsRes, csRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/teachers?school_id=eq.${schoolId}&select=id,first_name,last_name,staff_id,gender,email,phone,department,qualification,passport_url,is_active&order=first_name.asc`, { headers }),
-        fetch(`${SUPABASE_URL}/rest/v1/classes?school_id=eq.${schoolId}&select=id,name,section,class_teacher_id`, { headers }),
-        fetch(`${SUPABASE_URL}/rest/v1/class_subjects?school_id=eq.${schoolId}&select=id,teacher_id`, { headers }),
-      ])
-
-      const tchData = await tchRes.json() || []
-      const clsData = await clsRes.json() || []
-      const csData = await csRes.json() || []
-
-      // Build form teacher map (class_teacher_id -> class name)
-      const formMap: Record<string, string> = {}
-      clsData.forEach((c: any) => {
-        if (c.class_teacher_id) {
-          formMap[c.class_teacher_id] = `${c.name} - ${c.section || 'A'}`
-        }
-      })
-
-      // Build subject assignment count (teacher_id -> count)
-      const subMap: Record<string, number> = {}
-      csData.forEach((cs: any) => {
-        if (cs.teacher_id) {
-          subMap[cs.teacher_id] = (subMap[cs.teacher_id] || 0) + 1
-        }
-      })
-
-      setTeachers(tchData)
-      setClassTeachers(formMap)
-      setSubjectAssignments(subMap)
-    } catch (err) {
-      console.error('Error fetching teachers:', err)
-    } finally {
-      setLoading(false)
+  const teacherStats = useMemo(() => {
+    const formTeacherCount = classes.filter(c => c.class_teacher_id).length
+    const subjectAssignCount = classSubjects.filter(cs => cs.teacher_id).length
+    return {
+      total: teachers.length,
+      active: teachers.filter(t => t.is_active).length,
+      formTeachers: formTeacherCount,
+      subjectAssigns: subjectAssignCount,
     }
-  }
+  }, [teachers, classes, classSubjects])
+
+  const formTeacherClass = (teacherId: string) => classes.find(c => c.class_teacher_id === teacherId)
+  const assignmentCount = (teacherId: string) => classSubjects.filter(cs => cs.teacher_id === teacherId).length
 
   const filteredTeachers = useMemo(() => {
     if (!searchQuery.trim()) return teachers
     const q = searchQuery.toLowerCase()
     return teachers.filter(t => {
-      const first = (t.first_name || '').toLowerCase()
-      const last = (t.last_name || '').toLowerCase()
-      const staffId = (t.staff_id || '').toLowerCase()
+      const name = teacherName(t).toLowerCase()
       const email = (t.email || '').toLowerCase()
+      const staff = (t.staff_id || '').toLowerCase()
       const dept = (t.department || '').toLowerCase()
-      return `${first} ${last}`.includes(q) || first.includes(q) || last.includes(q) || staffId.includes(q) || email.includes(q) || dept.includes(q)
+      return name.includes(q) || email.includes(q) || staff.includes(q) || dept.includes(q)
     })
   }, [teachers, searchQuery])
 
-  const displayedTeachers = useMemo(() => {
-    if (filteredTeachers.length <= displayCount) return filteredTeachers
-    return filteredTeachers.slice(0, displayCount)
-  }, [filteredTeachers, displayCount])
-
-  const hasMore = filteredTeachers.length > displayCount
-  const total = teachers.length
-  const formMasterCount = teachers.filter(t => classTeachers[t.id]).length
-  const subjectTeacherCount = teachers.filter(t => (subjectAssignments[t.id] || 0) > 0).length
-
-  const getName = (t: Teacher) => {
-    const first = (t.first_name || '').trim()
-    const last = (t.last_name || '').trim()
-    if (first && last) return `${first} ${last}`
-    return first || last || ''
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('teachers').delete().eq('id', id)
+      if (error) throw error
+      setTeachers(prev => prev.filter(t => t.id !== id))
+      setDeleteConfirm(null)
+      setSuccessMsg('Teacher deleted')
+    } catch (e: any) {
+      setError(e.message || 'Delete failed')
+    }
   }
 
-  const getStaffId = (t: Teacher) => (t.staff_id || t.id || '').toString()
-
   const exportCsv = async () => {
-    if (filteredTeachers.length === 0) return
     setIsExporting(true)
     try {
-      const headers = ['S/N', 'Staff ID', 'Full Name', 'Gender', 'Email', 'Phone', 'Department', 'Qualification', 'Role(s)']
-      const rows = filteredTeachers.map((t, idx) => {
-        const roles: string[] = []
-        if (classTeachers[t.id]) roles.push('Form Teacher')
-        const subCount = subjectAssignments[t.id] || 0
-        if (subCount > 0) roles.push(`${subCount} Subject Teacher${subCount !== 1 ? 's' : ''}`)
-        return [
-          (idx + 1).toString(),
-          getStaffId(t),
-          getName(t),
-          t.gender || '',
-          t.email || '',
-          t.phone || '',
-          t.department || '',
-          t.qualification || '',
-          roles.length === 0 ? 'None' : roles.join(' / '),
-        ]
-      })
-      const csv = [headers.join(','), ...rows.map(row => row.map(cell => {
-        const val = String(cell)
-        if (val.includes(',') || val.includes('"') || val.includes('\n')) return `"${val.replace(/"/g, '""')}"`
-        return val
-      }).join(','))].join('\n')
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const headers = ['Staff ID', 'First Name', 'Last Name', 'Gender', 'Email', 'Phone', 'Department', 'Qualification']
+      const rows = filteredTeachers.map(t => [t.staff_id, t.first_name, t.last_name, t.gender, t.email, t.phone, t.department, t.qualification])
+      const csv = [headers, ...rows].map(r => r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(',')).join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'teachers.csv'
+      a.download = `teachers_${new Date().toISOString().slice(0, 10)}.csv`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (err) { console.error('Export error:', err) } finally { setIsExporting(false) }
+      setSuccessMsg(`Exported ${rows.length} teachers`)
+    } catch (e: any) {
+      setError(e.message || 'Export failed')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
-  const deleteTeacher = async (id: string) => {
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/teachers?id=eq.${id}`, { method: 'DELETE', headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } })
-      setTeachers(teachers.filter(t => t.id !== id))
-      setDeleteConfirm(null)
-    } catch (err) { console.error('Delete error:', err) }
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" /></div>
   }
-
-  const renderAvatar = (t: Teacher) => {
-    const name = getName(t)
-    const isFemale = (t.gender || '').toLowerCase() === 'female'
-    const photo = (t.passport_url || '').trim()
-    if (photo) return <img src={`${photo}?width=80&height=80`} alt={name} className="w-11 h-11 rounded-xl object-cover" />
-    const initials = name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase()
-    return <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white text-sm font-bold ${isFemale ? 'bg-pink-400' : 'bg-blue-400'}`}>{initials || '?'}</div>
-  }
-
-  const Badge = ({ text, color, bg }: { text: string; color: string; bg: string }) => (
-    <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ color, backgroundColor: bg }}>{text}</span>
-  )
-
-  if (loading) return <div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-3 border-[#1A237E] border-t-transparent rounded-full animate-spin" /></div>
 
   return (
-    <div className="p-6 bg-[#F7F8FA] min-h-full">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-11 h-11 bg-[#F0F4FF] rounded-xl flex items-center justify-center"><GraduationCap className="text-xl w-4 h-4" /></div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-800">Teachers</h1>
-            <p className="text-xs text-gray-400 mt-0.5">{searchQuery ? `${filteredTeachers.length} of ${total} found` : `${total} registered`}</p>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Teachers</h1>
+          <p className="text-sm text-gray-500 mt-1">{teachers.length} teachers registered</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={exportCsv} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50">
+            <Download className="w-3.5 h-3.5" /> {isExporting ? 'Exporting...' : 'Export'}
+          </button>
+          <button onClick={() => setShowSearch(!showSearch)} className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium transition ${showSearch ? 'bg-[#1A237E] text-white border-[#1A237E]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+            <Search className="w-3.5 h-3.5" /> Search
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+      {successMsg && (
+        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-green-700">{successMsg}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><Users className="w-5 h-5 text-blue-600" /></div>
+          <div><p className="text-xs text-gray-500">Total</p><p className="text-lg font-bold text-gray-800">{teacherStats.total}</p></div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><GraduationCap className="w-5 h-5 text-green-600" /></div>
+          <div><p className="text-xs text-gray-500">Active</p><p className="text-lg font-bold text-gray-800">{teacherStats.active}</p></div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center"><BookOpen className="w-5 h-5 text-orange-600" /></div>
+          <div><p className="text-xs text-gray-500">Form Teachers</p><p className="text-lg font-bold text-gray-800">{teacherStats.formTeachers}</p></div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center"><ClipboardList className="w-5 h-5 text-purple-600" /></div>
+          <div><p className="text-xs text-gray-500">Subject Assigns</p><p className="text-lg font-bold text-gray-800">{teacherStats.subjectAssigns}</p></div>
+        </div>
+      </div>
+
+      {showSearch && (
+        <div className="bg-white rounded-xl border border-gray-100 p-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by name, email, staff ID, or department..."
+              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+            />
           </div>
         </div>
+      )}
 
-        {/* Action chips */}
-        <div className="flex flex-wrap gap-2">
-          <button onClick={exportCsv} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50"><Download className="w-4 h-4 inline-block" /> {isExporting ? '...' : 'Export'}</button>
-          <button onClick={() => setShowSearch(!showSearch)} className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium transition ${showSearch ? 'bg-[#1A237E] text-white border-[#1A237E]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}><Search className="w-4 h-4 inline-block" /> Search</button>
+      {filteredTeachers.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
+          <div className="w-16 h-16 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3"><GraduationCap className="w-8 h-8 text-gray-300" /></div>
+          <p className="text-gray-400 text-sm">{searchQuery ? 'No teachers match your search.' : 'No teachers registered yet.'}</p>
         </div>
-
-        {showSearch && <div className="mt-3"><input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setDisplayCount(PAGE_SIZE) }} autoFocus placeholder="Search by name, staff ID, email, or department..." className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#1A237E] focus:border-transparent outline-none transition" /></div>}
-      </div>
-
-      {/* Stat cards (translated from Flutter: Total, Form Masters, Subject Teachers) */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center mb-2"><Users className="text-sm w-4 h-4" /></div>
-          <p className="text-2xl font-bold text-gray-800">{total}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center mb-2"><GraduationCap className="text-sm w-4 h-4" /></div>
-          <p className="text-2xl font-bold text-green-600">{formMasterCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Form Masters</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center mb-2"><BookOpen className="text-sm w-4 h-4" /></div>
-          <p className="text-2xl font-bold text-orange-600">{subjectTeacherCount}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Subject Teachers</p>
-        </div>
-      </div>
-
-      {/* Teacher list */}
-      {displayedTeachers.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center border border-gray-100"><GraduationCap className="text-4xl mb-3 w-6 h-6" /><p className="text-gray-400 text-sm">{searchQuery ? 'No teachers found matching your search.' : 'No teachers registered yet.'}</p></div>
       ) : (
-        <div className="space-y-2">
-          {displayedTeachers.map((t, idx) => {
-            const name = getName(t)
-            const staffId = getStaffId(t)
-            const email = (t.email || '').trim()
-            const phone = (t.phone || '').trim()
-            const dept = (t.department || '').trim()
-            const qual = (t.qualification || '').trim()
-            const isFormTeacher = !!classTeachers[t.id]
-            const assignedCount = subjectAssignments[t.id] || 0
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredTeachers.map(t => {
+            const ftClass = formTeacherClass(t.id)
+            const assigns = assignmentCount(t.id)
             return (
-              <div key={t.id || idx} className={`p-4 rounded-xl border transition ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFBFC]'} border-gray-200`}>
-                {/* Top row: avatar + info + badges */}
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-gray-400 w-6 text-center shrink-0">{idx + 1}</span>
-                  {renderAvatar(t)}
+              <div key={t.id} className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-lg font-semibold flex-shrink-0 overflow-hidden">
+                    {t.passport_url ? <img src={t.passport_url} alt={teacherName(t)} className="w-full h-full object-cover" /> : (t.first_name?.charAt(0) || '?')}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-1 items-center">
-                      {staffId && <Badge text={`Staff ID: ${staffId}`} color="#1A237E" bg="#F0F4FF" />}
-                      {email && <Badge text={`<Mail className="w-4 h-4 inline-block" /> ${email}`} color="#6B7280" bg="#F5F5F5" />}
-                      {phone && <Badge text={`<Phone className="w-4 h-4 inline-block" /> ${phone}`} color="#6B7280" bg="#F5F5F5" />}
-                    </div>
+                    <p className="text-sm font-medium text-gray-800 truncate">{teacherName(t)}</p>
+                    <p className="text-xs text-gray-400">{t.staff_id || '-'}</p>
+                    {t.email && <p className="text-xs text-gray-500 truncate">{t.email}</p>}
+                    {t.phone && <p className="text-xs text-gray-500">{t.phone}</p>}
                   </div>
-                  {/* Right side badges (Form Teacher + Subject count) */}
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    {isFormTeacher && (
-                      <span className="px-2 py-1 rounded-md bg-green-50 border border-green-200 text-[10px] font-semibold text-green-700 flex items-center gap-1">
-                        <GraduationCap className="w-4 h-4 inline-block" /> Form Teacher
-                      </span>
-                    )}
-                    {assignedCount > 0 && (
-                      <span className="px-2 py-1 rounded-md bg-blue-50 border border-blue-200 text-[10px] font-semibold text-blue-700">
-                        {assignedCount} Subject{assignedCount !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
+                  <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${t.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {t.is_active ? 'Active' : 'Inactive'}
+                  </span>
                 </div>
-
-                {/* Department + Qualification (translated from Flutter) */}
-                {(dept || qual) && (
-                  <div className="flex items-center gap-2 mt-2 pl-[60px]">
-                    {dept && <span className="text-[11px] text-gray-600 flex items-center gap-1"><Building2 className="w-4 h-4 inline-block" /> {dept}</span>}
-                    {dept && qual && <span className="w-1 h-1 bg-gray-400 rounded-full" />}
-                    {qual && <span className="text-[11px] text-gray-400 italic">{qual}</span>}
-                  </div>
-                )}
-
-                {/* Action buttons (translated from Flutter _smallButton) */}
-                <div className="flex justify-end gap-2 mt-3">
-                  <button className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg text-xs font-medium text-indigo-700 hover:bg-indigo-100 transition"><Pencil className="w-4 h-4 inline-block" /> Edit</button>
-                  <button onClick={() => setDeleteConfirm(t.id)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs font-medium text-red-700 hover:bg-red-100 transition"><Trash2 className="w-4 h-4 inline-block" /> Delete</button>
-                  <button className="flex items-center gap-1 px-3 py-1.5 bg-[#1A237E] border border-[#1A237E] rounded-lg text-xs font-medium text-white hover:bg-[#283593] transition"><ClipboardList className="w-4 h-4 inline-block" /> Assign</button>
+                <div className="mt-3 space-y-1">
+                  {t.department && <p className="text-[11px] text-gray-600 flex items-center gap-1"><BookOpen className="w-3 h-3" /> {t.department}</p>}
+                  {t.qualification && <p className="text-[11px] text-gray-500">{t.qualification}</p>}
+                  {ftClass && <p className="text-[11px] text-indigo-600 flex items-center gap-1"><GraduationCap className="w-3 h-3" /> Form Teacher: {ftClass.name}</p>}
+                  {assigns > 0 && <p className="text-[11px] text-purple-600 flex items-center gap-1"><ClipboardList className="w-3 h-3" /> {assigns} subject assignment{assigns > 1 ? 's' : ''}</p>}
+                </div>
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                  <button className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg text-xs font-medium text-indigo-700 hover:bg-indigo-100 transition">
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                  <button onClick={() => setDeleteConfirm(t.id)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs font-medium text-red-700 hover:bg-red-100 transition ml-auto">
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
                 </div>
               </div>
             )
           })}
-          {hasMore && <div className="text-center py-4"><button onClick={() => setDisplayCount(displayCount + PAGE_SIZE)} className="px-6 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">Load More ({filteredTeachers.length - displayCount} remaining)</button></div>}
         </div>
       )}
 
-      {/* Delete confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setDeleteConfirm(null)}>
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="relative bg-white rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4"><div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"><Trash2 className="text-xl w-4 h-4" /></div><div><h3 className="font-bold text-gray-800">Delete Teacher?</h3><p className="text-sm text-gray-500">This action cannot be undone.</p></div></div>
-            <div className="flex gap-3"><button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button><button onClick={() => deleteTeacher(deleteConfirm)} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">Delete</button></div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0"><Trash2 className="w-5 h-5 text-red-600" /></div>
+              <div>
+                <h3 className="font-bold text-gray-800">Delete Teacher?</h3>
+                <p className="text-sm text-gray-500 mt-1">This will permanently remove the teacher record. This cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">Delete</button>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Add teacher FAB */}
-      <button onClick={() => navigate('/dashboard/schooladmin/teachers/add')} className="fixed bottom-6 right-6 w-14 h-14 bg-[#1A237E] text-white rounded-2xl shadow-lg flex items-center justify-center hover:bg-[#283593] hover:scale-105 transition z-40"><span className="text-2xl">+</span></button>
     </div>
   )
 }

@@ -13,6 +13,12 @@ import AcademicPage from './pages/admin/AcademicPage'
 import ScoresPage from './pages/admin/ScoresPage'
 import PublishPage from './pages/admin/PublishPage'
 import CbtPage from './pages/admin/CbtPage'
+import SettingsPage from './pages/admin/SettingsPage'
+import CredentialsPage from './pages/admin/CredentialsPage'
+import FeesPage from './pages/admin/FeesPage'
+import AnnouncementsPage from './pages/admin/AnnouncementsPage'
+import PaceScoresPage from './pages/admin/PaceScoresPage'
+import AceReportsPage from './pages/admin/AceReportsPage'
 
 function App() {
   return (
@@ -35,12 +41,12 @@ function App() {
           <Route path="scores" element={<ScoresPage />} />
           <Route path="cbt" element={<CbtPage />} />
           <Route path="publish" element={<PublishPage />} />
-          <Route path="settings" element={<div className="p-8 text-2xl text-gray-500">Settings page coming soon...</div>} />
-          <Route path="credentials" element={<div className="p-8 text-2xl text-gray-500">Credentials page coming soon...</div>} />
-          <Route path="fees" element={<div className="p-8 text-2xl text-gray-500">Fees page coming soon...</div>} />
-          <Route path="announcements" element={<div className="p-8 text-2xl text-gray-500">Announcements page coming soon...</div>} />
-          <Route path="pace-scores" element={<div className="p-8 text-2xl text-gray-500">PACE Scores page coming soon...</div>} />
-          <Route path="ace-reports" element={<div className="p-8 text-2xl text-gray-500">ACE Reports page coming soon...</div>} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="credentials" element={<CredentialsPage />} />
+          <Route path="fees" element={<FeesPage />} />
+          <Route path="announcements" element={<AnnouncementsPage />} />
+          <Route path="pace-scores" element={<PaceScoresPage />} />
+          <Route path="ace-reports" element={<AceReportsPage />} />
           <Route path="reports" element={<div className="p-8 text-2xl text-gray-500">Reports page coming soon...</div>} />
           <Route path="live-class" element={<div className="p-8 text-2xl text-gray-500">Live Class page coming soon...</div>} />
         </Route>

@@ -110,6 +110,69 @@ const EMPTY_FORM: ExamForm = {
   allow_retake: false, max_attempts: 1, is_proctored: false,
 }
 
+
+// =========================================================
+// Parse pasted questions (port of Flutter _parsePastedQuestions)
+// Format: Question text?\nA. opt1\nB. opt2\nC. opt3\nD. opt4\nAns: B
+// Separate questions with blank lines
+// =========================================================
+function parsePastedQuestions(text: string): Array<Record<string, any>> {
+  const results: Array<Record<string, any>> = []
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const lines = normalized.split('\n').filter(l => l.trim() !== '')
+  let questionText: string | null = null
+  let optA: string | null = null
+  let optB: string | null = null
+  let optC: string | null = null
+  let optD: string | null = null
+  let correctOption = 'a'
+
+  const saveCurrent = () => {
+    if (questionText && questionText.length > 0) {
+      results.push({
+        question_text: questionText,
+        option_a: optA || '',
+        option_b: optB || '',
+        option_c: optC || '',
+        option_d: optD || '',
+        correct_option: correctOption,
+        marks: 0,
+        time_allocation: 0,
+      })
+    }
+    questionText = null
+    optA = optB = optC = optD = null
+    correctOption = 'a'
+  }
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim()
+    const upper = trimmed.toUpperCase()
+    if (upper.startsWith('A.') || upper.startsWith('A)')) { optA = trimmed.substring(2).trim(); continue }
+    if (upper.startsWith('B.') || upper.startsWith('B)')) { optB = trimmed.substring(2).trim(); continue }
+    if (upper.startsWith('C.') || upper.startsWith('C)')) { optC = trimmed.substring(2).trim(); continue }
+    if (upper.startsWith('D.') || upper.startsWith('D)')) { optD = trimmed.substring(2).trim(); continue }
+    if (upper.startsWith('ANS')) {
+      const ansPart = trimmed.replace(/^ans(wer)?\s*:?\s*/i, '')
+      if (ansPart.length > 0) {
+        const ch = ansPart[0].toUpperCase()
+        if (ch === 'A' || ch === 'B' || ch === 'C' || ch === 'D') {
+          correctOption = ch.toLowerCase()
+        }
+      }
+      saveCurrent()
+      continue
+    }
+    let qPart = trimmed
+    if (qPart.length > 0 && qPart.charCodeAt(0) >= 48 && qPart.charCodeAt(0) <= 57) {
+      qPart = qPart.replace(/^\d+[.)\s]+/, '')
+    }
+    if (questionText === null) { questionText = qPart } else { questionText = questionText + ' ' + qPart }
+  }
+  saveCurrent()
+  return results
+}
+
 export default function CbtPage() {
   const { user } = useAuth()
   const schoolId = user?.id || ''
@@ -137,6 +200,8 @@ export default function CbtPage() {
 
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [resetConfirm, setResetConfirm] = useState<string | null>(null)
+  const [showBulkImport, setShowBulkImport] = useState(false)
+  const [showSync, setShowSync] = useState(false)
 
   // LOAD: exams + classes + subjects + attempt counts
   useEffect(() => {
@@ -510,6 +575,18 @@ export default function CbtPage() {
                         <Edit3 className="w-3.5 h-3.5" /> Edit
                       </button>
                       <button
+                        onClick={() => { setShowBulkImport(true); setExpandedExamId(exam.id) }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100 transition"
+                      >
+                        <ListChecks className="w-3.5 h-3.5" /> Bulk Import
+                      </button>
+                      <button
+                        onClick={() => { setShowSync(true); setExpandedExamId(exam.id) }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg text-xs font-medium hover:bg-cyan-100 transition"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Sync to Scorebook
+                      </button>
+                      <button
                         onClick={() => {
                           if (showAttempts && expandedExamId === exam.id) {
                             setShowAttempts(false)
@@ -657,6 +734,32 @@ export default function CbtPage() {
             setShowAddQuestion(false)
             loadQuestions(expandedExamId)
             setSuccessMsg('Question added')
+          }}
+        />
+      )}
+
+      {/* Bulk import modal */}
+      {showBulkImport && expandedExamId && (
+        <BulkImportModal
+          examId={expandedExamId}
+          onClose={() => setShowBulkImport(false)}
+          onImported={() => {
+            setShowBulkImport(false)
+            loadQuestions(expandedExamId)
+            setSuccessMsg('Questions imported')
+          }}
+        />
+      )}
+
+      {/* Sync to scorebook modal */}
+      {showSync && expandedExamId && (
+        <SyncModal
+          exam={exams.find(e => e.id === expandedExamId) as Exam}
+          schoolId={schoolId}
+          onClose={() => setShowSync(false)}
+          onSynced={() => {
+            setShowSync(false)
+            setSuccessMsg('Scores synced to scorebook')
           }}
         />
       )}
@@ -998,6 +1101,314 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Saving...' : 'Add Question'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =========================================================
+// Bulk Import Modal (port of Flutter _showBulkImportDialog)
+// =========================================================
+function BulkImportModal({ examId, onClose, onImported }: {
+  examId: string
+  onClose: () => void
+  onImported: () => void
+}) {
+  const [step, setStep] = useState<0 | 1>(0)
+  const [text, setText] = useState('')
+  const [marks, setMarks] = useState(2)
+  const [timeAllocation, setTimeAllocation] = useState(0)
+  const [parsed, setParsed] = useState<Array<Record<string, any>>>([])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleParse = () => {
+    if (marks < 1) { setError('Marks must be at least 1'); return }
+    const p = parsePastedQuestions(text)
+    if (p.length === 0) {
+      setError('No questions found. Use blank lines between questions.')
+      return
+    }
+    for (const q of p) {
+      q.marks = marks
+      q.time_allocation = timeAllocation
+    }
+    setParsed(p)
+    setStep(1)
+    setError('')
+  }
+
+  const handleImport = async () => {
+    setSaving(true); setError('')
+    try {
+      const payload = parsed.map((q, i) => ({
+        exam_id: examId,
+        question_text: q.question_text,
+        option_a: q.option_a,
+        option_b: q.option_b,
+        option_c: q.option_c,
+        option_d: q.option_d,
+        correct_option: q.correct_option,
+        explanation: '',
+        marks: q.marks,
+        time_allocation: q.time_allocation,
+        question_order: i,
+      }))
+      const { error: inErr } = await supabase.from('cbt_questions').insert(payload)
+      if (inErr) throw inErr
+      onImported()
+    } catch (e: any) {
+      setError(e.message || 'Import failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
+          <h2 className="text-lg font-bold text-gray-800">
+            {step === 0 ? 'Bulk Import Questions' : `Preview (${parsed.length} questions)`}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          {error && <div className="p-2 bg-red-50 text-red-700 text-sm rounded">{error}</div>}
+
+          {step === 0 ? (
+            <>
+              <p className="text-xs text-gray-500">Paste questions below. Separate each question with a blank line.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Marks per question *</label>
+                  <input type="number" value={marks} onChange={e => setMarks(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Time per question</label>
+                  <select value={timeAllocation} onChange={e => setTimeAllocation(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+                    {TIME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="p-3 bg-gray-100 rounded-lg">
+                <pre className="text-[11px] font-mono text-gray-600 whitespace-pre-wrap">What is 2+2?
+A. 3
+B. 4
+C. 5
+D. 6
+Ans: B
+
+Capital of Nigeria?
+A. Lagos
+B. Abuja
+C. Kano
+D. Ibadan
+Ans: B</pre>
+              </div>
+              <textarea
+                value={text}
+                onChange={e => setText(e.target.value)}
+                rows={12}
+                placeholder="Paste questions here..."
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none"
+              />
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-green-700">
+                {parsed.length} questions parsed. Each worth {marks} marks{timeAllocation > 0 ? `, ${formatTimeAllocation(timeAllocation)} each` : ''}.
+              </p>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {parsed.map((q, i) => (
+                  <div key={i} className="p-3 bg-gray-50 rounded border border-gray-200">
+                    <p className="text-xs font-semibold text-gray-800">{i + 1}. {q.question_text}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">A. {q.option_a}   B. {q.option_b}</p>
+                    <p className="text-[11px] text-gray-500">C. {q.option_c}   D. {q.option_d}</p>
+                    <p className="text-[11px] text-[#1A237E] font-semibold mt-1">
+                      Answer: {q.correct_option.toUpperCase()} | Marks: {q.marks}{q.time_allocation > 0 ? ` | ${formatTimeAllocation(q.time_allocation)}` : ''}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100 sticky bottom-0 bg-white">
+          {step === 1 && (
+            <button onClick={() => setStep(0)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Back</button>
+          )}
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
+          {step === 0 ? (
+            <button onClick={handleParse} className="px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition">Parse</button>
+          ) : (
+            <button onClick={handleImport} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? 'Importing...' : `Import All (${parsed.length})`}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =========================================================
+// Sync Modal — copy CBT scores into scores table (port of Flutter syncCbtToScores)
+// =========================================================
+function SyncModal({ exam, schoolId, onClose, onSynced }: {
+  exam: Exam
+  schoolId: string
+  onClose: () => void
+  onSynced: () => void
+}) {
+  const [assessmentKey, setAssessmentKey] = useState('exam')
+  const [syncing, setSyncing] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState('')
+
+  const handleSync = async () => {
+    setSyncing(true); setError(''); setResult('')
+    try {
+      // Resolve current session + term
+      const { data: curSession } = await supabase
+        .from('academic_sessions')
+        .select('id')
+        .eq('school_id', schoolId)
+        .eq('is_current', true)
+        .maybeSingle()
+      const { data: curTerm } = await supabase
+        .from('terms')
+        .select('id')
+        .eq('school_id', schoolId)
+        .eq('is_current', true)
+        .maybeSingle()
+      if (!curSession?.id || !curTerm?.id) {
+        setError('No active session/term found. Set one in Academic page.')
+        setSyncing(false)
+        return
+      }
+
+      // 1. Fetch all attempts for this exam
+      const { data: attempts, error: aErr } = await supabase
+        .from('cbt_attempts')
+        .select('student_id, score')
+        .eq('exam_id', exam.id)
+      if (aErr) throw aErr
+      if (!attempts || attempts.length === 0) {
+        setError('No student attempts found for this exam.')
+        setSyncing(false)
+        return
+      }
+
+      // 2. Fetch existing scores for this class/subject/term
+      const { data: existingScores, error: sErr } = await supabase
+        .from('scores')
+        .select('id, student_id, scores_json')
+        .eq('class_id', exam.class_id)
+        .eq('subject_id', exam.subject_id)
+        .eq('session_id', curSession.id)
+        .eq('term_id', curTerm.id)
+      if (sErr) throw sErr
+
+      const scoreMap: Record<string, any> = {}
+      for (const s of (existingScores || [])) {
+        scoreMap[s.student_id] = s
+      }
+
+      let updatedCount = 0
+      let insertedCount = 0
+      for (const attempt of attempts) {
+        const studentId = attempt.student_id
+        const score = Number(attempt.score) || 0
+        const existing = scoreMap[studentId]
+        const scoresJson: Record<string, any> = existing?.scores_json ? { ...existing.scores_json } : {}
+        scoresJson[assessmentKey] = score
+
+        // Recompute total
+        let total = 0
+        for (const k in scoresJson) {
+          const v = scoresJson[k]
+          if (typeof v === 'number') total += v
+          else if (typeof v === 'string') total += Number(v) || 0
+        }
+
+        if (existing?.id) {
+          const { error: upErr } = await supabase
+            .from('scores')
+            .update({ scores_json: scoresJson, total })
+            .eq('id', existing.id)
+          if (upErr) throw upErr
+          updatedCount++
+        } else {
+          const { error: inErr } = await supabase
+            .from('scores')
+            .insert({
+              school_id: schoolId,
+              student_id: studentId,
+              class_id: exam.class_id,
+              subject_id: exam.subject_id,
+              session_id: curSession.id,
+              term_id: curTerm.id,
+              scores_json: scoresJson,
+              total,
+            })
+          if (inErr) throw inErr
+          insertedCount++
+        }
+      }
+
+      setResult(`Synced ${attempts.length} attempts. ${updatedCount} updated, ${insertedCount} inserted into scores table.`)
+      setTimeout(() => onSynced(), 1500)
+    } catch (e: any) {
+      setError(e.message || 'Sync failed')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-800">Sync to Scorebook</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-gray-600">
+            Copy CBT attempt scores into the regular scorebook for <span className="font-medium">{exam.title}</span>.
+            Students' scores will be added to the selected assessment column.
+          </p>
+          {error && <div className="p-2 bg-red-50 text-red-700 text-sm rounded">{error}</div>}
+          {result && <div className="p-2 bg-green-50 text-green-700 text-sm rounded">{result}</div>}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Assessment Column</label>
+            <select
+              value={assessmentKey}
+              onChange={e => setAssessmentKey(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+            >
+              <option value="exam">Exam (overwrite exam column)</option>
+              <option value="ca1">CA1</option>
+              <option value="ca2">CA2</option>
+              <option value="assignment">Assignment</option>
+              <option value="midterm">Mid-term</option>
+              <option value="ca">CA (for BECE)</option>
+            </select>
+            <p className="text-xs text-gray-400 mt-1">Choose which assessment column to write scores into. Existing values in that column will be overwritten.</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium hover:bg-cyan-700 transition disabled:opacity-50"
+          >
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {syncing ? 'Syncing...' : 'Sync Now'}
           </button>
         </div>
       </div>

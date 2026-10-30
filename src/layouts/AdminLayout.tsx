@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar,
   Pencil, ClipboardList, UploadCloud, Settings, KeyRound,
@@ -7,22 +8,30 @@ import {
   Video, LogOut, Bot, Menu
 } from 'lucide-react'
 
+// Curriculum mode determines which scoring pages are visible
+// Traditional mode (default): Scores + Publish + Reports
+// ACE mode: PACE Scores + ACE Reports (replaces Scores/Publish/Reports)
+const TRADITIONAL_ONLY_PATHS = ['/dashboard/schooladmin/scores', '/dashboard/schooladmin/publish', '/dashboard/schooladmin/reports']
+const ACE_ONLY_PATHS = ['/dashboard/schooladmin/pace-scores', '/dashboard/schooladmin/ace-reports']
+
 const allNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard/schooladmin' },
   { icon: Users, label: 'Students', path: '/dashboard/schooladmin/students' },
   { icon: GraduationCap, label: 'Teachers', path: '/dashboard/schooladmin/teachers' },
   { icon: BookOpen, label: 'Classes', path: '/dashboard/schooladmin/classes' },
   { icon: Calendar, label: 'Academic', path: '/dashboard/schooladmin/academic' },
-  { icon: Pencil, label: 'Scores', path: '/dashboard/schooladmin/scores' },
+  // Traditional scoring
+  { icon: Pencil, label: 'Scores', path: '/dashboard/schooladmin/scores', traditionalOnly: true },
   { icon: ClipboardList, label: 'CBT', path: '/dashboard/schooladmin/cbt' },
-  { icon: UploadCloud, label: 'Publish', path: '/dashboard/schooladmin/publish' },
+  { icon: UploadCloud, label: 'Publish', path: '/dashboard/schooladmin/publish', traditionalOnly: true },
   { icon: Settings, label: 'Settings', path: '/dashboard/schooladmin/settings' },
   { icon: KeyRound, label: 'Credentials', path: '/dashboard/schooladmin/credentials' },
   { icon: CreditCard, label: 'Fees', path: '/dashboard/schooladmin/fees' },
   { icon: Megaphone, label: 'Announcements', path: '/dashboard/schooladmin/announcements' },
-  { icon: BookOpenCheck, label: 'PACE Scores', path: '/dashboard/schooladmin/pace-scores' },
-  { icon: FileText, label: 'ACE Reports', path: '/dashboard/schooladmin/ace-reports' },
-  { icon: BarChart3, label: 'Reports', path: '/dashboard/schooladmin/reports' },
+  // ACE scoring (replaces traditional scores/publish/reports)
+  { icon: BookOpenCheck, label: 'PACE Scores', path: '/dashboard/schooladmin/pace-scores', aceOnly: true },
+  { icon: FileText, label: 'ACE Reports', path: '/dashboard/schooladmin/ace-reports', aceOnly: true },
+  { icon: BarChart3, label: 'Reports', path: '/dashboard/schooladmin/reports', traditionalOnly: true },
   { icon: Video, label: 'Live Class', path: '/dashboard/schooladmin/live-class' },
 ]
 
@@ -30,10 +39,37 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedIdx, setSelectedIdx] = useState(0)
+  const [isAceMode, setIsAceMode] = useState(false)
 
   const user = JSON.parse(localStorage.getItem('smartedu_user') || '{}')
   const schoolName = user.name || user.school_name || user.schoolName || 'School Portal'
   const schoolLogoUrl = user.logo_url || user.school_logo_url || user.schoolLogoUrl || ''
+  const schoolId = user.id || user.school_id || ''
+
+  // Load curriculum_mode from school_settings to filter sidebar items
+  useEffect(() => {
+    if (!schoolId) return
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('school_settings')
+          .select('curriculum_mode')
+          .eq('school_id', schoolId)
+          .maybeSingle()
+        const mode = (data?.curriculum_mode || '').toLowerCase()
+        setIsAceMode(mode === 'ace')
+      } catch (e) {
+        console.error('Failed to load curriculum_mode:', e)
+      }
+    })()
+  }, [schoolId])
+
+  // Filter nav items based on curriculum mode (mirrors Flutter's isAce conditional)
+  const visibleNavItems = allNavItems.filter(item => {
+    if (item.aceOnly && !isAceMode) return false
+    if (item.traditionalOnly && isAceMode) return false
+    return true
+  })
 
   const handleNavClick = (idx: number, path: string) => {
     setSelectedIdx(idx)
@@ -66,7 +102,7 @@ export default function AdminLayout() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-4">
-        {allNavItems.map((item, idx) => {
+        {visibleNavItems.map((item, idx) => {
           const Icon = item.icon
           return (
             <button

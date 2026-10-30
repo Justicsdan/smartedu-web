@@ -354,3 +354,71 @@ export function calculateWeightedGpa(gradesWithPointsAndUnits: Array<{ point?: n
   }
   return totalUnits > 0 ? totalWeighted / totalUnits : 0
 }
+
+// =========================================================
+// VALIDATION (mirrors Flutter's validateGradingSystem + validateAssessmentTypes)
+// =========================================================
+export function validateGradingSystem(gradingSystem: GradeBand[]): string[] {
+  const errors: string[] = []
+  if (!gradingSystem || gradingSystem.length === 0) {
+    errors.push('Grading system cannot be empty')
+    return errors
+  }
+  for (let i = 0; i < gradingSystem.length; i++) {
+    const g = gradingSystem[i]
+    const idx = `Row ${i + 1}`
+    if (g.min == null) errors.push(`${idx}: Missing minimum score`)
+    if (g.max == null) errors.push(`${idx}: Missing maximum score`)
+    if (!g.grade || !g.grade.trim()) errors.push(`${idx}: Missing grade label`)
+    if (g.min > g.max) errors.push(`${idx}: Min (${g.min}) cannot be greater than Max (${g.max})`)
+    if (g.min < 0) errors.push(`${idx}: Min cannot be negative`)
+    if (g.max > 100) errors.push(`${idx}: Max cannot exceed 100`)
+  }
+  const sorted = [...gradingSystem].sort((a, b) => a.min - b.min)
+  for (let i = 1; i < sorted.length; i++) {
+    const prevMax = sorted[i - 1].max
+    const currMin = sorted[i].min
+    if (currMin > prevMax + 1) {
+      errors.push(`Gap between ${sorted[i - 1].grade} and ${sorted[i].grade}: no grades for scores ${prevMax + 1} to ${currMin - 1}`)
+    }
+    if (currMin <= prevMax) {
+      errors.push(`Overlap between ${sorted[i - 1].grade} and ${sorted[i].grade}: ranges overlap at ${currMin}`)
+    }
+  }
+  if (sorted[0].min > 0) {
+    errors.push(`No grade defined for scores 0 to ${sorted[0].min - 1}`)
+  }
+  if (sorted[sorted.length - 1].max < 100) {
+    errors.push(`No grade defined for scores ${sorted[sorted.length - 1].max + 1} to 100`)
+  }
+  const grades = gradingSystem.map(g => (g.grade || '').trim())
+  const seen = new Set<string>()
+  for (const grade of grades) {
+    if (grade && seen.has(grade)) errors.push(`Duplicate grade label: "${grade}"`)
+    seen.add(grade)
+  }
+  return errors
+}
+
+export function validateAssessmentTypes(
+  assessmentTypes: AssessmentType[],
+  expectedTotal = 100,
+): { valid: boolean; sum: number; errors: string[] } {
+  const errors: string[] = []
+  if (!assessmentTypes || assessmentTypes.length === 0) {
+    return { valid: false, sum: 0, errors: ['Assessment types cannot be empty'] }
+  }
+  let sum = 0
+  for (let i = 0; i < assessmentTypes.length; i++) {
+    const at = assessmentTypes[i]
+    const max = Number(at.max) || 0
+    const name = (at.name || at.id || `Item ${i + 1}`).toString()
+    if (max <= 0) errors.push(`${name}: Max score must be greater than 0`)
+    if (!name.trim()) errors.push(`Item ${i + 1}: Missing name`)
+    sum += max
+  }
+  if (sum !== expectedTotal) {
+    errors.push(`Total of all assessments (${sum}) does not equal ${expectedTotal}`)
+  }
+  return { valid: errors.length === 0, sum, errors }
+}
