@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '../../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import { Users, GraduationCap, BookOpen, BookMarked, ClipboardList, CheckCircle2, BarChart3, UploadCloud, ClipboardCheck, CreditCard, Megaphone, TrendingUp } from 'lucide-react'
 
-const SUPABASE_URL = 'https://tcjsmkhmfjigutfhjtem.supabase.co'
-const ANON_KEY = 'sb_publishable_zWDvjhEldcV8eutnlRypGA_LGpOUhkg'
 
 const statCards = [
   { icon: Users, label: 'Students', countKey: 'students', color: '#6366F1', path: '/dashboard/schooladmin/students' },
@@ -28,6 +27,7 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<any>({})
   const [stats, setStats] = useState({ students: 0, teachers: 0, classes: 0, subjects: 0, assignments: 0, activeCbts: 0 })
   const [loading, setLoading] = useState(true)
+  const [isAceMode, setIsAceMode] = useState(false)
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('smartedu_user') || '{}')

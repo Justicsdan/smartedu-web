@@ -19,6 +19,7 @@ import FeesPage from './pages/admin/FeesPage'
 import AnnouncementsPage from './pages/admin/AnnouncementsPage'
 import PaceScoresPage from './pages/admin/PaceScoresPage'
 import AceReportsPage from './pages/admin/AceReportsPage'
+import LiveClassPage from './pages/admin/LiveClassPage'
 
 function App() {
   return (
@@ -48,7 +49,7 @@ function App() {
           <Route path="pace-scores" element={<PaceScoresPage />} />
           <Route path="ace-reports" element={<AceReportsPage />} />
           <Route path="reports" element={<div className="p-8 text-2xl text-gray-500">Reports page coming soon...</div>} />
-          <Route path="live-class" element={<div className="p-8 text-2xl text-gray-500">Live Class page coming soon...</div>} />
+          <Route path="live-class" element={<LiveClassPage />} />
         </Route>
 
         {/* Other dashboards (placeholders) */}
