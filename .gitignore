@@ -6,3 +6,8 @@ dist
 *.log
 .DS_Store
 .vite
+.env.save
+fix_imports.py
+fix_jsx_strings.py
+fix_layout.py
+replace_emojis.py
