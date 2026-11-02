@@ -25,6 +25,18 @@ import AceReportsPage from './pages/admin/AceReportsPage'
 import LiveClassPage from './pages/admin/LiveClassPage'
 import ReportsPage from './pages/admin/ReportsPage'
 import StudentLayout from './layouts/StudentLayout'
+import TeacherLayout from './layouts/TeacherLayout'
+import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import TeacherScores from './pages/teacher/TeacherScores'
+import TeacherClasses from './pages/teacher/TeacherClasses'
+import TeacherAttendance from './pages/teacher/TeacherAttendance'
+import TeacherAssignments from './pages/teacher/TeacherAssignments'
+import TeacherCbt from './pages/teacher/TeacherCbt'
+import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements'
+import TeacherLiveClass from './pages/teacher/TeacherLiveClass'
+import TeacherPublish from './pages/teacher/TeacherPublish'
+import TeacherMyClass from './pages/teacher/TeacherMyClass'
+import TeacherMyStudents from './pages/teacher/TeacherMyStudents'
 import StudentDashboard from './pages/student/StudentDashboard'
 import StudentResultsPage from './pages/student/StudentResultsPage'
 import StudentAnnouncementsPage from './pages/student/StudentAnnouncementsPage'
@@ -84,7 +96,21 @@ function App() {
         </Route>
 
         <Route path="/dashboard/superadmin" element={<div className="p-8">Super Admin Dashboard coming soon...</div>} />
-        <Route path="/dashboard/teacher" element={<div className="p-8">Teacher Dashboard coming soon...</div>} />
+
+              <Route path="/dashboard/teacher" element={<TeacherLayout />}>
+          <Route index element={<TeacherDashboard />} />
+          <Route path="my-class" element={<TeacherMyClass />} />
+          <Route path="my-students" element={<TeacherMyStudents />} />
+          <Route path="my-classes" element={<TeacherClasses />} />
+          <Route path="scores" element={<TeacherScores />} />
+          <Route path="assignments" element={<TeacherAssignments />} />
+          <Route path="cbt" element={<TeacherCbt />} />
+          <Route path="attendance" element={<TeacherAttendance />} />
+          <Route path="results" element={<TeacherDashboard />} />
+          <Route path="announcements" element={<TeacherAnnouncements />} />
+          <Route path="live-class" element={<TeacherLiveClass />} />
+          <Route path="publish" element={<TeacherPublish />} />
+        </Route>
       </Routes>
     </BrowserRouter>
     </AuthProvider>
