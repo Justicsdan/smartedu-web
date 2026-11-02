@@ -74,11 +74,9 @@ export default function StudentResultsPage() {
     if (!user) return
     setLoading(true); setError('')
     try {
+      // Use user object directly — student role can't SELECT from students table (RLS)
+      // The auth Edge Function already returns all needed student fields in the JWT payload
       let stu: any = user
-      if (studentId) {
-        const { data: sData } = await dbProxy.from('students').select('*').eq('id', studentId).maybeSingle()
-        if (sData) stu = sData
-      }
       setStudent(stu)
       const tasks: Promise<any>[] = []
       const keys: string[] = []
@@ -330,9 +328,10 @@ export default function StudentResultsPage() {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Subject</th>
-                    {assessmentTypes.map((a: string) => (
-                      <th key={a} className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">{a}</th>
-                    ))}
+                    {assessmentTypes.map((a: any, i: number) => {
+                      const aStr = typeof a === 'string' ? a : (a?.name || a?.id || a?.key || `col-${i}`)
+                      return <th key={aStr} className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">{aStr}</th>
+                    })}
                     <th className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Total</th>
                     <th className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Grade</th>
                   </tr>
@@ -356,9 +355,10 @@ export default function StudentResultsPage() {
                         <tr key={i} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 font-semibold text-slate-900">{name}</td>
                           {assessmentTypes.map((a: string) => {
-                            const colKey = a.toLowerCase().replace(/[\s-]/g, '_')
-                            const val = scoresJson[colKey] ?? scoresJson[a] ?? '—'
-                            return (<td key={a} className="text-center px-3 py-3 text-slate-700">{val}</td>)
+                            const aStr = typeof a === 'string' ? a : (a?.id || a?.name || a?.key || String(a || ''))
+                            const colKey = aStr.toLowerCase().replace(/[\s-]/g, '_')
+                            const val = scoresJson[colKey] ?? scoresJson[aStr] ?? '—'
+                            return (<td key={aStr} className="text-center px-3 py-3 text-slate-700">{val}</td>)
                           })}
                           <td className="text-center px-3 py-3">
                             <span className={`font-bold ${isPass ? 'text-emerald-700' : 'text-red-700'}`}>{total}</span>
