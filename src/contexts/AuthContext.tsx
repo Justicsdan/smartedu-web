@@ -2,9 +2,8 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 
 interface AuthUser {
   id: string
-  name: string
-  email: string
   role: string
+  [key: string]: any  // Permissive — allows first_name, last_name, admission_no, school_id, class_id, etc.
 }
 
 interface AuthCtx {

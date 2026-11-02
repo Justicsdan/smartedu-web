@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   Plus, Edit3, Trash2, Eye, EyeOff, RefreshCw, Save, X, ChevronDown,
@@ -210,12 +210,12 @@ export default function CbtPage() {
       setLoading(true)
       try {
         const [exRes, cRes, subRes] = await Promise.all([
-          supabase.from('cbt_exams')
-            .select('*, subjects(name, code), classes(name, section)')
+          dbProxy.from('cbt_exams')
+            .select('*')
             .eq('school_id', schoolId)
             .order('created_at', { ascending: false }),
-          supabase.from('classes').select('id, name, tier').eq('school_id', schoolId).order('name'),
-          supabase.from('subjects').select('id, name, code').eq('school_id', schoolId).order('name'),
+          dbProxy.from('classes').select('id, name, tier').eq('school_id', schoolId).order('name'),
+          dbProxy.from('subjects').select('id, name, code').eq('school_id', schoolId).order('name'),
         ])
         setExams((exRes.data || []) as Exam[])
         setClasses(cRes.data || [])
@@ -224,7 +224,7 @@ export default function CbtPage() {
         // Load attempt counts
         if ((exRes.data || []).length > 0) {
           const examIds = (exRes.data || []).map(e => e.id)
-          const { data: attRows } = await supabase
+          const { data: attRows } = await dbProxy
             .from('cbt_attempts')
             .select('exam_id')
             .in('exam_id', examIds)
@@ -243,15 +243,28 @@ export default function CbtPage() {
     })()
   }, [schoolId])
 
+  const [classSubjects, setClassSubjects] = useState<any[]>([])
+
+  // Load class_subjects to know which subjects belong to which class
+  useEffect(() => {
+    if (!schoolId) return
+    dbProxy.from('class_subjects').select('class_id, subject_id').eq('school_id', schoolId)
+      .then(({ data }: any) => setClassSubjects(data || []))
+  }, [schoolId])
+
   const subjectsForClass = useMemo(() => {
     if (!form.class_id) return subjects
-    return subjects
-  }, [subjects, form.class_id])
+    const linkedIds = new Set(classSubjects.filter(cs => cs.class_id === form.class_id).map(cs => cs.subject_id))
+    const filtered = subjects.filter(s => linkedIds.has(s.id))
+    // Only fallback to all if class_subjects haven't loaded yet OR truly none linked
+    if (classSubjects.length === 0) return subjects // still loading
+    return filtered // even if empty, show empty (don't fallback to all)
+  }, [subjects, classSubjects, form.class_id])
 
   const loadQuestions = async (examId: string) => {
     setLoadingQuestions(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dbProxy
         .from('cbt_questions')
         .select('*')
         .eq('exam_id', examId)
@@ -268,9 +281,9 @@ export default function CbtPage() {
 
   const loadAttempts = async (examId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dbProxy
         .from('cbt_attempts')
-        .select('*, students(first_name, last_name, admission_no)')
+        .select('*')
         .eq('exam_id', examId)
         .order('time_started', { ascending: false })
       if (error) throw error
@@ -352,18 +365,18 @@ export default function CbtPage() {
       if (editingExamId) {
         delete payload.school_id
         delete payload.created_by
-        const { error: upErr } = await supabase.from('cbt_exams').update(payload).eq('id', editingExamId)
+        const { error: upErr } = await dbProxy.from('cbt_exams').update(payload).eq('id', editingExamId)
         if (upErr) throw upErr
         setSuccessMsg('Exam updated')
       } else {
-        const { error: inErr } = await supabase.from('cbt_exams').insert(payload)
+        const { error: inErr } = await dbProxy.from('cbt_exams').insert(payload)
         if (inErr) throw inErr
         setSuccessMsg('Exam created')
       }
       setShowExamModal(false)
       // Reload exams
-      const { data: newEx } = await supabase.from('cbt_exams')
-        .select('*, subjects(name, code), classes(name, section)')
+      const { data: newEx } = await dbProxy.from('cbt_exams')
+        .select('*')
         .eq('school_id', schoolId)
         .order('created_at', { ascending: false })
       setExams((newEx || []) as Exam[])
@@ -376,7 +389,7 @@ export default function CbtPage() {
 
   const toggleActive = async (examId: string, current: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await dbProxy
         .from('cbt_exams')
         .update({ is_active: !current })
         .eq('id', examId)
@@ -391,9 +404,9 @@ export default function CbtPage() {
   const handleDeleteExam = async (examId: string) => {
     try {
       // Delete questions first (cascade may handle this, but be explicit)
-      await supabase.from('cbt_questions').delete().eq('exam_id', examId)
-      await supabase.from('cbt_attempts').delete().eq('exam_id', examId)
-      const { error } = await supabase.from('cbt_exams').delete().eq('id', examId)
+      await dbProxy.from('cbt_questions').delete().eq('exam_id', examId)
+      await dbProxy.from('cbt_attempts').delete().eq('exam_id', examId)
+      const { error } = await dbProxy.from('cbt_exams').delete().eq('id', examId)
       if (error) throw error
       setExams(prev => prev.filter(e => e.id !== examId))
       setDeleteConfirm(null)
@@ -405,7 +418,7 @@ export default function CbtPage() {
 
   const handleResetAttempts = async (examId: string) => {
     try {
-      const { error } = await supabase.from('cbt_attempts').delete().eq('exam_id', examId)
+      const { error } = await dbProxy.from('cbt_attempts').delete().eq('exam_id', examId)
       if (error) throw error
       setAttemptCounts(prev => ({ ...prev, [examId]: 0 }))
       setAttempts([])
@@ -418,23 +431,26 @@ export default function CbtPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
+          <span className="text-sm font-medium">Loading exams…</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">CBT Exams</h1>
-          <p className="text-sm text-gray-500 mt-1">Create computer-based tests, manage questions, view attempts.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">CBT Exams</h1>
+          <p className="text-sm text-slate-500 mt-1">Create computer-based tests, manage questions, view attempts.</p>
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 transition shadow-sm"
         >
           <Plus className="w-4 h-4" /> New Exam
         </button>
@@ -442,56 +458,48 @@ export default function CbtPage() {
 
       {/* Alerts */}
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><FileText className="w-5 h-5 text-blue-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Total Exams</p>
-            <p className="text-lg font-bold text-gray-800">{exams.length}</p>
-          </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFEFF', color: '#06B6D4' }}><FileText size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{exams.length}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Exams</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><Play className="w-5 h-5 text-green-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Active</p>
-            <p className="text-lg font-bold text-gray-800">{exams.filter(e => e.is_active).length}</p>
-          </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><Play size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{exams.filter(e => e.is_active).length}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Active</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center"><Users className="w-5 h-5 text-orange-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Total Attempts</p>
-            <p className="text-lg font-bold text-gray-800">{Object.values(attemptCounts).reduce((a, b) => a + b, 0)}</p>
-          </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><Users size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{Object.values(attemptCounts).reduce((a, b) => a + b, 0)}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Attempts</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center"><ListChecks className="w-5 h-5 text-purple-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Questions</p>
-            <p className="text-lg font-bold text-gray-800">{questions.length}</p>
-          </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}><ListChecks size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{questions.length}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Questions</div>
         </div>
       </div>
 
       {/* Exam list */}
       {exams.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-3"><FileText className="w-8 h-8 text-blue-400" /></div>
-          <h3 className="text-gray-700 font-medium mb-1">No CBT Exams Yet</h3>
-          <p className="text-gray-400 text-sm">Click "New Exam" to create your first computer-based test.</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+          <div className="w-16 h-16 mx-auto bg-cyan-50 rounded-2xl flex items-center justify-center mb-4 text-cyan-400"><FileText size={32} strokeWidth={2} /></div>
+          <h3 className="text-base font-bold text-slate-900 mb-1">No CBT Exams Yet</h3>
+          <p className="text-sm text-slate-500">Click "New Exam" to create your first computer-based test.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -499,10 +507,10 @@ export default function CbtPage() {
             const isExpanded = expandedExamId === exam.id
             const attemptCount = attemptCounts[exam.id] || 0
             return (
-              <div key={exam.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div key={exam.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 {/* Exam card header */}
                 <div
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition"
                   onClick={() => toggleExpand(exam.id)}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -531,7 +539,7 @@ export default function CbtPage() {
 
                 {/* Expanded panel */}
                 {isExpanded && (
-                  <div className="border-t border-gray-100 p-4 space-y-4 bg-gray-50/30">
+                  <div className="border-t border-slate-100 p-4 space-y-4 bg-slate-50/40">
                     {/* Exam details + actions */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
@@ -648,7 +656,7 @@ export default function CbtPage() {
                         <p className="text-xs font-medium text-gray-700">Questions ({questions.length})</p>
                         <button
                           onClick={() => setShowAddQuestion(true)}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-[#1A237E] text-white rounded text-xs font-medium hover:bg-[#283593] transition"
+                          className="flex items-center gap-1 px-2.5 py-1 bg-cyan-600 text-white rounded text-xs font-semibold hover:bg-cyan-700 transition"
                         >
                           <Plus className="w-3 h-3" /> Add Question
                         </button>
@@ -668,7 +676,7 @@ export default function CbtPage() {
                                 <button
                                   onClick={async () => {
                                     try {
-                                      await supabase.from('cbt_questions').delete().eq('id', q.id)
+                                      await dbProxy.from('cbt_questions').delete().eq('id', q.id)
                                       loadQuestions(exam.id)
                                       setSuccessMsg('Question deleted')
                                     } catch (e: any) {
@@ -805,7 +813,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
   onSave: () => void
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-gray-800">{editingId ? 'Edit Exam' : 'New CBT Exam'}</h2>
@@ -820,7 +828,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
               placeholder="e.g., First Term Mathematics CBT"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
             />
           </div>
 
@@ -830,7 +838,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
               <select
                 value={form.class_id}
                 onChange={e => setForm({ ...form, class_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               >
                 <option value="">Select class</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.tier || 'SSS'})</option>)}
@@ -841,7 +849,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
               <select
                 value={form.subject_id}
                 onChange={e => setForm({ ...form, subject_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               >
                 <option value="">Select subject</option>
                 {subjects.map(s => <option key={s.id} value={s.id}>{s.name}{s.code ? ` (${s.code})` : ''}</option>)}
@@ -856,7 +864,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
                 type="number"
                 value={form.duration_minutes}
                 onChange={e => setForm({ ...form, duration_minutes: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               />
             </div>
             <div>
@@ -865,7 +873,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
                 type="number"
                 value={form.total_questions}
                 onChange={e => setForm({ ...form, total_questions: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               />
             </div>
             <div>
@@ -875,7 +883,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
                 step="0.1"
                 value={form.pass_mark}
                 onChange={e => setForm({ ...form, pass_mark: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               />
             </div>
           </div>
@@ -887,7 +895,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
                 type="datetime-local"
                 value={form.start_time}
                 onChange={e => setForm({ ...form, start_time: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               />
             </div>
             <div>
@@ -896,7 +904,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
                 type="datetime-local"
                 value={form.end_time}
                 onChange={e => setForm({ ...form, end_time: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               />
             </div>
           </div>
@@ -908,7 +916,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
               onChange={e => setForm({ ...form, instructions: e.target.value })}
               rows={2}
               placeholder="Optional instructions shown to students before exam"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition resize-none"
             />
           </div>
 
@@ -940,7 +948,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
                   type="number"
                   value={form.max_attempts}
                   onChange={e => setForm({ ...form, max_attempts: Number(e.target.value) })}
-                  className="w-full px-2 py-1 border border-gray-200 rounded text-xs"
+                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs text-slate-900"
                 />
               </div>
             )}
@@ -951,7 +959,7 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
           <button
             onClick={onSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 shadow-sm transition disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Saving...' : editingId ? 'Update Exam' : 'Create Exam'}
@@ -985,7 +993,7 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
     }
     setSaving(true); setError('')
     try {
-      const { error: inErr } = await supabase.from('cbt_questions').insert({
+      const { error: inErr } = await dbProxy.from('cbt_questions').insert({
         exam_id: examId,
         question_text: questionText.trim(),
         option_a: optionA.trim(),
@@ -1008,7 +1016,7 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-gray-800">Add Question</h2>
@@ -1024,26 +1032,26 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
               onChange={e => setQuestionText(e.target.value)}
               rows={3}
               placeholder="Enter the question..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Option A *</label>
-              <input value={optionA} onChange={e => setOptionA(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input value={optionA} onChange={e => setOptionA(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Option B *</label>
-              <input value={optionB} onChange={e => setOptionB(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input value={optionB} onChange={e => setOptionB(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Option C *</label>
-              <input value={optionC} onChange={e => setOptionC(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input value={optionC} onChange={e => setOptionC(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Option D *</label>
-              <input value={optionD} onChange={e => setOptionD(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input value={optionD} onChange={e => setOptionD(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition" />
             </div>
           </div>
 
@@ -1053,7 +1061,7 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
               <select
                 value={correctOption}
                 onChange={e => setCorrectOption(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               >
                 <option value="a">A</option>
                 <option value="b">B</option>
@@ -1067,7 +1075,7 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
                 type="number"
                 value={marks}
                 onChange={e => setMarks(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               />
             </div>
             <div>
@@ -1075,7 +1083,7 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
               <select
                 value={timeAllocation}
                 onChange={e => setTimeAllocation(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               >
                 {TIME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -1088,7 +1096,7 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
               value={explanation}
               onChange={e => setExplanation(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition resize-none"
             />
           </div>
         </div>
@@ -1097,7 +1105,7 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 shadow-sm transition disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Saving...' : 'Add Question'}
@@ -1156,7 +1164,7 @@ function BulkImportModal({ examId, onClose, onImported }: {
         time_allocation: q.time_allocation,
         question_order: i,
       }))
-      const { error: inErr } = await supabase.from('cbt_questions').insert(payload)
+      const { error: inErr } = await dbProxy.from('cbt_questions').insert(payload)
       if (inErr) throw inErr
       onImported()
     } catch (e: any) {
@@ -1167,7 +1175,7 @@ function BulkImportModal({ examId, onClose, onImported }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-gray-800">
@@ -1184,11 +1192,11 @@ function BulkImportModal({ examId, onClose, onImported }: {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">Marks per question *</label>
-                  <input type="number" value={marks} onChange={e => setMarks(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+                  <input type="number" value={marks} onChange={e => setMarks(Number(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">Time per question</label>
-                  <select value={timeAllocation} onChange={e => setTimeAllocation(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+                  <select value={timeAllocation} onChange={e => setTimeAllocation(Number(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition">
                     {TIME_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
@@ -1242,7 +1250,7 @@ Ans: B</pre>
           )}
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
           {step === 0 ? (
-            <button onClick={handleParse} className="px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition">Parse</button>
+            <button onClick={handleParse} className="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 shadow-sm transition">Parse</button>
           ) : (
             <button onClick={handleImport} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -1273,13 +1281,13 @@ function SyncModal({ exam, schoolId, onClose, onSynced }: {
     setSyncing(true); setError(''); setResult('')
     try {
       // Resolve current session + term
-      const { data: curSession } = await supabase
+      const { data: curSession } = await dbProxy
         .from('academic_sessions')
         .select('id')
         .eq('school_id', schoolId)
         .eq('is_current', true)
         .maybeSingle()
-      const { data: curTerm } = await supabase
+      const { data: curTerm } = await dbProxy
         .from('terms')
         .select('id')
         .eq('school_id', schoolId)
@@ -1292,7 +1300,7 @@ function SyncModal({ exam, schoolId, onClose, onSynced }: {
       }
 
       // 1. Fetch all attempts for this exam
-      const { data: attempts, error: aErr } = await supabase
+      const { data: attempts, error: aErr } = await dbProxy
         .from('cbt_attempts')
         .select('student_id, score')
         .eq('exam_id', exam.id)
@@ -1304,7 +1312,7 @@ function SyncModal({ exam, schoolId, onClose, onSynced }: {
       }
 
       // 2. Fetch existing scores for this class/subject/term
-      const { data: existingScores, error: sErr } = await supabase
+      const { data: existingScores, error: sErr } = await dbProxy
         .from('scores')
         .select('id, student_id, scores_json')
         .eq('class_id', exam.class_id)
@@ -1336,14 +1344,14 @@ function SyncModal({ exam, schoolId, onClose, onSynced }: {
         }
 
         if (existing?.id) {
-          const { error: upErr } = await supabase
+          const { error: upErr } = await dbProxy
             .from('scores')
             .update({ scores_json: scoresJson, total })
             .eq('id', existing.id)
           if (upErr) throw upErr
           updatedCount++
         } else {
-          const { error: inErr } = await supabase
+          const { error: inErr } = await dbProxy
             .from('scores')
             .insert({
               school_id: schoolId,
@@ -1370,7 +1378,7 @@ function SyncModal({ exam, schoolId, onClose, onSynced }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-800">Sync to Scorebook</h2>
@@ -1388,7 +1396,7 @@ function SyncModal({ exam, schoolId, onClose, onSynced }: {
             <select
               value={assessmentKey}
               onChange={e => setAssessmentKey(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
             >
               <option value="exam">Exam (overwrite exam column)</option>
               <option value="ca1">CA1</option>
@@ -1428,7 +1436,7 @@ function ConfirmDialog({ title, message, confirmText, danger, onConfirm, onCance
   onCancel: () => void
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onCancel}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onCancel}>
       <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-start gap-3 mb-4">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${danger ? 'bg-red-100' : 'bg-yellow-100'}`}>

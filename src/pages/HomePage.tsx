@@ -1,347 +1,356 @@
-import { ArrowRight, ArrowUp, Baby, BarChart3, BookOpen, Calculator, CheckCircle, ClipboardList, Cloud, GraduationCap, Laptop, Lock, MessageSquare, Printer, School, Smartphone, Star, Trophy, Upload, Users, Zap } from 'lucide-react';
-
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  School, ArrowRight, BookOpen, BarChart3, Shield, Clock, ChevronDown,
+  ChevronUp, MessageCircle, FileText, Calendar, Wallet, Video, Lock,
+  Users, GraduationCap, Building2, Award, CheckCircle2, Sparkles,
+} from 'lucide-react'
+
+const FAQ_ITEMS = [
+  { q: 'Does each school get its own branding?', a: 'Yes. Every school operates independently with their own logo, colors, motto, and sub-domain. There is zero platform branding visible to your students, teachers, or parents.' },
+  { q: 'Can students access results from their phone?', a: 'Yes. The student portal is fully responsive and works on any device — phone, tablet, or desktop. Results, attendance, fees, assignments, and CBT exams are all accessible 24/7.' },
+  { q: 'How secure is student data?', a: 'All data is encrypted in transit and at rest. Row-Level Security (RLS) is enabled on every table, and a role-based proxy validates every query — students can only see their own data, teachers only see their assigned classes.' },
+  { q: 'Does it support CBT (Computer-Based Testing)?', a: 'Yes. Teachers can create exams with multiple-choice questions, set per-question time limits, and students take exams in a timed environment with auto-submit. Results are scored instantly with per-question review.' },
+  { q: 'Can the school print official report cards?', a: 'Yes. The Results page generates print-optimized PDFs with the school logo, watermark, behavioral ratings, teacher/principal comments, and grading key — all on one page.' },
+  { q: 'What grading systems are supported?', a: 'Nigerian tier-based (WAEC for SSS, BECE for JSS, 5-point for Primary) and American GPA. Each tier can have its own assessment structure and grade boundaries, configurable by the school administrator.' },
+]
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const [showScrollTop, setShowScrollTop] = useState(false)
-  const [showEntryDialog, setShowEntryDialog] = useState(false)
-  const [showCodeDialog, setShowCodeDialog] = useState(false)
-  const [schoolCode, setSchoolCode] = useState('')
-  const [codeError, setCodeError] = useState('')
-  const [codeLoading, setCodeLoading] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const savedCode = localStorage.getItem('last_school_code')
-    if (savedCode) setSchoolCode(savedCode)
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      setShowScrollTop(scrollRef.current.scrollTop > 400)
-    }
-  }
-
-  const scrollToTop = () => {
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const openWhatsApp = () => {
-    window.open('https://wa.me/2347080304822', '_blank')
-  }
-
-  const lookupSchoolCode = async () => {
-    const code = schoolCode.trim()
-    if (!code) return
-    setCodeLoading(true)
-    setCodeError('')
-    try {
-      const res = await fetch(
-        `https://tcjsmkhmfjigutfhjtem.supabase.co/rest/v1/schools?school_code=eq.${code}&select=*`,
-        { headers: { apikey: 'sb_publishable_zWDvjhEldcV8eutnlRypGA_LGpOUhkg' } }
-      )
-      const data = await res.json()
-      if (!data || data.length === 0) {
-        setCodeError('School code not found')
-      } else {
-        localStorage.setItem('last_school_code', code)
-        navigate(`/s/${code}`, { state: data[0] })
-      }
-    } catch {
-      setCodeError('Error looking up code')
-    } finally {
-      setCodeLoading(false)
-    }
-  }
-
-  const features = [
-    { icon: <Calculator className="w-6 h-6" />, title: 'Smart Grading', desc: 'WAEC, BECE, 5-point & American GPA with auto positions.', color: '#6366F1' },
-    { icon: <BookOpen className="w-6 h-6" />, title: 'ACE Curriculum', desc: 'Full support for PACEs, HACS/NCE scoring & specialized reports.', color: '#0EA5E9' },
-    { icon: <BarChart3 className="w-6 h-6" />, title: 'Result Publishing', desc: 'One-click publish with behavioral ratings & comments.', color: '#10B981' },
-    { icon: <Users className="w-6 h-6" />, title: 'Role-Based Access', desc: 'Separate dashboards for Admin, Teacher & Student.', color: '#F59E0B' },
-    { icon: <ClipboardList className="w-6 h-6" />, title: 'CBT Exams', desc: 'Computer-based tests with auto grading & score sync.', color: '#EC4899' },
-    { icon: <Lock className="w-6 h-6" />, title: 'Secure Login', desc: 'PIN for students, bcrypt passwords for staff.', color: '#06B6D4' },
-    { icon: <Printer className="w-6 h-6" />, title: 'PDF Reports', desc: 'Professional results with photos, stamps & signatures.', color: '#8B5CF6' },
-  ]
-
-  const gradingSystems = [
-    { title: 'SSS', subtitle: 'WAEC · NECO · IGCSE', icon: <GraduationCap className="w-6 h-6" />, color: '#6366F1', grades: ['A1','B2','B3','C4','C5','C6','D7','E8','F9'], desc: 'Five assessment columns with auto position computation' },
-    { title: 'JSS', subtitle: 'BECE Standard', icon: <BookOpen className="w-6 h-6" />, color: '#10B981', grades: ['A','B','C','P','F'], desc: 'Continuous Assessment and Exam — two columns' },
-    { title: 'Primary', subtitle: '5-Point Scale', icon: <Baby className="w-6 h-6" />, color: '#F59E0B', grades: ['5','4','3','2','1'], desc: 'Three assessment columns with simple grading' },
-    { title: 'American', subtitle: 'US GPA System', icon: <Star className="w-6 h-6" />, color: '#EC4899', grades: ['A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'], desc: 'Five assessment columns with 4.0 GPA points' },
-  ]
-
-  const steps = [
-    { title: 'Set Up School', desc: 'Configure your profile, grading system, and classes.', icon: <School className="w-6 h-6" />, color: '#6366F1' },
-    { title: 'Register People', desc: 'Add students and teachers with photos and details.', icon: <Users className="w-6 h-6" />, color: '#10B981' },
-    { title: 'Enter & Publish', desc: 'Record scores, compute positions, publish results.', icon: <Upload className="w-6 h-6" />, color: '#F59E0B' },
-  ]
-
-  const trustBadges = [
-    { icon: <Lock className="w-6 h-6" />, text: 'Secure' },
-    { icon: <Cloud className="w-6 h-6" />, text: 'Cloud Hosted' },
-    { icon: <Zap className="w-6 h-6" />, text: 'Fast' },
-    { icon: <Smartphone className="w-6 h-6" />, text: 'Any Device' },
-    { icon: <Trophy className="w-6 h-6" />, text: "Int'l Standards" },
-  ]
-
-  const faqs = [
-    { q: 'How do I get started?', a: 'Sign up, set up your school profile, add classes, register students and teachers. You can publish your first results in under an hour.' },
-    { q: 'Which grading systems are supported?', a: 'WAEC, NECO, IGCSE for secondary school, BECE for junior school, 5-point scale for primary — plus a full American GPA system. Each tier supports custom overrides.' },
-    { q: 'Can I switch between Nigerian and American standards?', a: 'Yes. Toggle between standards in Settings and all tiers instantly adapt — grading scales, assessment columns, and grade computations update automatically.' },
-    { q: 'Does it work on mobile?', a: 'Fully responsive web application. Works seamlessly on phones, tablets, and desktops through any modern browser.' },
-  ]
+  const toggleFaq = (i: number) => setOpenFaq(openFaq === i ? null : i)
 
   return (
-    <div className="min-h-screen bg-[#080C22] text-white overflow-x-hidden">
-      {/* Background gradient */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[#080C22] via-[#0E1630] to-[#0B1025]" />
-      
-      {/* Floating orbs */}
-      <div className="fixed top-[-120px] right-[-80px] w-[320px] h-[320px] rounded-full bg-indigo-600/10 blur-3xl" />
-      <div className="fixed bottom-[-140px] left-[-100px] w-[380px] h-[380px] rounded-full bg-purple-600/10 blur-3xl" />
+    <div className="min-h-screen bg-white text-slate-900">
+      {/* ── Top nav ─────────────────────────────────────────────── */}
+      <header className={`fixed top-0 inset-x-0 z-50 transition-all ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 blur-md opacity-50" />
+              <div className="relative w-9 h-9 rounded-xl bg-white shadow-md flex items-center justify-center ring-1 ring-slate-200 overflow-hidden">
+                <img src="/smartedu-logo.png" alt="SmartEdu" className="w-full h-full object-contain p-0.5"
+                  onError={(e) => {
+                    const t = e.target as HTMLImageElement
+                    t.onerror = null
+                    t.src = "/favicon.png"
+                    t.onerror = () => {
+                      const parent = t.parentElement
+                      if (parent) {
+                        t.style.display = 'none'
+                        parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">S</div>'
+                      }
+                    }
+                  }} />
+              </div>
+            </div>
+            <span className="font-bold text-base tracking-tight text-slate-900">SmartEdu</span>
+          </div>
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+            <a href="#features" className="hover:text-slate-900 transition">Features</a>
+            <a href="#grading" className="hover:text-slate-900 transition">Grading</a>
+            <a href="#how-it-works" className="hover:text-slate-900 transition">How it works</a>
+            <a href="#faq" className="hover:text-slate-900 transition">FAQ</a>
+          </nav>
+          <button onClick={() => navigate('/login-method')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold shadow-sm transition">
+            Sign in<ArrowRight size={14} strokeWidth={2.4} />
+          </button>
+        </div>
+      </header>
 
-      {/* Scrollable content */}
-      <div ref={scrollRef} onScroll={handleScroll} className="relative h-screen overflow-y-auto scroll-smooth">
-        <div className="max-w-2xl mx-auto px-4 py-16">
-          
-          {/* Hero Section */}
-          <div className="text-center mb-16">
-            <div className="inline-block mb-7">
-              <div className="w-[150px] h-[150px] bg-white rounded-3xl shadow-2xl p-2.5 flex items-center justify-center" style={{ boxShadow: '0 14px 50px rgba(59,130,246,0.5), 0 0 40px rgba(99,102,241,0.3)' }}>
-                <img src="/smartedu_logo.webp" alt="SmartEdu" className="w-full h-full object-contain" />
+      {/* ── Hero ────────────────────────────────────────────────── */}
+      <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 overflow-hidden">
+        <div className="absolute inset-0 -z-10"
+          style={{
+            background: `radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+              linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)`,
+          }}
+        />
+
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
+          {/* SmartEdu logo with glow — bobbing animation like Flutter original */}
+          <div className="inline-flex items-center justify-center mb-8">
+            <div className="relative animate-bounce" style={{ animationDuration: '3s', animationTimingFunction: 'ease-in-out' }}>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-400 via-blue-500 to-violet-500 blur-2xl opacity-60" />
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white shadow-2xl flex items-center justify-center ring-1 ring-slate-200 overflow-hidden">
+                <img src="/smartedu-logo.png" alt="SmartEdu" className="w-full h-full object-contain p-1.5"
+                  onError={(e) => {
+                    const t = e.target as HTMLImageElement
+                    t.onerror = null
+                    t.src = "/favicon.png"
+                    t.onerror = () => {
+                      const parent = t.parentElement
+                      if (parent) {
+                        t.style.display = 'none'
+                        parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-5xl">S</div>'
+                      }
+                    }
+                  }} />
               </div>
-            </div>
-            <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              School<br />Management System
-            </h1>
-            <p className="text-white/60 text-sm mb-8 px-4">
-              Streamline admissions, scores, and results — supporting Traditional, American GPA, and ACE curriculums.
-            </p>
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate('/role-selection')}
-                className="px-12 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/40 hover:scale-105 transition"
-              >
-                Get Started
-              </button>
-              <div>
-                <button
-                  onClick={() => scrollRef.current?.scrollTo({ top: 500, behavior: 'smooth' })}
-                  className="px-8 py-2.5 border border-white/10 rounded-xl text-white/60 text-sm hover:bg-white/5 transition"
-                >
-                  Learn More
-                </button>
-              </div>
-            </div>
-            {/* Pills */}
-            <div className="flex flex-wrap justify-center gap-2 mt-7">
-              {[
-                { key: 'fast', icon: <Zap className="w-3.5 h-3.5" />, label: 'Fast' },
-                { key: 'secure', icon: <Lock className="w-3.5 h-3.5" />, label: 'Secure' },
-                { key: 'reliable', icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Reliable' },
-                { key: 'cross', icon: <Laptop className="w-3.5 h-3.5" />, label: 'Cross-Platform' },
-              ].map(p => (
-                <span key={p.key} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs text-white/50 inline-flex items-center gap-1.5">
-                  {p.icon}{p.label}
-                </span>
-              ))}
             </div>
           </div>
 
-          {/* Features */}
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold text-center mb-2">Powerful Features</h2>
-            <p className="text-center text-white/40 text-sm mb-6">Everything your school needs</p>
-            <div className="grid gap-3">
-              {features.map((f, i) => (
-                <div key={i} className="flex items-start gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-white/20 transition cursor-default">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ background: `${f.color}30` }}>
-                    {f.icon}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-[1.15]">
+            School Management System
+          </h1>
+
+          <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+            A secure, multi-tenant platform for students, teachers, and administrators.
+            Manage results, attendance, fees, CBT exams, and live classes — all under your school's brand.
+          </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button onClick={() => navigate('/login-method')}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-md transition">
+              Get Started<ArrowRight size={15} strokeWidth={2.4} />
+            </button>
+            <a href="#features"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold text-sm shadow-sm transition">
+              Learn More
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features ────────────────────────────────────────────── */}
+      <section id="features" className="py-20 sm:py-28 bg-slate-50/50 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Features</h2>
+            <p className="mt-3 text-sm sm:text-base text-slate-600">Everything your school needs, in one secure platform.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: BookOpen, color: '#10b981', bg: '#ecfdf5', title: 'Results & Grading', desc: 'Custom grading systems per tier (WAEC, BECE, Primary, American GPA). Auto-compute positions, print-ready report cards.' },
+              { icon: BarChart3, color: '#3b82f6', bg: '#eff6ff', title: 'Analytics', desc: 'Performance charts per subject, multi-term comparison, attendance trends — visualized in real-time.' },
+              { icon: Calendar, color: '#f59e0b', bg: '#fffbeb', title: 'Attendance', desc: 'Daily attendance with 4 status types, monthly breakdowns, consecutive-absence warnings.' },
+              { icon: Wallet, color: '#7c3aed', bg: '#f5f3ff', title: 'Fees', desc: 'Custom fee types (termly, sessionly, one-time). Track partial payments, generate receipts.' },
+              { icon: Shield, color: '#0891b2', bg: '#ecfeff', title: 'CBT Exams', desc: 'Computer-Based Testing with timed questions, question navigator, auto-submit, instant scoring.' },
+              { icon: Video, color: '#ef4444', bg: '#fef2f2', title: 'Live Classes', desc: 'Built-in video conferencing. Schedule classes, target audiences (class/students/all), one-click join.' },
+              { icon: FileText, color: '#6366f1', bg: '#eef2ff', title: 'Assignments', desc: 'Teachers post assignments, students submit answers, teachers leave feedback and scores.' },
+              { icon: MessageCircle, color: '#10b981', bg: '#ecfdf5', title: 'Announcements', desc: 'School-wide or class-targeted announcements with pinning, expiry, and author attribution.' },
+              { icon: Lock, color: '#475569', bg: '#f1f5f9', title: 'Security', desc: 'Row-Level Security on every table. Role-based query proxy. JWT-validated access.' },
+            ].map((f) => {
+              const Icon = f.icon
+              return (
+                <div key={f.title} className="group bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
+                    style={{ backgroundColor: f.bg, color: f.color }}>
+                    <Icon size={22} strokeWidth={2.2} />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-sm">{f.title}</h3>
-                    <p className="text-xs text-white/50 mt-1">{f.desc}</p>
-                  </div>
+                  <h3 className="text-base font-bold text-slate-900">{f.title}</h3>
+                  <p className="mt-1.5 text-sm text-slate-700 leading-relaxed">{f.desc}</p>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
+        </div>
+      </section>
 
-          {/* Grading Standards */}
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold text-center mb-2">Grading Standards</h2>
-            <p className="text-center text-white/40 text-sm mb-6">Nigerian, American GPA, and ACE systems supported</p>
-            <div className="grid gap-3">
-              {gradingSystems.map((g, i) => (
-                <div key={i} className="p-5 bg-white/5 border border-white/10 rounded-2xl">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style={{ background: `${g.color}30` }}>{g.icon}</div>
-                    <div>
-                      <h3 className="font-bold text-sm">{g.title}</h3>
-                      <p className="text-xs text-white/40">{g.subtitle}</p>
-                    </div>
+      {/* ── Grading Showcase ────────────────────────────────────── */}
+      <section id="grading" className="py-20 sm:py-28">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Grading Systems</h2>
+            <p className="mt-3 text-sm sm:text-base text-slate-600">Supports Nigerian tier-based and American GPA standards, configurable per school.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { tier: 'SSS', label: 'Senior Secondary', system: 'WAEC', grades: 'A1 — F9', color: '#10b981', bg: '#ecfdf5', structure: 'CA1 (10) + CA2 (10) + Assignment (10) + Mid-term (20) + Exam (50) = 100' },
+              { tier: 'JSS', label: 'Junior Secondary', system: 'BECE', grades: 'A, B, C, P, F', color: '#3b82f6', bg: '#eff6ff', structure: 'CA (40) + Exam (60) = 100' },
+              { tier: 'PRIMARY', label: 'Primary School', system: '5-Point', grades: '5, 4, 3, 2, 1', color: '#f59e0b', bg: '#fffbeb', structure: 'CA1 (20) + CA2 (20) + Exam (60) = 100' },
+              { tier: 'AMERICAN', label: 'American GPA', system: 'GPA 4.0', grades: 'A through F', color: '#7c3aed', bg: '#f5f3ff', structure: 'Assignments (15) + Quizzes (15) + Mid-term (20) + Participation (10) + Final (40) = 100' },
+            ].map((g) => (
+              <div key={g.tier} className="group bg-white rounded-2xl border border-slate-200 p-5 flex items-start gap-4 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+                <div className="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-sm transition-transform group-hover:scale-110"
+                  style={{ backgroundColor: g.bg, color: g.color }}>
+                  {g.tier}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-slate-900">{g.label}</h3>
+                    <span className="text-xs font-semibold text-slate-600">· {g.system}</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {g.grades.map(gr => (
-                      <span key={gr} className="px-2 py-0.5 text-xs font-bold rounded" style={{ background: `${g.color}20`, color: g.color }}>{gr}</span>
+                  <div className="mt-1 text-sm font-semibold text-slate-800">Grades: {g.grades}</div>
+                  <div className="mt-1.5 text-xs text-slate-700 leading-relaxed">{g.structure}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Roles ───────────────────────────────────────────────── */}
+      <section id="roles" className="py-20 sm:py-28 bg-slate-50/50 border-y border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Three Portals</h2>
+            <p className="mt-3 text-sm sm:text-base text-slate-600">Each role gets a tailored experience.</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {[
+              { icon: GraduationCap, color: '#10b981', bg: '#ecfdf5', title: 'Student', points: ['View results & behavioral ratings','Check attendance','Pay fees, track history','Take CBT exams','Submit assignments','Join live classes'] },
+              { icon: Users, color: '#3b82f6', bg: '#eff6ff', title: 'Teacher', points: ['Enter scores per subject/class','Mark attendance','Post & grade assignments','Publish results as form master','Create CBT exams','Start live classes'] },
+              { icon: Building2, color: '#7c3aed', bg: '#f5f3ff', title: 'School Admin', points: ['Manage students, teachers, classes','Configure grading systems','Post announcements','Monitor live classes','Generate reports (CSV/PDF)','AI chatbot for help'] },
+            ].map((r) => {
+              const Icon = r.icon
+              return (
+                <div key={r.title} className="group bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
+                    style={{ backgroundColor: r.bg, color: r.color }}>
+                    <Icon size={24} strokeWidth={2.2} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">{r.title}</h3>
+                  <ul className="mt-4 space-y-2.5">
+                    {r.points.map((p) => (
+                      <li key={p} className="flex items-start gap-2 text-sm text-slate-700">
+                        <CheckCircle2 size={15} className="flex-shrink-0 mt-0.5" strokeWidth={2.4} style={{ color: r.color }} />
+                        <span>{p}</span>
+                      </li>
                     ))}
-                  </div>
-                  <p className="text-xs text-white/30">{g.desc}</p>
+                  </ul>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
+        </div>
+      </section>
 
-          {/* How It Works */}
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold text-center mb-2">How It Works</h2>
-            <p className="text-center text-white/40 text-sm mb-6">Three steps to go live</p>
-            <div className="space-y-3">
-              {steps.map((s, i) => (
-                <div key={i} className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ background: `${s.color}30` }}>{s.icon}</div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-sm">{s.title}</h3>
-                    <p className="text-xs text-white/40 mt-1">{s.desc}</p>
-                  </div>
-                  <ArrowRight className="text-white/20 w-4 h-4" />
+      {/* ── How it works ────────────────────────────────────────── */}
+      <section id="how-it-works" className="py-20 sm:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">How it works</h2>
+            <p className="mt-3 text-sm sm:text-base text-slate-600">From setup to first report card.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[
+              { step: '01', title: 'Create your school', desc: 'Sign up with your school name, logo, and brand colors. Configure your grading system.' },
+              { step: '02', title: 'Add students & teachers', desc: 'Bulk-import via CSV or add one-by-one. Students get admission numbers and PINs.' },
+              { step: '03', title: 'Enter scores', desc: 'Teachers enter CA1, CA2, mid-term, exam scores. Positions and grades are auto-computed.' },
+              { step: '04', title: 'Publish & share', desc: 'Hit publish — students see results immediately. Print PDF report cards for parents.' },
+            ].map((s) => (
+              <div key={s.step} className="relative">
+                <div className="text-4xl font-bold text-slate-200">{s.step}</div>
+                <h3 className="mt-2 text-sm font-bold text-slate-900">{s.title}</h3>
+                <p className="mt-1 text-xs sm:text-sm text-slate-600 leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Trust bar (badges, not numbers) ─────────────────────── */}
+      <section className="border-y border-slate-100 bg-slate-50/50 py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+            {[
+              { icon: Lock, label: 'Bank-grade Security' },
+              { icon: Users, label: 'Multi-tenant' },
+              { icon: Clock, label: '24/7 Access' },
+              { icon: Award, label: 'CBT Ready' },
+              { icon: Sparkles, label: 'No Setup Fees' },
+            ].map((b) => {
+              const Icon = b.icon
+              return (
+                <div key={b.label} className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-600">
+                  <Icon size={14} className="text-emerald-600" strokeWidth={2.2} />
+                  {b.label}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Trust Bar */}
-          <div className="mb-16 p-6 bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-2xl text-center">
-            <h2 className="text-xl font-bold mb-1">Built for Real Schools</h2>
-            <p className="text-white/35 text-sm mb-5">Designed for Nigerian schools, ready for the world</p>
-            <div className="flex flex-wrap justify-center gap-2.5">
-              {trustBadges.map(b => (
-                <span key={b.text} className="px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white/70 flex items-center gap-2">
-                  <span>{b.icon}</span> {b.text}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* FAQ */}
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold text-center mb-2">Common Questions</h2>
-            <p className="text-center text-white/40 text-sm mb-6">Quick answers</p>
-            <div className="space-y-2">
-              {faqs.map((f, i) => <FAQItem key={i} q={f.q} a={f.a} />)}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center">
-            <div className="h-px bg-white/5 mb-6" />
-            <button onClick={openWhatsApp} className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500/10 border border-green-500/20 rounded-full hover:bg-green-500/20 transition mb-4">
-              <MessageSquare className="w-4 h-4 inline-block" />
-              <span className="text-sm text-white">WhatsApp: 07080304822</span>
-            </button>
-            <div className="flex justify-center gap-3 text-xs text-white/25 mb-3">
-              <button className="hover:text-white/50">Privacy</button>
-              <span>·</span>
-              <button className="hover:text-white/50">Terms</button>
-              <span>·</span>
-              <button onClick={openWhatsApp} className="hover:text-white/50">Support</button>
-            </div>
-            <div className="flex items-center justify-center gap-1.5">
-              <span className="text-white/12 text-[11px]">© 2025. All rights reserved.</span>
-              <button onClick={() => navigate('/super-admin-login')} className="text-white/10 hover:text-white/20 transition">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </button>
-            </div>
+              )
+            })}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Floating WhatsApp button */}
-      <button onClick={openWhatsApp} className="fixed bottom-7 left-7 w-13 h-13 bg-green-500 rounded-2xl shadow-lg flex items-center justify-center hover:scale-110 transition z-50" style={{ width: 52, height: 52 }}>
-        <MessageSquare className="text-xl w-4 h-4" />
-      </button>
-
-      {/* Scroll to top button */}
-      {showScrollTop && (
-        <button onClick={scrollToTop} className="fixed bottom-7 right-7 bg-[#1A237E] rounded-2xl shadow-lg flex items-center justify-center hover:scale-110 transition z-50" style={{ width: 52, height: 52 }}>
-          <ArrowUp className="text-white text-xl w-4 h-4" />
-        </button>
-      )}
-
-      {/* Entry Options Dialog */}
-      {showEntryDialog && (
-        <div className="fixed inset-0 flex items-end justify-center z-50" onClick={() => setShowEntryDialog(false)}>
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="relative bg-[#0E0E2A] rounded-2xl p-5 mb-8 w-[340px] max-w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-white mb-1">Sign In</h3>
-            <p className="text-xs text-white/50 mb-3">Choose your preferred method</p>
-            <button onClick={() => { setShowEntryDialog(false); setShowCodeDialog(true) }} className="w-full flex items-center gap-3 p-2 bg-white/5 border border-indigo-500/20 rounded-2xl hover:bg-white/10 transition mb-2">
-              <Smartphone className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-400/60 rounded-2xl flex items-center justify-center text-2xl" />
-              <div className="flex-1 text-left">
-                <h4 className="font-bold text-sm text-white">Enter with School Code</h4>
-                <p className="text-xs text-white/40 mt-1">Use your school code for a branded experience</p>
+      {/* ── FAQ ─────────────────────────────────────────────────── */}
+      <section id="faq" className="py-20 sm:py-28">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Frequently Asked Questions</h2>
+          </div>
+          <div className="space-y-3">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <button onClick={() => toggleFaq(i)}
+                  className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50 transition">
+                  <span className="text-sm sm:text-base font-bold text-slate-900">{item.q}</span>
+                  {openFaq === i ? <ChevronUp size={16} className="flex-shrink-0 text-slate-700" strokeWidth={2.4} />
+                    : <ChevronDown size={16} className="flex-shrink-0 text-slate-700" strokeWidth={2.4} />}
+                </button>
+                {openFaq === i && (<div className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">{item.a}</div>)}
               </div>
-              <ArrowRight className="text-indigo-400/70 w-4 h-4" />
-            </button>
-            <button onClick={() => { setShowEntryDialog(false); navigate('/role-selection') }} className="w-full flex items-center gap-3 p-2 bg-white/5 border border-green-500/20 rounded-2xl hover:bg-white/10 transition">
-              <KeyRound className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-400/60 rounded-2xl flex items-center justify-center text-2xl" />
-              <div className="flex-1 text-left">
-                <h4 className="font-bold text-sm text-white">Continue without code</h4>
-                <p className="text-xs text-white/40 mt-1">Go directly to role selection</p>
-              </div>
-              <ArrowRight className="text-green-400/70 w-4 h-4" />
-            </button>
+            ))}
           </div>
         </div>
-      )}
+      </section>
 
-      {/* School Code Dialog */}
-      {showCodeDialog && (
-        <div className="fixed inset-0 flex items-end justify-center z-50" onClick={() => setShowCodeDialog(false)}>
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="relative bg-[#0E0E2A] rounded-2xl p-5 mb-8 w-[340px] max-w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-white mb-1">Enter School Code</h3>
-            <p className="text-xs text-white/50 mb-3 text-center">Type the 4-digit code provided by your school</p>
-            <div className="flex items-center bg-[#16163A] rounded-xl border border-white/10 overflow-hidden">
-              <input
-                type="text"
-                value={schoolCode}
-                onChange={e => setSchoolCode(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && lookupSchoolCode()}
-                maxLength={4}
-                placeholder="e.g. 4821"
-                className="flex-1 bg-transparent text-white text-center text-lg font-bold tracking-widest px-4 py-3.5 outline-none placeholder:text-white/20 placeholder:tracking-normal"
-              />
-              <button
-                onClick={lookupSchoolCode}
-                disabled={codeLoading}
-                className="w-12 h-12 bg-indigo-500 flex items-center justify-center disabled:bg-white/10"
-              >
-                {codeLoading ? <span className="text-white/70 text-sm">...</span> : <ArrowRight className="text-white w-4 h-4" />}
+      {/* ── CTA ─────────────────────────────────────────────────── */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl bg-slate-900 px-6 py-10 sm:px-12 sm:py-12 text-center text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Ready to modernize your school?</h2>
+            <p className="mt-3 text-sm text-white/80 max-w-xl mx-auto">Sign in to access your portal, or contact us to set up your school.</p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button onClick={() => navigate('/login-method')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-slate-900 font-semibold text-sm shadow-lg hover:bg-slate-100 transition">
+                Sign in<ArrowRight size={15} strokeWidth={2.4} />
               </button>
+              <a href="https://wa.me/2348000000000" target="_blank" rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm transition">
+                <MessageCircle size={15} strokeWidth={2.4} />Contact us
+              </a>
             </div>
-            {codeError && <p className="text-red-400 text-xs mt-2">{codeError}</p>}
           </div>
         </div>
-      )}
-    </div>
-  )
-}
+      </section>
 
-function FAQItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="border border-white/10 rounded-2xl overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition">
-        <span className="font-semibold text-sm text-white/90">{q}</span>
-        <span className="text-white/40">{open ? '−' : '+'}</span>
-      </button>
-      {open && <div className="px-4 pb-4 text-sm text-white/50">{a}</div>}
+      {/* ── Footer ──────────────────────────────────────────────── */}
+      <footer className="bg-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 blur-md opacity-50" />
+                <div className="relative w-9 h-9 rounded-xl bg-white shadow-md flex items-center justify-center ring-1 ring-slate-200 overflow-hidden">
+                  <img src="/smartedu-logo.png" alt="SmartEdu" className="w-full h-full object-contain p-0.5"
+                    onError={(e) => {
+                      const t = e.target as HTMLImageElement
+                      t.onerror = null
+                      t.src = "/favicon.png"
+                      t.onerror = () => {
+                        const parent = t.parentElement
+                        if (parent) {
+                          t.style.display = 'none'
+                          parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">S</div>'
+                        }
+                      }
+                    }} />
+                </div>
+              </div>
+              <span className="font-bold text-base">SmartEdu</span>
+            </div>
+            <a href="https://wa.me/2348000000000" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition">
+              <MessageCircle size={16} strokeWidth={2.2} />
+              Chat on WhatsApp
+            </a>
+          </div>
+          <div className="mt-6 pt-6 border-t border-white/10 text-center text-xs text-white/50">
+            © {new Date().getFullYear()} SmartEdu. School Management System. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   Loader2, AlertCircle, CheckCircle, Plus, X, Save, Trash2,
@@ -99,13 +99,13 @@ export default function LiveClassPage() {
       setLoading(true)
       try {
         const [lcRes, cRes, sRes] = await Promise.all([
-          supabase.from('live_classes')
+          dbProxy.from('live_classes')
             .select('*')
             .eq('school_id', schoolId)
             .in('status', ['scheduled', 'live'])
             .order('scheduled_at', { ascending: true }),
-          supabase.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
-          supabase.from('subjects').select('id, name').eq('school_id', schoolId).order('name'),
+          dbProxy.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
+          dbProxy.from('subjects').select('id, name').eq('school_id', schoolId).order('name'),
         ])
         if (lcRes.error) throw lcRes.error
         if (cRes.error) throw cRes.error
@@ -145,7 +145,7 @@ export default function LiveClassPage() {
   }
 
   const reloadLiveClasses = async () => {
-    const { data: newLc } = await supabase.from('live_classes')
+    const { data: newLc } = await dbProxy.from('live_classes')
       .select('*')
       .eq('school_id', schoolId)
       .in('status', ['scheduled', 'live'])
@@ -179,7 +179,7 @@ export default function LiveClassPage() {
         scheduled_at: scheduledDateTime,
       }
 
-      const { error: inErr } = await supabase.from('live_classes').insert(payload)
+      const { error: inErr } = await dbProxy.from('live_classes').insert(payload)
       if (inErr) throw inErr
 
       await reloadLiveClasses()
@@ -211,7 +211,7 @@ export default function LiveClassPage() {
   const forceEndClass = async (id: string) => {
     setEndingId(id)
     try {
-      const { error } = await supabase.from('live_classes')
+      const { error } = await dbProxy.from('live_classes')
         .update({ status: 'ended', ended_at: new Date().toISOString() })
         .eq('id', id)
       if (error) throw error
@@ -241,7 +241,7 @@ export default function LiveClassPage() {
 
   const deleteClass = async (id: string) => {
     try {
-      const { error } = await supabase.from('live_classes').delete().eq('id', id)
+      const { error } = await dbProxy.from('live_classes').delete().eq('id', id)
       if (error) throw error
       setLiveClasses(prev => prev.filter(lc => lc.id !== id))
       setDeleteConfirm(null)
@@ -301,66 +301,76 @@ export default function LiveClassPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" /></div>
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-red-600" />
+          <span className="text-sm font-medium">Loading live classes…</span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Live Classes</h1>
-          <p className="text-sm text-gray-500 mt-1">Start, schedule, and monitor live video classes</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Live Classes</h1>
+          <p className="text-sm text-slate-500 mt-1">Start, schedule, and monitor live video classes</p>
         </div>
-        <button onClick={() => { resetForm(); setShowStartModal(true) }} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition">
+        <button onClick={() => { resetForm(); setShowStartModal(true) }} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition shadow-sm">
           <Plus className="w-4 h-4" /> Start / Schedule
         </button>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center"><Radio className="w-5 h-5 text-red-600" /></div>
-          <div><p className="text-xs text-gray-500">Live Now</p><p className="text-lg font-bold text-gray-800">{liveCount}</p></div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}><Radio size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{liveCount}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Live Now</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><Calendar className="w-5 h-5 text-blue-600" /></div>
-          <div><p className="text-xs text-gray-500">Scheduled</p><p className="text-lg font-bold text-gray-800">{scheduledCount}</p></div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EFF6FF', color: '#3B82F6' }}><Calendar size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{scheduledCount}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Scheduled</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><Video className="w-5 h-5 text-green-600" /></div>
-          <div><p className="text-xs text-gray-500">Total Active</p><p className="text-lg font-bold text-gray-800">{liveClasses.length}</p></div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><Video size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{liveClasses.length}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Active</div>
         </div>
       </div>
 
       {/* Info Banner */}
-      <div className="flex items-start gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-        <div className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-          <span className="text-orange-600 text-xs font-bold">i</span>
+      <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+        <div className="w-5 h-5 rounded-full bg-amber-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span className="text-amber-700 text-xs font-bold">i</span>
         </div>
-        <p className="text-sm text-orange-700">
+        <p className="text-sm">
           Live classes open in-browser (no app required). The host (Admin/Teacher) enters first and becomes the moderator. Students join as guests.
         </p>
       </div>
 
       {/* Live Classes List */}
       {liveClasses.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-3"><Video className="w-8 h-8 text-blue-400" /></div>
-          <h3 className="text-gray-700 font-medium mb-1">No Live Classes</h3>
-          <p className="text-gray-400 text-sm">Click "Start / Schedule" to begin a live class or schedule one for later.</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+          <div className="w-16 h-16 mx-auto bg-red-50 rounded-2xl flex items-center justify-center mb-4 text-red-400"><Video size={32} strokeWidth={2} /></div>
+          <h3 className="text-base font-bold text-slate-900 mb-1">No Live Classes</h3>
+          <p className="text-sm text-slate-500">Click "Start / Schedule" to begin a live class or schedule one for later.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -371,15 +381,15 @@ export default function LiveClassPage() {
             const isScheduledReady = lc.status === 'scheduled' && lc.scheduled_at && new Date(lc.scheduled_at).getTime() <= Date.now()
             const AudIcon = AUDIENCE_OPTIONS.find(a => a.value === lc.audience)?.icon || Video
             return (
-              <div key={lc.id} className={`bg-white rounded-xl border overflow-hidden ${isLive ? 'border-red-300 shadow-sm' : 'border-gray-100'}`}>
+              <div key={lc.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition hover:shadow-md ${isLive ? 'border-red-300 ring-1 ring-red-100' : 'border-slate-200'}`}>
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-red-50' : 'bg-blue-50'}`}>
                       {isLive ? <Radio className="w-5 h-5 text-red-600" /> : <Calendar className="w-5 h-5 text-blue-600" />}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{title}</p>
-                      <p className="text-xs text-gray-400 flex items-center gap-2">
+                      <p className="text-sm font-medium text-slate-800 truncate">{title}</p>
+                      <p className="text-xs text-slate-400 flex items-center gap-2">
                         <AudIcon className="w-3 h-3" />
                         {subject ? `${subject.name} · ` : ''}
                         {isLive ? 'Live now' : `Scheduled: ${formatDateTime(lc.scheduled_at)}`}
@@ -402,7 +412,7 @@ export default function LiveClassPage() {
                         End
                       </button>
                     )}
-                    <button onClick={() => setDeleteConfirm(lc.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition">
+                    <button onClick={() => setDeleteConfirm(lc.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -415,16 +425,16 @@ export default function LiveClassPage() {
 
       {/* Start / Schedule Modal */}
       {showStartModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowStartModal(false)}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowStartModal(false)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
-              <h2 className="text-lg font-bold text-gray-800">Start / Schedule Live Class</h2>
-              <button onClick={() => setShowStartModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+              <h2 className="text-lg font-bold text-slate-800">Start / Schedule Live Class</h2>
+              <button onClick={() => setShowStartModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Audience</label>
-                <select value={audience} onChange={e => { setAudience(e.target.value); setSelectedClassId(''); setSelectedSubjectId('') }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Audience</label>
+                <select value={audience} onChange={e => { setAudience(e.target.value); setSelectedClassId(''); setSelectedSubjectId('') }} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition">
                   {AUDIENCE_OPTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                 </select>
               </div>
@@ -432,15 +442,15 @@ export default function LiveClassPage() {
               {audience === 'class' && (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Select Class *</label>
-                    <select value={selectedClassId} onChange={e => setSelectedClassId(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5">Select Class *</label>
+                    <select value={selectedClassId} onChange={e => setSelectedClassId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition">
                       <option value="">Select class</option>
                       {classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` (${c.section})` : ''}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Select Subject *</label>
-                    <select value={selectedSubjectId} onChange={e => setSelectedSubjectId(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5">Select Subject *</label>
+                    <select value={selectedSubjectId} onChange={e => setSelectedSubjectId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition">
                       <option value="">Select subject</option>
                       {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
@@ -448,16 +458,16 @@ export default function LiveClassPage() {
                 </>
               )}
 
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-xs text-gray-600 mb-2">Leave date/time empty to start <span className="font-semibold text-red-600">LIVE NOW</span></p>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-xs text-slate-600 mb-2">Leave date/time empty to start <span className="font-semibold text-red-600">LIVE NOW</span></p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[10px] text-gray-500 mb-1">Date</label>
-                    <input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" />
+                    <label className="block text-[10px] text-slate-500 mb-1">Date</label>
+                    <input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm text-slate-900 focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition" />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-500 mb-1">Time</label>
-                    <input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" />
+                    <label className="block text-[10px] text-slate-500 mb-1">Time</label>
+                    <input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm text-slate-900 focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none transition" />
                   </div>
                 </div>
               </div>
@@ -468,9 +478,9 @@ export default function LiveClassPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100 sticky bottom-0 bg-white">
-              <button onClick={() => setShowStartModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
-              <button onClick={startClass} disabled={starting || (audience === 'class' && (!selectedClassId || !selectedSubjectId))} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+            <div className="flex items-center justify-end gap-2 p-5 border-t border-slate-100 sticky bottom-0 bg-white">
+              <button onClick={() => setShowStartModal(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">Cancel</button>
+              <button onClick={startClass} disabled={starting || (audience === 'class' && (!selectedClassId || !selectedSubjectId))} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 shadow-sm transition disabled:opacity-50">
                 {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
                 {starting ? 'Starting...' : scheduledDate && scheduledTime ? 'Schedule' : 'Start Live Now'}
               </button>
@@ -481,17 +491,17 @@ export default function LiveClassPage() {
 
       {/* Delete Confirm */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm(null)}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0"><Trash2 className="w-5 h-5 text-red-600" /></div>
               <div>
-                <h3 className="font-bold text-gray-800">Delete Live Class?</h3>
-                <p className="text-sm text-gray-500 mt-1">This will permanently remove the class. This cannot be undone.</p>
+                <h3 className="font-bold text-slate-800">Delete Live Class?</h3>
+                <p className="text-sm text-slate-500 mt-1">This will permanently remove the class. This cannot be undone.</p>
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition">Cancel</button>
               <button onClick={() => deleteClass(deleteConfirm)} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">Delete</button>
             </div>
           </div>

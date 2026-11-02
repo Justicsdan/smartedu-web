@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   Lock, Unlock, Calculator, Send, Loader2, AlertCircle, CheckCircle,
@@ -98,20 +98,20 @@ export default function PublishPage() {
     ;(async () => {
       setLoading(true)
       try {
-        const { data: sData } = await supabase
+        const { data: sData } = await dbProxy
           .from('school_settings')
           .select('*')
           .eq('school_id', schoolId)
           .maybeSingle()
         const s: LocalSettings = (sData as any) || {}
-        const { data: curSession } = await supabase
+        const { data: curSession } = await dbProxy
           .from('academic_sessions')
           .select('id, name')
           .eq('school_id', schoolId)
           .eq('is_current', true)
           .maybeSingle()
         if (curSession) s.current_session = curSession.id
-        const { data: curTerm } = await supabase
+        const { data: curTerm } = await dbProxy
           .from('terms')
           .select('id, name')
           .eq('school_id', schoolId)
@@ -120,7 +120,7 @@ export default function PublishPage() {
         if (curTerm) s.current_term = curTerm.id
         setSettings(s)
 
-        const { data: cData } = await supabase
+        const { data: cData } = await dbProxy
           .from('classes')
           .select('id, name, tier')
           .eq('school_id', schoolId)
@@ -155,12 +155,12 @@ export default function PublishPage() {
       setLoading(true)
       try {
         const [sRes, sumRes, cRes, bRes, scRes, lockRes] = await Promise.all([
-          supabase.from('students').select('id, first_name, last_name, admission_no, passport_url').eq('class_id', classId).order('first_name'),
-          supabase.from('student_term_summaries').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
-          supabase.from('term_comments').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
-          supabase.from('student_behavioural_ratings').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
-          supabase.from('scores').select('student_id, total, grade').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
-          supabase.from('score_locks').select('is_locked').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId).maybeSingle(),
+          dbProxy.from('students').select('id, first_name, last_name, admission_no, passport_url').eq('class_id', classId).order('first_name'),
+          dbProxy.from('student_term_summaries').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
+          dbProxy.from('term_comments').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
+          dbProxy.from('student_behavioural_ratings').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
+          dbProxy.from('scores').select('student_id, total, grade').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
+          dbProxy.from('score_locks').select('is_locked').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId).maybeSingle(),
         ])
         const studs: Student[] = (sRes.data || []).map((s: any) => ({
           id: s.id, first_name: s.first_name ?? '', last_name: s.last_name ?? '',
@@ -240,7 +240,7 @@ export default function PublishPage() {
       )
 
       // Delete existing summaries for this class+session+term
-      await supabase
+      await dbProxy
         .from('student_term_summaries')
         .delete()
         .eq('school_id', schoolId)
@@ -273,12 +273,12 @@ export default function PublishPage() {
         }
       })
       if (inserts.length > 0) {
-        const { error: inErr } = await supabase.from('student_term_summaries').insert(inserts)
+        const { error: inErr } = await dbProxy.from('student_term_summaries').insert(inserts)
         if (inErr) throw inErr
       }
 
       // Reload summaries
-      const { data: newSum } = await supabase
+      const { data: newSum } = await dbProxy
         .from('student_term_summaries')
         .select('*')
         .eq('school_id', schoolId)
@@ -300,7 +300,7 @@ export default function PublishPage() {
     const wasLocked = isLocked
     const now = new Date().toISOString()
     try {
-      const { data: existing } = await supabase
+      const { data: existing } = await dbProxy
         .from('score_locks')
         .select('id')
         .eq('school_id', schoolId)
@@ -309,12 +309,12 @@ export default function PublishPage() {
         .eq('term_id', termId)
         .maybeSingle()
       if (existing) {
-        await supabase
+        await dbProxy
           .from('score_locks')
           .update({ is_locked: !wasLocked, locked_at: !wasLocked ? now : null, updated_at: now })
           .eq('id', existing.id)
       } else {
-        await supabase
+        await dbProxy
           .from('score_locks')
           .insert({ school_id: schoolId, class_id: classId, session_id: sessionId, term_id: termId, is_locked: true, locked_at: now })
       }
@@ -331,7 +331,7 @@ export default function PublishPage() {
     setPublishing(true); setError(''); setSuccessMsg('')
     try {
       const now = new Date().toISOString()
-      const { error: upErr } = await supabase
+      const { error: upErr } = await dbProxy
         .from('student_term_summaries')
         .update({ is_published: true, published_at: now, published_by: user?.id || null })
         .eq('school_id', schoolId)
@@ -340,7 +340,7 @@ export default function PublishPage() {
         .eq('term_id', termId)
       if (upErr) throw upErr
       // Reload
-      const { data: newSum } = await supabase
+      const { data: newSum } = await dbProxy
         .from('student_term_summaries')
         .select('*')
         .eq('school_id', schoolId)
@@ -361,7 +361,7 @@ export default function PublishPage() {
     if (!classId) return
     setPublishing(true); setError(''); setSuccessMsg('')
     try {
-      const { error: upErr } = await supabase
+      const { error: upErr } = await dbProxy
         .from('student_term_summaries')
         .update({ is_published: false, published_at: null, published_by: null })
         .eq('school_id', schoolId)
@@ -369,7 +369,7 @@ export default function PublishPage() {
         .eq('session_id', sessionId)
         .eq('term_id', termId)
       if (upErr) throw upErr
-      const { data: newSum } = await supabase
+      const { data: newSum } = await dbProxy
         .from('student_term_summaries')
         .select('*')
         .eq('school_id', schoolId)
@@ -407,15 +407,15 @@ export default function PublishPage() {
         attendance_remark: data.attendance_remark,
       }
       if (existingComment?.id) {
-        await supabase.from('term_comments').update(commentPayload).eq('id', existingComment.id)
+        await dbProxy.from('term_comments').update(commentPayload).eq('id', existingComment.id)
       } else {
-        await supabase.from('term_comments').insert(commentPayload)
+        await dbProxy.from('term_comments').insert(commentPayload)
       }
 
       // 2. Update days_present/days_absent on summary
       const summary = summaryFor(sid)
       if (summary?.id) {
-        await supabase
+        await dbProxy
           .from('student_term_summaries')
           .update({ days_present: data.days_present, days_absent: data.days_absent })
           .eq('id', summary.id)
@@ -434,16 +434,16 @@ export default function PublishPage() {
         ...data.behavioral_ratings,
       }
       if (existingBeh?.id) {
-        await supabase.from('student_behavioural_ratings').update(behPayload).eq('id', existingBeh.id)
+        await dbProxy.from('student_behavioural_ratings').update(behPayload).eq('id', existingBeh.id)
       } else {
-        await supabase.from('student_behavioural_ratings').insert(behPayload)
+        await dbProxy.from('student_behavioural_ratings').insert(behPayload)
       }
 
       // Reload all
       const [cRes, bRes, sumRes] = await Promise.all([
-        supabase.from('term_comments').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
-        supabase.from('student_behavioural_ratings').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
-        supabase.from('student_term_summaries').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
+        dbProxy.from('term_comments').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
+        dbProxy.from('student_behavioural_ratings').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
+        dbProxy.from('student_term_summaries').select('*').eq('school_id', schoolId).eq('class_id', classId).eq('session_id', sessionId).eq('term_id', termId),
       ])
       setComments((cRes.data || []) as Comment[])
       setBehavioral(bRes.data || [])
@@ -460,7 +460,7 @@ export default function PublishPage() {
   const handleTogglePublishOne = async (sid: string, publish: boolean) => {
     try {
       const now = publish ? new Date().toISOString() : null
-      await supabase
+      await dbProxy
         .from('student_term_summaries')
         .update({ is_published: publish, published_at: now, published_by: publish ? (user?.id || null) : null })
         .eq('school_id', schoolId)
@@ -468,7 +468,7 @@ export default function PublishPage() {
         .eq('class_id', classId)
         .eq('session_id', sessionId)
         .eq('term_id', termId)
-      const { data: newSum } = await supabase
+      const { data: newSum } = await dbProxy
         .from('student_term_summaries')
         .select('*')
         .eq('school_id', schoolId)
@@ -503,19 +503,22 @@ export default function PublishPage() {
 
   if (loading && students.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+          <span className="text-sm font-medium">Loading publish data…</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Publish Results</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Publish Results</h1>
+          <p className="text-sm text-slate-500 mt-1">
             {sessionId && termId ? 'Compute positions, enter comments & behavioral ratings, then publish.' : 'No active session/term set.'}
           </p>
         </div>
@@ -534,7 +537,7 @@ export default function PublishPage() {
           <button
             onClick={handleCompute}
             disabled={!classId || computing}
-            className="flex items-center gap-2 px-3 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-700 transition disabled:opacity-50 shadow-sm"
           >
             {computing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
             {computing ? 'Computing...' : 'Compute Positions'}
@@ -542,9 +545,9 @@ export default function PublishPage() {
           <button
             onClick={publishedCount > 0 ? handleUnpublishAll : handlePublishAll}
             disabled={!classId || publishing || totalSummaries === 0}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50 shadow-sm ${
               publishedCount > 0 ? 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'
-                                 : 'bg-green-600 text-white hover:bg-green-700'
+                                 : 'bg-emerald-600 text-white hover:bg-emerald-700'
             }`}
           >
             {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -555,25 +558,25 @@ export default function PublishPage() {
 
       {/* Alerts */}
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
 
       {/* Class selector */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <label className="block text-xs font-medium text-gray-600 mb-1.5">Class</label>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+        <label className="block text-xs font-semibold text-slate-600 mb-1.5">Class</label>
         <select
           value={classId}
           onChange={e => setClassId(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+          className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
         >
           <option value="">Select class</option>
           {classes.map(c => (
@@ -584,36 +587,26 @@ export default function PublishPage() {
 
       {/* Stats */}
       {classId && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><Users className="w-5 h-5 text-blue-600" /></div>
-            <div>
-              <p className="text-xs text-gray-500">Students</p>
-              <p className="text-lg font-bold text-gray-800">{students.length}</p>
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}><Users size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{students.length}</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Students</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><CheckCircle className="w-5 h-5 text-green-600" /></div>
-            <div>
-              <p className="text-xs text-gray-500">Summaries</p>
-              <p className="text-lg font-bold text-gray-800">{totalSummaries}</p>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><CheckCircle size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalSummaries}</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Summaries</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center"><Send className="w-5 h-5 text-purple-600" /></div>
-            <div>
-              <p className="text-xs text-gray-500">Published</p>
-              <p className="text-lg font-bold text-gray-800">{publishedCount}/{totalSummaries}</p>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}><Send size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{publishedCount}/{totalSummaries}</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Published</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isLocked ? 'bg-orange-50' : 'bg-gray-50'}`}>
-              <Lock className={`w-5 h-5 ${isLocked ? 'text-orange-600' : 'text-gray-400'}`} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Lock Status</p>
-              <p className="text-lg font-bold text-gray-800">{isLocked ? 'Locked' : 'Open'}</p>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: isLocked ? '#FFFBEB' : '#F1F5F9', color: isLocked ? '#F59E0B' : '#94A3B8' }}><Lock size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{isLocked ? 'Locked' : 'Open'}</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Lock Status</div>
           </div>
         </div>
       )}
@@ -622,9 +615,9 @@ export default function PublishPage() {
       {classId ? (
         <div className="space-y-3">
           {students.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-              <div className="w-16 h-16 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3"><Users className="w-8 h-8 text-gray-300" /></div>
-              <p className="text-gray-400 text-sm">No students in this class.</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+              <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400"><Users size={32} strokeWidth={2} /></div>
+              <p className="text-sm text-slate-500">No students in this class.</p>
             </div>
           ) : (
             students.map((s, i) => {
@@ -634,10 +627,10 @@ export default function PublishPage() {
               const isSaving = saving === s.id
               if (!data) return null
               return (
-                <div key={s.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                   {/* Card header */}
                   <div
-                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
+                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition"
                     onClick={() => setExpandedStudent(isExpanded ? null : s.id)}
                   >
                     <div className="flex items-center gap-3">
@@ -691,7 +684,7 @@ export default function PublishPage() {
 
                   {/* Expanded editor */}
                   {isExpanded && (
-                    <div className="border-t border-gray-100 p-4 space-y-4 bg-gray-50/30">
+                    <div className="border-t border-slate-100 p-4 space-y-4 bg-slate-50/40">
                       {/* Attendance */}
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -700,7 +693,7 @@ export default function PublishPage() {
                             type="number"
                             value={data.days_present}
                             onChange={e => updateField(s.id, 'days_present', Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
                           />
                         </div>
                         <div>
@@ -709,7 +702,7 @@ export default function PublishPage() {
                             type="number"
                             value={data.days_absent}
                             onChange={e => updateField(s.id, 'days_absent', Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
                           />
                         </div>
                       </div>
@@ -724,7 +717,7 @@ export default function PublishPage() {
                               <select
                                 value={data.behavioral_ratings[key] || ''}
                                 onChange={e => updateRating(s.id, key, e.target.value)}
-                                className="w-full px-2 py-1 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                                className="w-full px-2 py-1 border border-slate-200 rounded-md text-xs text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
                               >
                                 <option value="">-</option>
                                 {behavioralOptions.map(o => <option key={o} value={o}>{o}</option>)}
@@ -742,7 +735,7 @@ export default function PublishPage() {
                             value={data.teacher_comment}
                             onChange={e => updateField(s.id, 'teacher_comment', e.target.value)}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition resize-none"
                           />
                         </div>
                         <div>
@@ -751,7 +744,7 @@ export default function PublishPage() {
                             value={data.principal_comment}
                             onChange={e => updateField(s.id, 'principal_comment', e.target.value)}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition resize-none"
                           />
                         </div>
                         <div>
@@ -759,7 +752,7 @@ export default function PublishPage() {
                           <input
                             value={data.conduct}
                             onChange={e => updateField(s.id, 'conduct', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
                           />
                         </div>
                         <div>
@@ -767,7 +760,7 @@ export default function PublishPage() {
                           <input
                             value={data.attitude}
                             onChange={e => updateField(s.id, 'attitude', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
                           />
                         </div>
                         <div>
@@ -775,7 +768,7 @@ export default function PublishPage() {
                           <input
                             value={data.interest}
                             onChange={e => updateField(s.id, 'interest', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
                           />
                         </div>
                         <div>
@@ -783,7 +776,7 @@ export default function PublishPage() {
                           <input
                             value={data.attendance_remark}
                             onChange={e => updateField(s.id, 'attendance_remark', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+                            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
                           />
                         </div>
                       </div>
@@ -806,7 +799,7 @@ export default function PublishPage() {
                         <button
                           onClick={() => handleSaveStudent(s.id)}
                           disabled={isSaving}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-[#1A237E] text-white rounded-lg text-xs font-medium hover:bg-[#283593] transition disabled:opacity-50 ml-auto"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 text-white rounded-lg text-xs font-semibold hover:bg-violet-700 transition disabled:opacity-50 ml-auto shadow-sm"
                         >
                           {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                           {isSaving ? 'Saving...' : 'Save'}
@@ -820,10 +813,10 @@ export default function PublishPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-3"><Send className="w-8 h-8 text-blue-400" /></div>
-          <h3 className="text-gray-700 font-medium mb-1">Select a Class</h3>
-          <p className="text-gray-400 text-sm">Choose a class above to compute positions, enter comments, and publish results.</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+          <div className="w-16 h-16 mx-auto bg-violet-50 rounded-2xl flex items-center justify-center mb-4 text-violet-400"><Send size={32} strokeWidth={2} /></div>
+          <h3 className="text-base font-bold text-slate-900 mb-1">Select a Class</h3>
+          <p className="text-sm text-slate-500">Choose a class above to compute positions, enter comments, and publish results.</p>
         </div>
       )}
     </div>

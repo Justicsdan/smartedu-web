@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   KeyRound, RefreshCw, Copy, Eye, Printer, Loader2, AlertCircle,
@@ -105,9 +105,9 @@ export default function CredentialsPage() {
       setLoading(true)
       try {
         const [tRes, sRes, cRes] = await Promise.all([
-          supabase.from('teachers').select('*').eq('school_id', schoolId).order('first_name'),
-          supabase.from('students').select('*').eq('school_id', schoolId).order('first_name'),
-          supabase.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
+          dbProxy.from('teachers').select('*').eq('school_id', schoolId).order('first_name'),
+          dbProxy.from('students').select('*').eq('school_id', schoolId).order('first_name'),
+          dbProxy.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
         ])
         if (tRes.error) throw tRes.error
         if (sRes.error) throw sRes.error
@@ -172,17 +172,17 @@ export default function CredentialsPage() {
       if (!item.username) {
         updates.username = makeUsername(item, isTeacher)
       }
-      const { error } = await supabase
+      const { error } = await dbProxy
         .from(isTeacher ? 'teachers' : 'students')
         .update(updates)
         .eq('id', item.id)
       if (error) throw error
 
       if (isTeacher) {
-        const { data } = await supabase.from('teachers').select('*').eq('id', item.id).maybeSingle()
+        const { data } = await dbProxy.from('teachers').select('*').eq('id', item.id).maybeSingle()
         if (data) setTeachers(prev => prev.map(t => t.id === item.id ? data as Teacher : t))
       } else {
-        const { data } = await supabase.from('students').select('*').eq('id', item.id).maybeSingle()
+        const { data } = await dbProxy.from('students').select('*').eq('id', item.id).maybeSingle()
         if (data) setStudents(prev => prev.map(s => s.id === item.id ? data as Student : s))
       }
       setSuccessMsg(`New ${isTeacher ? 'password' : 'PIN'} generated`)
@@ -216,13 +216,13 @@ export default function CredentialsPage() {
         } else {
           updates.pin = generatePin()
         }
-        await supabase
+        await dbProxy
           .from(isTeacher ? 'teachers' : 'students')
           .update(updates)
           .eq('id', it.id)
       }
       // Reload
-      const { data: fresh } = await supabase
+      const { data: fresh } = await dbProxy
         .from(isTeacher ? 'teachers' : 'students')
         .select('*')
         .eq('school_id', schoolId)
@@ -250,8 +250,8 @@ export default function CredentialsPage() {
       const cls = !isTeacher && it.class_id ? classMap[it.class_id]?.name || '' : ''
       return `
         <div style="page-break-after: always; padding: 24px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; font-family: Arial, sans-serif;">
-          <div style="text-align: center; border-bottom: 2px solid #1A237E; padding-bottom: 12px; margin-bottom: 16px;">
-            <h2 style="color: #1A237E; margin: 0;">SmartEdu Credentials</h2>
+          <div style="text-align: center; border-bottom: 2px solid #0D9488; padding-bottom: 12px; margin-bottom: 16px;">
+            <h2 style="color: #0D9488; margin: 0;">SmartEdu Credentials</h2>
             <p style="color: #6b7280; margin: 4px 0 0; font-size: 12px;">Keep this safe — do not share</p>
           </div>
           <table style="width: 100%; font-size: 14px;">
@@ -259,7 +259,7 @@ export default function CredentialsPage() {
             ${cls ? `<tr><td style="padding: 6px 0; color: #6b7280;">Class:</td><td>${cls}</td></tr>` : ''}
             ${!isTeacher && it.admission_no ? `<tr><td style="padding: 6px 0; color: #6b7280;">Admission No:</td><td>${it.admission_no}</td></tr>` : ''}
             ${isTeacher && it.staff_id ? `<tr><td style="padding: 6px 0; color: #6b7280;">Staff ID:</td><td>${it.staff_id}</td></tr>` : ''}
-            <tr><td style="padding: 6px 0; color: #6b7280;">Username:</td><td style="font-family: monospace; font-weight: 600; color: #1A237E;">${username}</td></tr>
+            <tr><td style="padding: 6px 0; color: #6b7280;">Username:</td><td style="font-family: monospace; font-weight: 600; color: #0D9488;">${username}</td></tr>
             <tr><td style="padding: 6px 0; color: #6b7280;">${secretLabel}:</td><td style="font-family: monospace; font-weight: 700; color: #dc2626; font-size: 16px;">${secret}</td></tr>
           </table>
           <p style="margin-top: 16px; font-size: 11px; color: #9ca3af; text-align: center;">Slip ${i + 1} of ${items.length}</p>
@@ -280,79 +280,80 @@ export default function CredentialsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" /></div>
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
+          <span className="text-sm font-medium">Loading credentials…</span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Credentials</h1>
-        <p className="text-sm text-gray-500 mt-1">Generate and manage login credentials for teachers and students</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Credentials</h1>
+        <p className="text-sm text-slate-500 mt-1">Generate and manage login credentials for teachers and students</p>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white rounded-xl border border-gray-100 p-1">
-        <button onClick={() => setTab('teachers')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${tab === 'teachers' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+      <div className="flex gap-1 bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+        <button onClick={() => setTab('teachers')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${tab === 'teachers' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           Teachers ({teachers.length})
         </button>
-        <button onClick={() => setTab('students')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${tab === 'students' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => setTab('students')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${tab === 'students' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           Students ({students.length})
         </button>
       </div>
 
       {/* Stats + actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-            {tab === 'teachers' ? <GraduationCap className="w-5 h-5 text-blue-600" /> : <Users className="w-5 h-5 text-blue-600" />}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
+            {tab === 'teachers' ? <GraduationCap size={16} strokeWidth={2.2} /> : <Users size={16} strokeWidth={2.2} />}
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Total {tab === 'teachers' ? 'Teachers' : 'Students'}</p>
-            <p className="text-lg font-bold text-gray-800">{tab === 'teachers' ? teachers.length : students.length}</p>
-          </div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{tab === 'teachers' ? teachers.length : students.length}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center"><KeyRound className="w-5 h-5 text-orange-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Missing Credentials</p>
-            <p className="text-lg font-bold text-gray-800">{tab === 'teachers' ? teachersMissing : studentsMissing}</p>
-          </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><KeyRound size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{tab === 'teachers' ? teachersMissing : studentsMissing}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Missing</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><ClipboardCheck className="w-5 h-5 text-green-600" /></div>
-          <div>
-            <p className="text-xs text-gray-500">Have Credentials</p>
-            <p className="text-lg font-bold text-gray-800">{(tab === 'teachers' ? teachers.length : students.length) - (tab === 'teachers' ? teachersMissing : studentsMissing)}</p>
-          </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><ClipboardCheck size={16} strokeWidth={2.2} /></div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{(tab === 'teachers' ? teachers.length : students.length) - (tab === 'teachers' ? teachersMissing : studentsMissing)}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Have Creds</div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-xl border border-gray-100 p-3 flex flex-wrap items-center gap-2">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={`Search ${tab === 'teachers' ? 'teachers' : 'students'}...`}
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
           />
         </div>
         {tab === 'students' && (
-          <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+          <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition">
             <option value="">All Classes</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` (${c.section})` : ''}</option>)}
           </select>
@@ -360,46 +361,46 @@ export default function CredentialsPage() {
         <button
           onClick={() => generateMissing(tab === 'teachers')}
           disabled={bulkGenerating || (tab === 'teachers' ? teachersMissing : studentsMissing) === 0}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 shadow-sm transition disabled:opacity-50"
         >
           {bulkGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           {bulkGenerating ? 'Generating...' : `Generate Missing (${tab === 'teachers' ? teachersMissing : studentsMissing})`}
         </button>
         <button
           onClick={() => printSlips(tab === 'teachers')}
-          className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+          className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
         >
           <Printer className="w-4 h-4" /> Print Slips
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">#</th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Name</th>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">#</th>
+                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Name</th>
                 {tab === 'teachers' ? (
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Staff ID</th>
+                  <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Staff ID</th>
                 ) : (
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Admission No</th>
+                  <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Admission No</th>
                 )}
-                <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Username</th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">{tab === 'teachers' ? 'Password' : 'PIN'}</th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Status</th>
-                <th className="text-right text-xs font-medium text-gray-500 uppercase px-4 py-3">Actions</th>
+                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Username</th>
+                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">{tab === 'teachers' ? 'Password' : 'PIN'}</th>
+                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
+                <th className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {(tab === 'teachers' ? filteredTeachers : filteredStudents).length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-12 text-center">
-                    <div className="w-16 h-16 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                    <div className="w-16 h-16 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-3">
                       {tab === 'teachers' ? <GraduationCap className="w-8 h-8 text-gray-300" /> : <Users className="w-8 h-8 text-gray-300" />}
                     </div>
-                    <p className="text-gray-400 text-sm">{search ? 'No matches found.' : `No ${tab === 'teachers' ? 'teachers' : 'students'} registered.`}</p>
+                    <p className="text-slate-400 text-sm">{search ? 'No matches found.' : `No ${tab === 'teachers' ? 'teachers' : 'students'} registered.`}</p>
                   </td>
                 </tr>
               ) : (
@@ -411,27 +412,27 @@ export default function CredentialsPage() {
                   const needsRegenFlag = needsRegen(secret, isTeacher)
                   const isLoading = loadingIds.has(item.id)
                   return (
-                    <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-sm text-gray-400">{i + 1}</td>
+                    <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50">
+                      <td className="px-4 py-3 text-sm text-slate-400">{i + 1}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                             {name.charAt(0) || '?'}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-800">{name}</p>
+                            <p className="text-sm font-medium text-slate-800">{name}</p>
                             {!isTeacher && item.class_id && (
-                              <p className="text-xs text-gray-400">{classMap[item.class_id]?.name || '-'}</p>
+                              <p className="text-xs text-slate-400">{classMap[item.class_id]?.name || '-'}</p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-slate-600">
                         {isTeacher ? (item.staff_id || '-') : (item.admission_no || '-')}
                       </td>
                       <td className="px-4 py-3">
                         {username ? (
-                          <span className="text-sm font-mono text-gray-800">{username}</span>
+                          <span className="text-sm font-mono text-slate-800">{username}</span>
                         ) : (
                           <span className="text-xs text-orange-600 italic">not set</span>
                         )}
@@ -439,7 +440,7 @@ export default function CredentialsPage() {
                       <td className="px-4 py-3">
                         {secret ? (
                           <span className="inline-flex items-center gap-1.5">
-                            <span className="text-sm font-mono text-gray-700">{'•'.repeat(secret.length > 8 ? 8 : secret.length)}</span>
+                            <span className="text-sm font-mono text-slate-700">{'•'.repeat(secret.length > 8 ? 8 : secret.length)}</span>
                             {needsRegenFlag && (
                               <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-[10px] font-medium">Needs Regen</span>
                             )}
@@ -449,7 +450,7 @@ export default function CredentialsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-slate-500'}`}>
                           {item.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -457,7 +458,7 @@ export default function CredentialsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setViewing({ item, isTeacher })}
-                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
                             title="View"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -465,7 +466,7 @@ export default function CredentialsPage() {
                           <button
                             onClick={() => copyToClipboard(`Username: ${username}\n${isTeacher ? 'Password' : 'PIN'}: ${secret}`, 'Credentials', setSuccessMsg)}
                             disabled={!secret}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition disabled:opacity-30"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition disabled:opacity-30"
                             title="Copy"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -473,7 +474,7 @@ export default function CredentialsPage() {
                           <button
                             onClick={() => regenerateOne(item, isTeacher)}
                             disabled={isLoading}
-                            className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition disabled:opacity-50"
+                            className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded transition disabled:opacity-50"
                             title="Regenerate"
                           >
                             {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
@@ -491,33 +492,33 @@ export default function CredentialsPage() {
 
       {/* View Modal */}
       {viewing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setViewing(null)}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setViewing(null)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800">Credentials</h2>
-              <button onClick={() => setViewing(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-800">Credentials</h2>
+              <button onClick={() => setViewing(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="text-center py-2">
                 <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-semibold mb-3">
                   {(viewing.isTeacher ? teacherName(viewing.item as Teacher) : studentName(viewing.item as Student)).charAt(0) || '?'}
                 </div>
-                <p className="text-base font-semibold text-gray-800">
+                <p className="text-base font-semibold text-slate-800">
                   {viewing.isTeacher ? teacherName(viewing.item as Teacher) : studentName(viewing.item as Student)}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-slate-400">
                   {viewing.isTeacher ? (viewing.item.staff_id || '-') : (viewing.item.admission_no || '-')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Username</p>
-                  <p className="text-sm font-mono text-gray-800">{viewing.item.username || '(not set)'}</p>
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="text-xs text-slate-500 mb-1">Username</p>
+                  <p className="text-sm font-mono text-slate-800">{viewing.item.username || '(not set)'}</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">{viewing.isTeacher ? 'Password' : 'PIN'}</p>
-                  <p className="text-sm font-mono text-gray-800">
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="text-xs text-slate-500 mb-1">{viewing.isTeacher ? 'Password' : 'PIN'}</p>
+                  <p className="text-sm font-mono text-slate-800">
                     {viewing.isTeacher ? (viewing.item.password || '(not set)') : (viewing.item.pin || '(not set)')}
                   </p>
                 </div>
@@ -541,7 +542,7 @@ export default function CredentialsPage() {
                 <button
                   onClick={() => regenerateOne(viewing.item, viewing.isTeacher)}
                   disabled={loadingIds.has(viewing.item.id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 shadow-sm transition disabled:opacity-50"
                 >
                   {loadingIds.has(viewing.item.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                   Regenerate

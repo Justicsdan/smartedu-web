@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from "../../lib/dbProxy"
 import { useAuth } from '../../contexts/AuthContext'
 import {
   Loader2, AlertCircle, CheckCircle, Save, X, ChevronRight,
@@ -66,9 +66,9 @@ export default function AceReportsPage() {
       setLoading(true)
       try {
         const [cRes, ssRes, tRes] = await Promise.all([
-          supabase.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
-          supabase.from('academic_sessions').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
-          supabase.from('terms').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
+          dbProxy.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
+          dbProxy.from('academic_sessions').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
+          dbProxy.from('terms').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
         ])
         setClasses(cRes.data || [])
         setSessionId(ssRes.data?.id || '')
@@ -84,7 +84,7 @@ export default function AceReportsPage() {
   const loadData = async (cid: string) => {
     setLoading(true); setError('')
     try {
-      const { data: studs } = await supabase
+      const { data: studs } = await dbProxy
         .from('students')
         .select('id, first_name, middle_name, last_name, admission_no')
         .eq('class_id', cid)
@@ -96,7 +96,7 @@ export default function AceReportsPage() {
       const repMap: Record<string, AceReport | null> = {}
       const paceMap: Record<string, number> = {}
       for (const s of list) {
-        const { data: rep } = await supabase
+        const { data: rep } = await dbProxy
           .from('ace_term_reports')
           .select('*')
           .eq('student_id', s.id)
@@ -105,7 +105,7 @@ export default function AceReportsPage() {
           .maybeSingle()
         repMap[s.id] = rep as AceReport || null
 
-        const { data: paces } = await supabase
+        const { data: paces } = await dbProxy
           .from('ace_pace_scores')
           .select('id')
           .eq('student_id', s.id)
@@ -123,47 +123,47 @@ export default function AceReportsPage() {
   }
 
   if (loading && classes.length === 0) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" /></div>
+    return <div className="flex items-center justify-center min-h-[60vh]"><div className="flex flex-col items-center gap-3 text-slate-600"><Loader2 className="w-8 h-8 animate-spin text-violet-600"  /><span className="text-sm font-medium">Loading…</span></div></div>
   }
 
   return (
-    <div className="space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">ACE Reports</h1>
-        <p className="text-sm text-gray-500 mt-1">Generate and publish ACE term reports with PACE summaries</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">ACE Reports</h1>
+        <p className="text-sm text-slate-500 mt-1">Generate and publish ACE term reports with PACE summaries</p>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <label className="block text-xs font-medium text-gray-600 mb-1.5">Select Class</label>
-        <select value={classId} onChange={e => { setClassId(e.target.value); if (e.target.value) loadData(e.target.value) }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+        <label className="block text-xs font-medium text-slate-600 mb-1.5">Select Class</label>
+        <select value={classId} onChange={e => { setClassId(e.target.value); if (e.target.value) loadData(e.target.value) }} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition">
           <option value="">Select class</option>
           {classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` (${c.section})` : ''}</option>)}
         </select>
       </div>
 
       {!classId ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-3"><BookOpen className="w-8 h-8 text-blue-400" /></div>
-          <p className="text-gray-400 text-sm">Select a class to begin</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+          <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"><BookOpen className="w-8 h-8 text-blue-400" /></div>
+          <p className="text-slate-400 text-sm">Select a class to begin</p>
         </div>
       ) : loading ? (
-        <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 text-[#1A237E] animate-spin" /></div>
+        <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 text-[#7C3AED] animate-spin" /></div>
       ) : students.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <p className="text-gray-400 text-sm">No students in this class.</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+          <p className="text-slate-400 text-sm">No students in this class.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -171,14 +171,14 @@ export default function AceReportsPage() {
             const rep = reports[s.id]
             const pc = paceCounts[s.id] || 0
             return (
-              <div key={s.id} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between hover:shadow-sm transition cursor-pointer" onClick={() => setEditingStudent(s)}>
+              <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center justify-between hover:shadow-sm transition cursor-pointer" onClick={() => setEditingStudent(s)}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                     {studentName(s).charAt(0) || '?'}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{studentName(s)}</p>
-                    <p className="text-xs text-gray-400">{pc} PACE{pc !== 1 ? 's' : ''} recorded</p>
+                    <p className="text-sm font-medium text-slate-800">{studentName(s)}</p>
+                    <p className="text-xs text-slate-400">{pc} PACE{pc !== 1 ? 's' : ''} recorded</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -187,9 +187,9 @@ export default function AceReportsPage() {
                   ) : rep?.hacs_score != null ? (
                     <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">HACS: {Number(rep.hacs_score).toFixed(1)}</span>
                   ) : (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs font-medium">Draft</span>
+                    <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-xs font-medium">Draft</span>
                   )}
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </div>
               </div>
             )
@@ -273,10 +273,10 @@ function AceReportModal({ student, existingReport, paceCount, schoolId, classId,
       }
 
       if (existingReport?.id) {
-        const { error } = await supabase.from('ace_term_reports').update(payload).eq('id', existingReport.id)
+        const { error } = await dbProxy.from('ace_term_reports').update(payload).eq('id', existingReport.id)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('ace_term_reports').insert(payload)
+        const { error } = await dbProxy.from('ace_term_reports').insert(payload)
         if (error) throw error
       }
       onSaved()
@@ -294,7 +294,7 @@ function AceReportModal({ student, existingReport, paceCount, schoolId, classId,
       if (!existingReport?.id) {
         await handleSave()
       }
-      const { error } = await supabase
+      const { error } = await dbProxy
         .from('ace_term_reports')
         .update({ is_published: true, published_at: new Date().toISOString() })
         .eq('student_id', student.id)
@@ -310,11 +310,11 @@ function AceReportModal({ student, existingReport, paceCount, schoolId, classId,
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-bold text-gray-800">ACE Report — {studentName(student)}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+          <h2 className="text-lg font-bold text-slate-800">ACE Report — {studentName(student)}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           {error && <div className="p-2 bg-red-50 text-red-700 text-sm rounded">{error}</div>}
@@ -325,61 +325,61 @@ function AceReportModal({ student, existingReport, paceCount, schoolId, classId,
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Day in Term</label>
-              <input type="number" value={form.day_in_term} onChange={e => updateField('day_in_term', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Day in Term</label>
+              <input type="number" value={form.day_in_term} onChange={e => updateField('day_in_term', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Days Absent</label>
-              <input type="number" value={form.days_absent} onChange={e => updateField('days_absent', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Days Absent</label>
+              <input type="number" value={form.days_absent} onChange={e => updateField('days_absent', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition" />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Reading WPM</label>
-              <input type="number" value={form.reading_wpm} onChange={e => updateField('reading_wpm', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Reading WPM</label>
+              <input type="number" value={form.reading_wpm} onChange={e => updateField('reading_wpm', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Reading Composite</label>
-              <input type="number" value={form.reading_composite} onChange={e => updateField('reading_composite', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Reading Composite</label>
+              <input type="number" value={form.reading_composite} onChange={e => updateField('reading_composite', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Reading Comp.</label>
-              <input type="number" value={form.reading_comprehension} onChange={e => updateField('reading_comprehension', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Reading Comp.</label>
+              <input type="number" value={form.reading_comprehension} onChange={e => updateField('reading_comprehension', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Reading Progress</label>
-            <textarea value={form.reading_progress} onChange={e => updateField('reading_progress', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none" />
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Reading Progress</label>
+            <textarea value={form.reading_progress} onChange={e => updateField('reading_progress', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition resize-none" />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Teacher Comment</label>
-            <textarea value={form.teacher_comment} onChange={e => updateField('teacher_comment', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none" />
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Teacher Comment</label>
+            <textarea value={form.teacher_comment} onChange={e => updateField('teacher_comment', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition resize-none" />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Supervisor Comment</label>
-            <textarea value={form.supervisor_comment} onChange={e => updateField('supervisor_comment', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none" />
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Supervisor Comment</label>
+            <textarea value={form.supervisor_comment} onChange={e => updateField('supervisor_comment', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition resize-none" />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Principal Comment</label>
-            <textarea value={form.principal_comment} onChange={e => updateField('principal_comment', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none" />
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Principal Comment</label>
+            <textarea value={form.principal_comment} onChange={e => updateField('principal_comment', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition resize-none" />
           </div>
 
           {existingReport?.hacs_score != null && (
-            <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg">
-              <div><p className="text-xs text-gray-500">HACS Score</p><p className="text-sm font-semibold text-gray-800">{Number(existingReport.hacs_score).toFixed(1)}</p></div>
-              <div><p className="text-xs text-gray-500">NCE Score</p><p className="text-sm font-semibold text-gray-800">{existingReport.nce_score ? Number(existingReport.nce_score).toFixed(1) : '-'}</p></div>
-              <div><p className="text-xs text-gray-500">Total</p><p className="text-sm font-semibold text-gray-800">{existingReport.total_score ? Number(existingReport.total_score).toFixed(1) : '-'}</p></div>
+            <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 rounded-lg">
+              <div><p className="text-xs text-slate-500">HACS Score</p><p className="text-sm font-semibold text-slate-800">{Number(existingReport.hacs_score).toFixed(1)}</p></div>
+              <div><p className="text-xs text-slate-500">NCE Score</p><p className="text-sm font-semibold text-slate-800">{existingReport.nce_score ? Number(existingReport.nce_score).toFixed(1) : '-'}</p></div>
+              <div><p className="text-xs text-slate-500">Total</p><p className="text-sm font-semibold text-slate-800">{existingReport.total_score ? Number(existingReport.total_score).toFixed(1) : '-'}</p></div>
             </div>
           )}
         </div>
-        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100 sticky bottom-0 bg-white">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
-          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+        <div className="flex items-center justify-end gap-2 p-5 border-t border-slate-100 sticky bottom-0 bg-white">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-lg text-sm font-medium hover:bg-[#7C3AED] transition disabled:opacity-50">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Saving...' : 'Save'}
           </button>

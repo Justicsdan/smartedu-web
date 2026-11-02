@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from "../../lib/dbProxy"
 import { useAuth } from '../../contexts/AuthContext'
 import {
   Save, Search, AlertCircle, CheckCircle, Loader2, Users, BookOpen,
@@ -54,21 +54,21 @@ export default function ScoresPage() {
     ;(async () => {
       setLoading(true)
       try {
-        const { data: sData } = await supabase
+        const { data: sData } = await dbProxy
           .from('school_settings')
           .select('*')
           .eq('school_id', schoolId)
           .maybeSingle()
         const s: LocalSettings = (sData as any) || {}
 
-        const { data: curSession } = await supabase
+        const { data: curSession } = await dbProxy
           .from('academic_sessions')
           .select('id, name')
           .eq('school_id', schoolId)
           .eq('is_current', true)
           .maybeSingle()
         if (curSession) s.current_session = curSession.id
-        const { data: curTerm } = await supabase
+        const { data: curTerm } = await dbProxy
           .from('terms')
           .select('id, name')
           .eq('school_id', schoolId)
@@ -77,7 +77,7 @@ export default function ScoresPage() {
         if (curTerm) s.current_term = curTerm.id
         setSettings(s)
 
-        const { data: cData } = await supabase
+        const { data: cData } = await dbProxy
           .from('classes')
           .select('id, name, tier, assessment_types')
           .eq('school_id', schoolId)
@@ -128,7 +128,7 @@ export default function ScoresPage() {
     if (!classId) { setSubjects([]); setSubjectId(''); return }
     ;(async () => {
       try {
-        const { data: csRows, error: csErr } = await supabase
+        const { data: csRows, error: csErr } = await dbProxy
           .from('class_subjects')
           .select('subject_id')
           .eq('class_id', classId)
@@ -142,7 +142,7 @@ export default function ScoresPage() {
           setSubjects([])
           return
         }
-        const { data: subjRows, error: sErr } = await supabase
+        const { data: subjRows, error: sErr } = await dbProxy
           .from('subjects')
           .select('id, name, code')
           .in('id', subjectIds)
@@ -168,7 +168,7 @@ export default function ScoresPage() {
     }
     ;(async () => {
       try {
-        const { data } = await supabase
+        const { data } = await dbProxy
           .from('score_locks')
           .select('is_locked')
           .eq('school_id', schoolId)
@@ -195,7 +195,7 @@ export default function ScoresPage() {
     ;(async () => {
       setLoading(true)
       try {
-        const { data: studs } = await supabase
+        const { data: studs } = await dbProxy
           .from('students')
           .select('id, first_name, last_name, admission_no, passport_url')
           .eq('class_id', classId)
@@ -209,7 +209,7 @@ export default function ScoresPage() {
         }))
         setStudents(list)
 
-        const { data: existing } = await supabase
+        const { data: existing } = await dbProxy
           .from('scores')
           .select('id, student_id, scores_json, total, grade')
           .eq('school_id', schoolId)
@@ -306,13 +306,13 @@ export default function ScoresPage() {
 
         const existing = existingRows[s.id]
         if (existing?.id) {
-          const { error: upErr } = await supabase
+          const { error: upErr } = await dbProxy
             .from('scores')
             .update(payload)
             .eq('id', existing.id)
           if (upErr) throw upErr
         } else {
-          const { error: inErr, data } = await supabase
+          const { error: inErr, data } = await dbProxy
             .from('scores')
             .insert(payload)
             .select('id')
@@ -337,18 +337,21 @@ export default function ScoresPage() {
 
   if (loading && students.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <span className="text-sm font-medium">Loading scores…</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Results / Score Entry</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Score Entry</h1>
+          <p className="text-sm text-slate-500 mt-1">
             {settings.current_session && settings.current_term
               ? 'Active session & term loaded automatically.'
               : 'No active session/term set in Settings.'}
@@ -357,39 +360,39 @@ export default function ScoresPage() {
         <button
           onClick={handleSave}
           disabled={saving || totalEntered === 0 || isLocked}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? 'Saving...' : `Save${totalEntered > 0 ? ` (${totalEntered})` : ''}`}
+          {saving ? 'Saving…' : `Save${totalEntered > 0 ? ` (${totalEntered})` : ''}`}
         </button>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
       {isLocked && (
-        <div className="flex items-start gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-          <Lock className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-orange-700">Scores are locked for this class. Unlock from the Publish page to edit.</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+          <Lock size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">Scores are locked for this class. Unlock from the Publish page to edit.</p>
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Class</label>
           <select
             value={classId}
             onChange={e => setClassId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30"
+            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
           >
             <option value="">Select class</option>
             {classes.map(c => (
@@ -403,7 +406,7 @@ export default function ScoresPage() {
             value={subjectId}
             onChange={e => setSubjectId(e.target.value)}
             disabled={!classId}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 disabled:bg-gray-50 disabled:text-gray-400"
+            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition disabled:bg-slate-50 disabled:text-slate-400"
           >
             <option value="">Select subject</option>
             {subjects.map(s => (
@@ -414,75 +417,67 @@ export default function ScoresPage() {
       </div>
 
       {classId && subjectId && assessmentTypes.length > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
-          <p className="text-sm text-blue-700">
-            <span className="font-medium">{formulaText}</span>
-            <span className="text-blue-500 ml-2">- Tier: {tier} - Template: {examTemplate}</span>
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800">
+          <Info size={18} className="flex-shrink-0" />
+          <p className="text-sm">
+            <span className="font-semibold">{formulaText}</span>
+            <span className="text-blue-600 ml-2">• Tier: {tier} • Template: {examTemplate}</span>
           </p>
         </div>
       )}
 
       {classId && subjectId && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><Users className="w-5 h-5 text-blue-600" /></div>
-            <div>
-              <p className="text-xs text-gray-500">Students</p>
-              <p className="text-lg font-bold text-gray-800">{students.length}</p>
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}><Users size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{students.length}</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Students</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><CheckCircle className="w-5 h-5 text-green-600" /></div>
-            <div>
-              <p className="text-xs text-gray-500">Scores Entered</p>
-              <p className="text-lg font-bold text-gray-800">{totalEntered}/{students.length}</p>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><CheckCircle size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalEntered}/{students.length}</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Entered</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center"><BookOpen className="w-5 h-5 text-orange-600" /></div>
-            <div>
-              <p className="text-xs text-gray-500">Class Average</p>
-              <p className="text-lg font-bold text-gray-800">{classAvg}/{totalMax}</p>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><BookOpen size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{classAvg}<span className="text-sm text-slate-400">/{totalMax}</span></div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Class Avg</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center"><Info className="w-5 h-5 text-purple-600" /></div>
-            <div>
-              <p className="text-xs text-gray-500">Columns</p>
-              <p className="text-lg font-bold text-gray-800">{assessmentTypes.length}</p>
-            </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}><Info size={16} strokeWidth={2.2} /></div>
+            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{assessmentTypes.length}</div>
+            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Columns</div>
           </div>
         </div>
       )}
 
       {classId && subjectId ? (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-700">Student Scores</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-900">Student Scores</h2>
             <div className="relative">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" strokeWidth={2.2} />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search student..."
-                className="pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 w-64"
+                placeholder="Search student…"
+                className="pl-9 pr-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-blue-400 focus:bg-white transition w-48 sm:w-64"
               />
             </div>
           </div>
 
           {filteredStudents.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-3"><Users className="w-8 h-8 text-gray-300" /></div>
-              <p className="text-gray-400 text-sm">{students.length === 0 ? 'No students in this class.' : 'No students match your search.'}</p>
+            <div className="py-16 text-center">
+              <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400"><Users size={32} strokeWidth={2} /></div>
+              <p className="text-sm text-slate-500">{students.length === 0 ? 'No students in this class.' : 'No students match your search.'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-3">#</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-3">Student</th>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-3">#</th>
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-3">Student</th>
                     {assessmentTypes.map(at => (
                       <th key={at.id} className="text-center text-xs font-medium text-gray-500 uppercase px-3 py-2">
                         {at.name}<br/><span className="text-[10px] normal-case text-gray-400">/{at.max}</span>
@@ -523,7 +518,7 @@ export default function ScoresPage() {
                                 value={sj[key] ?? ''}
                                 onChange={e => setScore(s.id, at, e.target.value)}
                                 disabled={isLocked}
-                                className="w-14 px-1.5 py-1 text-center border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 focus:border-[#1A237E] disabled:bg-gray-50"
+                                className="w-14 px-1.5 py-1 text-center border border-slate-200 rounded-md text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition disabled:bg-slate-50"
                                 placeholder="0"
                               />
                             </td>
@@ -554,10 +549,10 @@ export default function ScoresPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-3"><BookOpen className="w-8 h-8 text-blue-400" /></div>
-          <h3 className="text-gray-700 font-medium mb-1">Select Class & Subject</h3>
-          <p className="text-gray-400 text-sm">Choose a class and subject above to start entering scores.</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+          <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-400"><BookOpen size={32} strokeWidth={2} /></div>
+          <h3 className="text-base font-bold text-slate-900 mb-1">Select Class & Subject</h3>
+          <p className="text-sm text-slate-500">Choose a class and subject above to start entering scores.</p>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from "../../lib/dbProxy"
 import { useAuth } from '../../contexts/AuthContext'
 import {
   Save, Loader2, AlertCircle, CheckCircle, Plus, Trash2, Copy,
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     ;(async () => {
       setLoading(true)
       try {
-        const { data, error } = await supabase
+        const { data, error } = await dbProxy
           .from('school_settings')
           .select('*')
           .eq('school_id', schoolId)
@@ -82,7 +82,7 @@ export default function SettingsPage() {
       for (const [k, v] of Object.entries(fields)) {
         payload[k] = v
       }
-      const { error } = await supabase
+      const { error } = await dbProxy
         .from('school_settings')
         .update(payload)
         .eq('school_id', schoolId)
@@ -105,43 +105,50 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" /></div>
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-rose-600" />
+          <span className="text-sm font-medium">Loading settings…</span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">Configure school profile, grading systems, and result layout</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
+        <p className="text-sm text-slate-500 mt-1">Configure school profile, grading systems, and result layout</p>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
 
-      <div className="flex gap-1 bg-white rounded-xl border border-gray-100 p-1 overflow-x-auto">
-        <button onClick={() => setTab('profile')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'profile' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+      <div className="flex gap-1 bg-white rounded-xl shadow-sm border border-slate-200 p-1 overflow-x-auto">
+        <button onClick={() => setTab('profile')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'profile' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           <School className="w-4 h-4" /> Profile
         </button>
-        <button onClick={() => setTab('grading')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'grading' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => setTab('grading')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'grading' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           <GraduationCap className="w-4 h-4" /> Grading
         </button>
-        <button onClick={() => setTab('assessment')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'assessment' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => setTab('assessment')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'assessment' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           <BookOpen className="w-4 h-4" /> Assessment
         </button>
-        <button onClick={() => setTab('layout')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'layout' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => setTab('layout')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'layout' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           <FileText className="w-4 h-4" /> Result Layout
         </button>
-        <button onClick={() => setTab('display')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'display' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+        <button onClick={() => setTab('display')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'display' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           <Eye className="w-4 h-4" /> Display
         </button>
       </div>
@@ -157,49 +164,49 @@ export default function SettingsPage() {
 
 function ProfileTab({ settings, updateField, onSave, saving }: any) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-4 max-w-2xl">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 max-w-2xl">
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">School Name *</label>
-        <input value={settings.name || ''} onChange={e => updateField('name', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+        <input value={settings.name || ''} onChange={e => updateField('name', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">Motto</label>
-        <input value={settings.motto || ''} onChange={e => updateField('motto', e.target.value)} placeholder="Knowledge is Power" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+        <input value={settings.motto || ''} onChange={e => updateField('motto', e.target.value)} placeholder="Knowledge is Power" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">Address</label>
-        <textarea value={settings.address || ''} onChange={e => updateField('address', e.target.value)} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30 resize-none" />
+        <textarea value={settings.address || ''} onChange={e => updateField('address', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition resize-none" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Official Phone</label>
-          <input value={settings.official_phone || ''} onChange={e => updateField('official_phone', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+          <input value={settings.official_phone || ''} onChange={e => updateField('official_phone', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Official Email</label>
-          <input value={settings.official_email || ''} onChange={e => updateField('official_email', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+          <input value={settings.official_email || ''} onChange={e => updateField('official_email', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Website</label>
-          <input value={settings.website || ''} onChange={e => updateField('website', e.target.value)} placeholder="https://" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+          <input value={settings.website || ''} onChange={e => updateField('website', e.target.value)} placeholder="https://" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Principal Name</label>
-          <input value={settings.principal_name || ''} onChange={e => updateField('principal_name', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+          <input value={settings.principal_name || ''} onChange={e => updateField('principal_name', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
         </div>
       </div>
-      <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+      <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg">
         <label className="block text-xs font-medium text-gray-700 mb-1.5">Curriculum Mode</label>
         <p className="text-xs text-gray-500 mb-2">Determines which scoring pages are available. ACE schools use PACE Scores + ACE Reports instead of traditional Scores + Publish + Reports.</p>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => updateField('curriculum_mode', 'traditional')}
-            className={`p-3 rounded-lg border-2 text-left transition ${(settings.curriculum_mode || 'traditional').toLowerCase() !== 'ace' ? 'border-[#1A237E] bg-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+            className={`p-3 rounded-lg border-2 text-left transition ${(settings.curriculum_mode || 'traditional').toLowerCase() !== 'ace' ? 'border-rose-600 bg-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <GraduationCap className="w-4 h-4 text-[#1A237E]" />
+              <GraduationCap className="w-4 h-4 text-rose-700" />
               <span className="text-sm font-medium text-gray-800">Traditional</span>
             </div>
             <p className="text-xs text-gray-500">WAEC / BECE / NECO / IGCSE</p>
@@ -207,10 +214,10 @@ function ProfileTab({ settings, updateField, onSave, saving }: any) {
           </button>
           <button
             onClick={() => updateField('curriculum_mode', 'ace')}
-            className={`p-3 rounded-lg border-2 text-left transition ${(settings.curriculum_mode || '').toLowerCase() === 'ace' ? 'border-[#1A237E] bg-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+            className={`p-3 rounded-lg border-2 text-left transition ${(settings.curriculum_mode || '').toLowerCase() === 'ace' ? 'border-rose-600 bg-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <BookOpen className="w-4 h-4 text-[#1A237E]" />
+              <BookOpen className="w-4 h-4 text-rose-700" />
               <span className="text-sm font-medium text-gray-800">ACE</span>
             </div>
             <p className="text-xs text-gray-500">Accelerated Christian Education</p>
@@ -220,7 +227,7 @@ function ProfileTab({ settings, updateField, onSave, saving }: any) {
       </div>
 
       <div className="flex justify-end pt-2">
-        <button onClick={() => onSave({ name: settings.name, motto: settings.motto, address: settings.address, official_phone: settings.official_phone, official_email: settings.official_email, website: settings.website, principal_name: settings.principal_name, curriculum_mode: settings.curriculum_mode || 'traditional' })} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+        <button onClick={() => onSave({ name: settings.name, motto: settings.motto, address: settings.address, official_phone: settings.official_phone, official_email: settings.official_email, website: settings.website, principal_name: settings.principal_name, curriculum_mode: settings.curriculum_mode || 'traditional' })} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-semibold hover:bg-rose-700 shadow-sm transition disabled:opacity-50">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Saving...' : 'Save Profile'}
         </button>
@@ -265,16 +272,16 @@ function GradingTab({ settings, onSave, saving }: any) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-gray-700">Grading Standard</h3>
         <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => onSave({ grading_standard: 'Nigerian' })} className={`p-4 rounded-lg border-2 text-left transition ${!isAmerican ? 'border-[#1A237E] bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
-            <GraduationCap className={`w-5 h-5 mb-2 ${!isAmerican ? 'text-[#1A237E]' : 'text-gray-400'}`} />
+          <button onClick={() => onSave({ grading_standard: 'Nigerian' })} className={`p-4 rounded-lg border-2 text-left transition ${!isAmerican ? 'border-rose-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
+            <GraduationCap className={`w-5 h-5 mb-2 ${!isAmerican ? 'text-rose-700' : 'text-gray-400'}`} />
             <p className="text-sm font-medium text-gray-800">Nigerian</p>
             <p className="text-xs text-gray-500">Tier-based (WAEC/BECE/PRIMARY)</p>
           </button>
-          <button onClick={() => onSave({ grading_standard: 'American' })} className={`p-4 rounded-lg border-2 text-left transition ${isAmerican ? 'border-[#1A237E] bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
-            <GraduationCap className={`w-5 h-5 mb-2 ${isAmerican ? 'text-[#1A237E]' : 'text-gray-400'}`} />
+          <button onClick={() => onSave({ grading_standard: 'American' })} className={`p-4 rounded-lg border-2 text-left transition ${isAmerican ? 'border-rose-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
+            <GraduationCap className={`w-5 h-5 mb-2 ${isAmerican ? 'text-rose-700' : 'text-gray-400'}`} />
             <p className="text-sm font-medium text-gray-800">American</p>
             <p className="text-xs text-gray-500">GPA (A-F, 4.0 scale)</p>
           </button>
@@ -282,14 +289,14 @@ function GradingTab({ settings, onSave, saving }: any) {
         {!isAmerican && (
           <div className="pt-2">
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Exam Template (SSS Default)</label>
-            <select value={settings.exam_template || 'WAEC'} onChange={e => onSave({ exam_template: e.target.value })} className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+            <select value={settings.exam_template || 'WAEC'} onChange={e => onSave({ exam_template: e.target.value })} className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition">
               {TEMPLATES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 p-5">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <div className="flex gap-2 mb-4">
           {TIERS.map(t => (
             <button key={t.id} onClick={() => setTier(t.id)} className="px-4 py-2 rounded-lg text-sm font-medium transition" style={tier === t.id ? { backgroundColor: t.color, color: 'white' } : { backgroundColor: '#F3F4F6', color: '#4B5563' }}>
@@ -312,7 +319,7 @@ function GradingTab({ settings, onSave, saving }: any) {
         </div>
 
         <div className="flex gap-2 mb-4">
-          <button onClick={addRow} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A237E] text-white rounded-lg text-xs font-medium hover:bg-[#283593] transition">
+          <button onClick={addRow} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition">
             <Plus className="w-3.5 h-3.5" /> Add Grade
           </button>
           {!hasOverride && (
@@ -335,23 +342,23 @@ function GradingTab({ settings, onSave, saving }: any) {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Min</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Max</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Grade</th>
-                  <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Remark</th>
-                  {isAmerican && <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Point</th>}
-                  <th className="text-right text-xs font-medium text-gray-500 uppercase px-3 py-2"></th>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Min</th>
+                  <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Max</th>
+                  <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Grade</th>
+                  <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Remark</th>
+                  {isAmerican && <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Point</th>}
+                  <th className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {currentGrading.map((g, i) => (
                   <tr key={i} className="border-b border-gray-50">
-                    <td className="px-3 py-2"><input type="number" value={g.min} onChange={e => updateGrading(i, 'min', Number(e.target.value))} className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" /></td>
-                    <td className="px-3 py-2"><input type="number" value={g.max} onChange={e => updateGrading(i, 'max', Number(e.target.value))} className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" /></td>
-                    <td className="px-3 py-2"><input value={g.grade} onChange={e => updateGrading(i, 'grade', e.target.value)} className="w-20 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" /></td>
-                    <td className="px-3 py-2"><input value={g.remark} onChange={e => updateGrading(i, 'remark', e.target.value)} className="w-32 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" /></td>
-                    {isAmerican && <td className="px-3 py-2"><input type="number" step="0.1" value={g.point || 0} onChange={e => updateGrading(i, 'point', Number(e.target.value))} className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" /></td>}
+                    <td className="px-3 py-2"><input type="number" value={g.min} onChange={e => updateGrading(i, 'min', Number(e.target.value))} className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" /></td>
+                    <td className="px-3 py-2"><input type="number" value={g.max} onChange={e => updateGrading(i, 'max', Number(e.target.value))} className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" /></td>
+                    <td className="px-3 py-2"><input value={g.grade} onChange={e => updateGrading(i, 'grade', e.target.value)} className="w-20 px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" /></td>
+                    <td className="px-3 py-2"><input value={g.remark} onChange={e => updateGrading(i, 'remark', e.target.value)} className="w-32 px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" /></td>
+                    {isAmerican && <td className="px-3 py-2"><input type="number" step="0.1" value={g.point || 0} onChange={e => updateGrading(i, 'point', Number(e.target.value))} className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" /></td>}
                     <td className="px-3 py-2 text-right"><button onClick={() => deleteRow(i)} className="text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button></td>
                   </tr>
                 ))}
@@ -399,7 +406,7 @@ function AssessmentTab({ settings, onSave, saving }: any) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
       <div className="flex gap-2">
         {TIERS.map(t => (
           <button key={t.id} onClick={() => setTier(t.id)} className="px-4 py-2 rounded-lg text-sm font-medium transition" style={tier === t.id ? { backgroundColor: t.color, color: 'white' } : { backgroundColor: '#F3F4F6', color: '#4B5563' }}>
@@ -422,7 +429,7 @@ function AssessmentTab({ settings, onSave, saving }: any) {
       </div>
 
       <div className="flex gap-2">
-        <button onClick={addRow} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1A237E] text-white rounded-lg text-xs font-medium hover:bg-[#283593] transition">
+        <button onClick={addRow} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition">
           <Plus className="w-3.5 h-3.5" /> Add Assessment
         </button>
         {!hasOverride && (
@@ -448,15 +455,15 @@ function AssessmentTab({ settings, onSave, saving }: any) {
             <div key={i} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
               <div className="flex-1">
                 <label className="block text-[10px] text-gray-500 mb-0.5">Name</label>
-                <input value={a.name} onChange={e => updateAssess(i, 'name', e.target.value)} className="w-full px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" />
+                <input value={a.name} onChange={e => updateAssess(i, 'name', e.target.value)} className="w-full px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" />
               </div>
               <div>
                 <label className="block text-[10px] text-gray-500 mb-0.5">ID</label>
-                <input value={a.id} onChange={e => updateAssess(i, 'id', e.target.value)} className="w-24 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" />
+                <input value={a.id} onChange={e => updateAssess(i, 'id', e.target.value)} className="w-24 px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" />
               </div>
               <div>
                 <label className="block text-[10px] text-gray-500 mb-0.5">Max</label>
-                <input type="number" value={a.max} onChange={e => updateAssess(i, 'max', Number(e.target.value))} className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" />
+                <input type="number" value={a.max} onChange={e => updateAssess(i, 'max', Number(e.target.value))} className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" />
               </div>
               <div className="text-xs text-gray-500 w-12 text-right mt-4">{total > 0 ? `${Math.round((a.max / total) * 100)}%` : ''}</div>
               <button onClick={() => deleteRow(i)} className="text-red-400 hover:text-red-600 mt-4"><Trash2 className="w-4 h-4" /></button>
@@ -470,19 +477,19 @@ function AssessmentTab({ settings, onSave, saving }: any) {
 
 function LayoutTab({ settings, updateField, onSave, saving }: any) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-4 max-w-2xl">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 max-w-2xl">
       <h3 className="text-sm font-semibold text-gray-700">Result Sheet Layout</h3>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Orientation</label>
-          <select value={settings.result_orientation || 'portrait'} onChange={e => updateField('result_orientation', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+          <select value={settings.result_orientation || 'portrait'} onChange={e => updateField('result_orientation', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition">
             <option value="portrait">Portrait</option>
             <option value="landscape">Landscape</option>
           </select>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Paper Size</label>
-          <select value={settings.result_paper_size || 'a4'} onChange={e => updateField('result_paper_size', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+          <select value={settings.result_paper_size || 'a4'} onChange={e => updateField('result_paper_size', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition">
             <option value="a4">A4</option>
             <option value="a5">A5</option>
             <option value="letter">Letter</option>
@@ -490,7 +497,7 @@ function LayoutTab({ settings, updateField, onSave, saving }: any) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Logo Position</label>
-          <select value={settings.logo_position || 'left'} onChange={e => updateField('logo_position', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+          <select value={settings.logo_position || 'left'} onChange={e => updateField('logo_position', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition">
             <option value="left">Left</option>
             <option value="center">Center</option>
             <option value="right">Right</option>
@@ -498,20 +505,20 @@ function LayoutTab({ settings, updateField, onSave, saving }: any) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Font Family</label>
-          <input value={settings.font_family || ''} onChange={e => updateField('font_family', e.target.value)} placeholder="e.g., Inter, Arial" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+          <input value={settings.font_family || ''} onChange={e => updateField('font_family', e.target.value)} placeholder="e.g., Inter, Arial" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
         </div>
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">Header Text</label>
-        <input value={settings.result_header_text || ''} onChange={e => updateField('result_header_text', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+        <input value={settings.result_header_text || ''} onChange={e => updateField('result_header_text', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">Footer Text</label>
-        <input value={settings.result_footer_text || ''} onChange={e => updateField('result_footer_text', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+        <input value={settings.result_footer_text || ''} onChange={e => updateField('result_footer_text', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">Watermark Text</label>
-        <input value={settings.result_watermark_text || ''} onChange={e => updateField('result_watermark_text', e.target.value)} placeholder="e.g., CONFIDENTIAL" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+        <input value={settings.result_watermark_text || ''} onChange={e => updateField('result_watermark_text', e.target.value)} placeholder="e.g., CONFIDENTIAL" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
       </div>
 
       <div className="pt-2">
@@ -529,7 +536,7 @@ function LayoutTab({ settings, updateField, onSave, saving }: any) {
               <label className="block text-[10px] text-gray-500 mb-1">{c.label}</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={settings[c.key] || '#1A237E'} onChange={e => updateField(c.key, e.target.value)} className="w-8 h-8 rounded border border-gray-200 cursor-pointer" />
-                <input value={settings[c.key] || ''} onChange={e => updateField(c.key, e.target.value)} placeholder="#1A237E" className="flex-1 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#1A237E]/30" />
+                <input value={settings[c.key] || ''} onChange={e => updateField(c.key, e.target.value)} placeholder="#1A237E" className="flex-1 px-2 py-1 border border-slate-200 rounded text-xs text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 outline-none transition" />
               </div>
             </div>
           ))}
@@ -551,7 +558,7 @@ function LayoutTab({ settings, updateField, onSave, saving }: any) {
           header_bg_color: settings.header_bg_color,
           header_text_color: settings.header_text_color,
           text_color: settings.text_color,
-        })} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+        })} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-semibold hover:bg-rose-700 shadow-sm transition disabled:opacity-50">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Saving...' : 'Save Layout'}
         </button>
@@ -577,7 +584,7 @@ function DisplayTab({ settings, updateField, onSave, saving }: any) {
   ]
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-3 max-w-2xl">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3 max-w-2xl">
       <h3 className="text-sm font-semibold text-gray-700 mb-2">Display Options</h3>
       {toggles.map(t => (
         <div key={t.key} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
@@ -587,14 +594,14 @@ function DisplayTab({ settings, updateField, onSave, saving }: any) {
           </div>
           <button
             onClick={() => updateField(t.key, !settings[t.key])}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${settings[t.key] ? 'bg-[#1A237E]' : 'bg-gray-300'}`}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${settings[t.key] ? 'bg-rose-600' : 'bg-slate-300'}`}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${settings[t.key] ? 'translate-x-6' : 'translate-x-1'}`} />
           </button>
         </div>
       ))}
       <div className="flex justify-end pt-2">
-        <button onClick={() => onSave(Object.fromEntries(toggles.map(t => [t.key, settings[t.key]])))} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+        <button onClick={() => onSave(Object.fromEntries(toggles.map(t => [t.key, settings[t.key]])))} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-semibold hover:bg-rose-700 shadow-sm transition disabled:opacity-50">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Saving...' : 'Save Display'}
         </button>

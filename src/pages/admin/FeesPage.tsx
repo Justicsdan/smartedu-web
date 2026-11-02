@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect, useMemo } from "react"
+import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   Plus, Save, Loader2, AlertCircle, CheckCircle, X, Wallet,
@@ -74,13 +74,13 @@ export default function FeesPage() {
       setLoading(true)
       try {
         const [ftRes, pRes, aRes, cRes, sRes, ssRes, tRes] = await Promise.all([
-          supabase.from('fee_types').select('*').eq('school_id', schoolId).order('name'),
-          supabase.from('fee_payments').select('*').eq('school_id', schoolId).order('payment_date', { ascending: false }),
-          supabase.from('fee_assignments').select('*').eq('school_id', schoolId).order('assigned_at', { ascending: false }),
-          supabase.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
-          supabase.from('students').select('id, first_name, middle_name, last_name, class_id, admission_no').eq('school_id', schoolId).order('first_name'),
-          supabase.from('academic_sessions').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
-          supabase.from('terms').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
+          dbProxy.from('fee_types').select('*').eq('school_id', schoolId).order('name'),
+          dbProxy.from('fee_payments').select('*').eq('school_id', schoolId).order('payment_date', { ascending: false }),
+          dbProxy.from('fee_assignments').select('*').eq('school_id', schoolId).order('assigned_at', { ascending: false }),
+          dbProxy.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
+          dbProxy.from('students').select('id, first_name, middle_name, last_name, class_id, admission_no').eq('school_id', schoolId).order('first_name'),
+          dbProxy.from('academic_sessions').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
+          dbProxy.from('terms').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
         ])
         if (ftRes.error) throw ftRes.error
         if (pRes.error) throw pRes.error
@@ -240,7 +240,7 @@ export default function FeesPage() {
         a.student_id === rpStudentId && a.fee_type_id === rpFeeTypeId &&
         a.session_id === sessionId && a.term_id === termId
       )
-      const { error: pErr } = await supabase.from('fee_payments').insert({
+      const { error: pErr } = await dbProxy.from('fee_payments').insert({
         school_id: schoolId,
         student_id: rpStudentId,
         fee_type_id: rpFeeTypeId,
@@ -260,7 +260,7 @@ export default function FeesPage() {
         const currentPaid = (Number(assignment.amount_paid) || 0) + amt
         const owed = Number(assignment.amount_owed) || 0
         const newStatus = currentPaid >= owed ? 'paid' : (currentPaid > 0 ? 'partial' : 'pending')
-        const { error: aErr } = await supabase.from('fee_assignments').update({
+        const { error: aErr } = await dbProxy.from('fee_assignments').update({
           amount_paid: currentPaid,
           status: newStatus,
         }).eq('id', assignment.id)
@@ -268,8 +268,8 @@ export default function FeesPage() {
       }
       // Reload
       const [pRes, aRes] = await Promise.all([
-        supabase.from('fee_payments').select('*').eq('school_id', schoolId).order('payment_date', { ascending: false }),
-        supabase.from('fee_assignments').select('*').eq('school_id', schoolId).order('assigned_at', { ascending: false }),
+        dbProxy.from('fee_payments').select('*').eq('school_id', schoolId).order('payment_date', { ascending: false }),
+        dbProxy.from('fee_assignments').select('*').eq('school_id', schoolId).order('assigned_at', { ascending: false }),
       ])
       setPayments((pRes.data || []) as FeePayment[])
       setAssignments((aRes.data || []) as FeeAssignment[])
@@ -322,9 +322,9 @@ export default function FeesPage() {
         due_date: postDueDate || null,
         assigned_by: user?.id || null,
       }))
-      const { error: inErr } = await supabase.from('fee_assignments').insert(inserts)
+      const { error: inErr } = await dbProxy.from('fee_assignments').insert(inserts)
       if (inErr) throw inErr
-      const { data: aRes } = await supabase.from('fee_assignments').select('*').eq('school_id', schoolId).order('assigned_at', { ascending: false })
+      const { data: aRes } = await dbProxy.from('fee_assignments').select('*').eq('school_id', schoolId).order('assigned_at', { ascending: false })
       setAssignments((aRes || []) as FeeAssignment[])
       setSuccessMsg(`Fees posted for ${inserts.length} student(s)`)
       setSelectedPostIds(new Set())
@@ -339,7 +339,7 @@ export default function FeesPage() {
     if (!feeTypeForm.name.trim() || !feeTypeForm.amount) { setError('Name and amount required'); return }
     setSaving(true); setError('')
     try {
-      const { error } = await supabase.from('fee_types').insert({
+      const { error } = await dbProxy.from('fee_types').insert({
         school_id: schoolId,
         name: feeTypeForm.name.trim(),
         amount: Number(feeTypeForm.amount),
@@ -350,7 +350,7 @@ export default function FeesPage() {
         currency_code: feeTypeForm.currency_code || 'NGN',
       })
       if (error) throw error
-      const { data } = await supabase.from('fee_types').select('*').eq('school_id', schoolId).order('name')
+      const { data } = await dbProxy.from('fee_types').select('*').eq('school_id', schoolId).order('name')
       setFeeTypes((data || []) as FeeType[])
       setShowFeeTypeModal(false)
       setFeeTypeForm({ name: '', amount: '', frequency: 'termly', is_compulsory: false, is_active: true, description: '', currency_code: 'NGN' })
@@ -363,64 +363,75 @@ export default function FeesPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-[#1A237E] animate-spin" /></div>
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-slate-600">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+          <span className="text-sm font-medium">Loading fees…</span>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Fees Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Record payments, post fees to classes, view history</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Fees Management</h1>
+          <p className="text-sm text-slate-500 mt-1">Record payments, post fees to classes, view history</p>
         </div>
-        <button onClick={() => setShowFeeTypeModal(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition">
+        <button onClick={() => setShowFeeTypeModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition shadow-sm">
           <Plus className="w-4 h-4" /> New Fee Type
         </button>
       </div>
 
       {error && (
-        <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-green-700">{successMsg}</p>
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <p className="text-sm flex-1">{successMsg}</p>
         </div>
       )}
 
-      <div className="flex gap-1 bg-white rounded-xl border border-gray-100 p-1 overflow-x-auto">
-        <button onClick={() => setTab('overview')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'overview' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Overview</button>
-        <button onClick={() => setTab('record')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'record' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Record Payment</button>
-        <button onClick={() => setTab('post')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'post' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>Post Fees</button>
-        <button onClick={() => setTab('history')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'history' ? 'bg-[#1A237E] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>History</button>
+      <div className="flex gap-1 bg-white rounded-xl shadow-sm border border-slate-200 p-1 overflow-x-auto">
+        <button onClick={() => setTab('overview')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'overview' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Overview</button>
+        <button onClick={() => setTab('record')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'record' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Record Payment</button>
+        <button onClick={() => setTab('post')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'post' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Post Fees</button>
+        <button onClick={() => setTab('history')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'history' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>History</button>
       </div>
 
       {/* Overview */}
       {tab === 'overview' && (
         <div className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center"><DollarSign className="w-5 h-5 text-green-600" /></div>
-              <div><p className="text-xs text-gray-500">Total Collected</p><p className="text-lg font-bold text-gray-800">{totalCollected.toLocaleString()}</p></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><DollarSign size={16} strokeWidth={2.2} /></div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalCollected.toLocaleString()}</div>
+              <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Collected</div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center"><TrendingUp className="w-5 h-5 text-red-600" /></div>
-              <div><p className="text-xs text-gray-500">Outstanding</p><p className="text-lg font-bold text-gray-800">{totalOutstanding.toLocaleString()}</p></div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}><TrendingUp size={16} strokeWidth={2.2} /></div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalOutstanding.toLocaleString()}</div>
+              <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Outstanding</div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"><CheckCircle className="w-5 h-5 text-blue-600" /></div>
-              <div><p className="text-xs text-gray-500">Fully Paid</p><p className="text-lg font-bold text-gray-800">{paidCount}</p></div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EFF6FF', color: '#3B82F6' }}><CheckCircle size={16} strokeWidth={2.2} /></div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{paidCount}</div>
+              <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Fully Paid</div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center"><Wallet className="w-5 h-5 text-orange-600" /></div>
-              <div><p className="text-xs text-gray-500">Pending/Partial</p><p className="text-lg font-bold text-gray-800">{pendingCount}</p></div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><Wallet size={16} strokeWidth={2.2} /></div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{pendingCount}</div>
+              <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Pending</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Fee Types ({feeTypes.length})</h3>
             {feeTypes.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-6">No fee types created yet. Click "New Fee Type" to create one.</p>
@@ -445,12 +456,12 @@ export default function FeesPage() {
 
       {/* Record Payment */}
       {tab === 'record' && (
-        <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4 max-w-2xl">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4 max-w-2xl">
           <h3 className="text-sm font-semibold text-gray-700">Record New Payment</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Class</label>
-              <select value={rpClassId} onChange={e => { setRpClassId(e.target.value); setRpStudentId('') }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+              <select value={rpClassId} onChange={e => { setRpClassId(e.target.value); setRpStudentId('') }} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
                 <option value="">All Classes</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` (${c.section})` : ''}</option>)}
               </select>
@@ -459,13 +470,13 @@ export default function FeesPage() {
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Student Search</label>
               <div className="relative">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input value={rpStudentSearch} onChange={e => setRpStudentSearch(e.target.value)} placeholder="Name or admission no..." className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+                <input value={rpStudentSearch} onChange={e => setRpStudentSearch(e.target.value)} placeholder="Name or admission no..." className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
               </div>
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Student *</label>
-            <select value={rpStudentId} onChange={e => handleRpStudentChange(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+            <select value={rpStudentId} onChange={e => handleRpStudentChange(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
               <option value="">Select student</option>
               {rpFilteredStudents.slice(0, 100).map(s => <option key={s.id} value={s.id}>{studentName(s)} ({s.admission_no || '-'})</option>)}
             </select>
@@ -473,51 +484,51 @@ export default function FeesPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Fee Type *</label>
-              <select value={rpFeeTypeId} onChange={e => handleRpFeeTypeChange(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+              <select value={rpFeeTypeId} onChange={e => handleRpFeeTypeChange(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
                 <option value="">Select fee type</option>
                 {feeTypes.map(ft => <option key={ft.id} value={ft.id}>{ft.name} ({ft.currency_code} {Number(ft.amount).toLocaleString()})</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Amount *</label>
-              <input type="number" value={rpAmount} onChange={e => setRpAmount(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input type="number" value={rpAmount} onChange={e => setRpAmount(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
             </div>
           </div>
           {rpStudentId && rpFeeTypeId && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-700">
-                Outstanding: <span className="font-semibold">{getOutstanding(rpStudentId, rpFeeTypeId).toLocaleString()}</span>
+            <div className="px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200">
+              <p className="text-xs text-amber-800">
+                Outstanding: <span className="font-bold">{getOutstanding(rpStudentId, rpFeeTypeId).toLocaleString()}</span>
               </p>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Payment Method</label>
-              <select value={rpMethod} onChange={e => setRpMethod(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+              <select value={rpMethod} onChange={e => setRpMethod(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
                 {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Payment Date</label>
-              <input type="date" value={rpDate} onChange={e => setRpDate(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input type="date" value={rpDate} onChange={e => setRpDate(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Receipt No</label>
-              <input value={rpReceipt} onChange={e => setRpReceipt(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input value={rpReceipt} onChange={e => setRpReceipt(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Reference No</label>
-              <input value={rpRef} onChange={e => setRpRef(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input value={rpRef} onChange={e => setRpRef(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Remark</label>
-            <input value={rpRemark} onChange={e => setRpRemark(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+            <input value={rpRemark} onChange={e => setRpRemark(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
           </div>
           <div className="flex justify-end pt-2">
-            <button onClick={savePayment} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+            <button onClick={savePayment} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Saving...' : 'Record Payment'}
             </button>
@@ -527,31 +538,31 @@ export default function FeesPage() {
 
       {/* Post Fees */}
       {tab === 'post' && (
-        <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700">Post Fees to Class</h3>
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Class *</label>
-              <select value={postClassId} onChange={e => { setPostClassId(e.target.value); setSelectedPostIds(new Set()) }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+              <select value={postClassId} onChange={e => { setPostClassId(e.target.value); setSelectedPostIds(new Set()) }} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
                 <option value="">Select class</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}{c.section ? ` (${c.section})` : ''}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Fee Type *</label>
-              <select value={postFeeTypeId} onChange={e => setPostFeeTypeId(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+              <select value={postFeeTypeId} onChange={e => setPostFeeTypeId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
                 <option value="">Select fee type</option>
                 {feeTypes.map(ft => <option key={ft.id} value={ft.id}>{ft.name}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">Amount (override)</label>
-              <input type="number" value={postAmount} onChange={e => setPostAmount(e.target.value)} placeholder="Default from fee type" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input type="number" value={postAmount} onChange={e => setPostAmount(e.target.value)} placeholder="Default from fee type" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">Due Date</label>
-            <input type="date" value={postDueDate} onChange={e => setPostDueDate(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+            <input type="date" value={postDueDate} onChange={e => setPostDueDate(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
           </div>
 
           {postableStudents.length > 0 && (
@@ -559,7 +570,7 @@ export default function FeesPage() {
               <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-100">
                 <button onClick={toggleAllPost} className="flex items-center gap-2 text-sm font-medium text-gray-700">
                   {selectedPostIds.size === postableStudents.length && postableStudents.length > 0
-                    ? <CheckSquare className="w-4 h-4 text-[#1A237E]" />
+                    ? <CheckSquare className="w-4 h-4 text-amber-600" />
                     : <Square className="w-4 h-4 text-gray-400" />}
                   Select All ({postableStudents.length} unassigned)
                 </button>
@@ -569,7 +580,7 @@ export default function FeesPage() {
                 {postableStudents.map(s => (
                   <button key={s.id} onClick={() => togglePostStudent(s.id)} className="flex items-center gap-3 w-full p-2.5 hover:bg-gray-50 border-b border-gray-50 last:border-0 text-left">
                     {selectedPostIds.has(s.id)
-                      ? <CheckSquare className="w-4 h-4 text-[#1A237E] flex-shrink-0" />
+                      ? <CheckSquare className="w-4 h-4 text-amber-600 flex-shrink-0" />
                       : <Square className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{studentName(s)}</p>
@@ -582,7 +593,7 @@ export default function FeesPage() {
           )}
 
           <div className="flex justify-end pt-2">
-            <button onClick={postFees} disabled={saving || selectedPostIds.size === 0} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+            <button onClick={postFees} disabled={saving || selectedPostIds.size === 0} className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Posting...' : `Post to ${selectedPostIds.size} Student(s)`}
             </button>
@@ -593,20 +604,20 @@ export default function FeesPage() {
       {/* History */}
       {tab === 'history' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-3 flex flex-wrap items-center gap-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input value={histStudentSearch} onChange={e => setHistStudentSearch(e.target.value)} placeholder="Search student..." className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+              <input value={histStudentSearch} onChange={e => setHistStudentSearch(e.target.value)} placeholder="Search student..." className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
             </div>
-            <select value={filterClassId} onChange={e => setFilterClassId(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+            <select value={filterClassId} onChange={e => setFilterClassId(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
               <option value="">All Classes</option>
               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <select value={filterFeeTypeId} onChange={e => setFilterFeeTypeId(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+            <select value={filterFeeTypeId} onChange={e => setFilterFeeTypeId(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
               <option value="">All Fee Types</option>
               {feeTypes.map(ft => <option key={ft.id} value={ft.id}>{ft.name}</option>)}
             </select>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
               <option value="">All Status</option>
               <option value="paid">Paid</option>
               <option value="partial">Partial</option>
@@ -614,20 +625,20 @@ export default function FeesPage() {
             </select>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-3 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700">Payment History ({filteredPayments.length})</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Date</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Student</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Fee Type</th>
-                    <th className="text-right text-xs font-medium text-gray-500 uppercase px-3 py-2">Amount</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Method</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Receipt</th>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Date</th>
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Student</th>
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Fee Type</th>
+                    <th className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Amount</th>
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Method</th>
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Receipt</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -654,20 +665,20 @@ export default function FeesPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-3 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700">Fee Assignments ({filteredAssignments.length})</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Student</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Fee Type</th>
-                    <th className="text-right text-xs font-medium text-gray-500 uppercase px-3 py-2">Owed</th>
-                    <th className="text-right text-xs font-medium text-gray-500 uppercase px-3 py-2">Paid</th>
-                    <th className="text-right text-xs font-medium text-gray-500 uppercase px-3 py-2">Outstanding</th>
-                    <th className="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Status</th>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Student</th>
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Fee Type</th>
+                    <th className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Owed</th>
+                    <th className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Paid</th>
+                    <th className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Outstanding</th>
+                    <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -707,7 +718,7 @@ export default function FeesPage() {
 
       {/* Fee Type Modal */}
       {showFeeTypeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowFeeTypeModal(false)}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowFeeTypeModal(false)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-800">New Fee Type</h2>
@@ -716,21 +727,21 @@ export default function FeesPage() {
             <div className="p-5 space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Name *</label>
-                <input value={feeTypeForm.name} onChange={e => setFeeTypeForm({ ...feeTypeForm, name: e.target.value })} placeholder="e.g., Tuition" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+                <input value={feeTypeForm.name} onChange={e => setFeeTypeForm({ ...feeTypeForm, name: e.target.value })} placeholder="e.g., Tuition" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">Amount *</label>
-                  <input type="number" value={feeTypeForm.amount} onChange={e => setFeeTypeForm({ ...feeTypeForm, amount: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+                  <input type="number" value={feeTypeForm.amount} onChange={e => setFeeTypeForm({ ...feeTypeForm, amount: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">Currency</label>
-                  <input value={feeTypeForm.currency_code} onChange={e => setFeeTypeForm({ ...feeTypeForm, currency_code: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+                  <input value={feeTypeForm.currency_code} onChange={e => setFeeTypeForm({ ...feeTypeForm, currency_code: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Frequency</label>
-                <select value={feeTypeForm.frequency} onChange={e => setFeeTypeForm({ ...feeTypeForm, frequency: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30">
+                <select value={feeTypeForm.frequency} onChange={e => setFeeTypeForm({ ...feeTypeForm, frequency: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition">
                   <option value="termly">Termly</option>
                   <option value="monthly">Monthly</option>
                   <option value="annually">Annually</option>
@@ -741,7 +752,7 @@ export default function FeesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Description</label>
-                <input value={feeTypeForm.description} onChange={e => setFeeTypeForm({ ...feeTypeForm, description: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A237E]/30" />
+                <input value={feeTypeForm.description} onChange={e => setFeeTypeForm({ ...feeTypeForm, description: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
               </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -756,7 +767,7 @@ export default function FeesPage() {
             </div>
             <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100">
               <button onClick={() => setShowFeeTypeModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
-              <button onClick={saveFeeType} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#1A237E] text-white rounded-lg text-sm font-medium hover:bg-[#283593] transition disabled:opacity-50">
+              <button onClick={saveFeeType} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Saving...' : 'Save'}
               </button>
