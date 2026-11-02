@@ -29,6 +29,9 @@ import TeacherLayout from './layouts/TeacherLayout'
 import SuperAdminLayout from './layouts/SuperAdminLayout'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
+import SuperAdminUsers from './pages/superadmin/SuperAdminUsers'
+import SuperAdminAuditLog from './pages/superadmin/SuperAdminAuditLog'
+import SchoolsManagement from './pages/superadmin/SchoolsManagement'
 import TeacherScores from './pages/teacher/TeacherScores'
 import TeacherClasses from './pages/teacher/TeacherClasses'
 import TeacherAttendance from './pages/teacher/TeacherAttendance'
@@ -99,7 +102,9 @@ function App() {
 
         <Route path="/dashboard/superadmin" element={<SuperAdminLayout />}>
           <Route index element={<SuperAdminDashboard />} />
-          <Route path="schools" element={<div className="p-8 text-slate-500">Schools management page coming soon...</div>} />
+          <Route path="schools" element={<SchoolsManagement />} />
+          <Route path="users" element={<SuperAdminUsers />} />
+          <Route path="audit-log" element={<SuperAdminAuditLog />} />
         </Route>
 
               <Route path="/dashboard/teacher" element={<TeacherLayout />}>

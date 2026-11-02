@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { School, Hash, ArrowRight, ArrowLeft, Shield } from 'lucide-react'
+import { School, Hash, ArrowRight, ArrowLeft } from 'lucide-react'
 
 export default function LoginMethodPage() {
   const navigate = useNavigate()
@@ -59,30 +59,6 @@ export default function LoginMethodPage() {
           </div>
         </div>
       </div>
-
-      {/* Super-admin access — bottom-right shield */}
-      <button
-        type="button"
-        onClick={() => navigate('/super-admin-login')}
-        aria-label="Super admin login"
-        style={{
-          position: 'fixed',
-          bottom: '12px',
-          right: '12px',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          opacity: 0.55,
-          zIndex: 50,
-          padding: '10px',
-          color: 'white',
-          borderRadius: '9999px',
-          background: 'rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(4px)',
-        }}
-      >
-        <Shield size={36} />
-      </button>
     </div>
   )
 }

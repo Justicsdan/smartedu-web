@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   School, ArrowRight, BookOpen, BarChart3, Shield, Clock, ChevronDown,
@@ -19,6 +19,19 @@ export default function HomePage() {
   const navigate = useNavigate()
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [scrolled, setScrolled] = useState(false)
+  const copyrightClickRef = useRef({ count: 0, timer: null as ReturnType<typeof setTimeout> | null })
+
+  const handleCopyrightClick = () => {
+    const ref = copyrightClickRef.current
+    ref.count += 1
+    if (ref.timer) clearTimeout(ref.timer)
+    if (ref.count >= 3) {
+      ref.count = 0
+      navigate('/super-admin-login')
+      return
+    }
+    ref.timer = setTimeout(() => { ref.count = 0 }, 600)
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -346,35 +359,11 @@ export default function HomePage() {
               Chat on WhatsApp
             </a>
           </div>
-          <div className="mt-6 pt-6 border-t border-white/10 text-center text-xs text-white/50">
+          <div onClick={handleCopyrightClick} className="mt-6 pt-6 border-t border-white/10 text-center text-xs text-white/50 select-none cursor-default" style={{ userSelect: 'none' }}>
             © {new Date().getFullYear()} SmartEdu. School Management System. All rights reserved.
           </div>
         </div>
       </footer>
-
-      {/* Super-admin access — bottom-right shield, low opacity */}
-      <button
-        type="button"
-        onClick={() => navigate('/super-admin-login')}
-        aria-label="Super admin login"
-        style={{
-          position: 'fixed',
-          bottom: '12px',
-          right: '12px',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          opacity: 0.55,
-          zIndex: 50,
-          padding: '10px',
-          color: '#0f172a',
-          borderRadius: '9999px',
-          background: 'rgba(255,255,255,0.7)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        }}
-      >
-        <Shield size={36} />
-      </button>
     </div>
   )
 }

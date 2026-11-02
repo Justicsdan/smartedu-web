@@ -3,12 +3,14 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, Building2, LogOut, Menu, X, ChevronLeft,
-  Shield, User,
+  Shield, User, Users, ScrollText,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/dashboard/superadmin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { to: '/dashboard/superadmin/schools', label: 'Schools', icon: Building2 },
+  { to: '/dashboard/superadmin/users', label: 'Users', icon: Users },
+  { to: '/dashboard/superadmin/audit-log', label: 'Audit Log', icon: ScrollText },
 ]
 
 export default function SuperAdminLayout() {
