@@ -29,6 +29,12 @@ export default function SchoolsManagement() {
   const [search, setSearch] = useState('')
   const [editingSchool, setEditingSchool] = useState<School | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [addForm, setAddForm] = useState({
+    name: '', school_code: '', subscription_plan: 'free',
+    subscription_status: 'trialing', is_active: true,
+    max_students: 200, max_teachers: 20,
+  })
 
   useEffect(() => {
     loadSchools()
@@ -77,6 +83,40 @@ export default function SchoolsManagement() {
       setEditingSchool(null)
       setSuccessMsg('School updated')
     } catch (e: any) { setError(e.message) }
+  }
+
+  const handleAddSubmit = async () => {
+    if (!addForm.name.trim() || !addForm.school_code.trim()) {
+      setError('School name and code are required')
+      return
+    }
+    setSaving(true)
+    setError('')
+    try {
+      const code = addForm.school_code.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      const { data, error } = await dbProxy.from('schools').insert({
+        name: addForm.name.trim(),
+        school_code: code,
+        is_active: addForm.is_active,
+        subscription_plan: addForm.subscription_plan,
+        subscription_status: addForm.subscription_status,
+        max_students: Number(addForm.max_students) || 0,
+        max_teachers: Number(addForm.max_teachers) || 0,
+      }).select('*')
+      if (error) throw error
+      if (data && data[0]) setSchools(prev => [data[0] as School, ...prev])
+      setShowAddModal(false)
+      setAddForm({
+        name: '', school_code: '', subscription_plan: 'free',
+        subscription_status: 'trialing', is_active: true,
+        max_students: 200, max_teachers: 20,
+      })
+      setSuccessMsg(`School "${addForm.name}" created with code: ${code}`)
+    } catch (e: any) {
+      setError(e.message || 'Failed to create school')
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) {
@@ -233,16 +273,116 @@ export default function SchoolsManagement() {
         </div>
       )}
 
-      {/* Add School Modal (placeholder) */}
+      {/* Add School Modal — real form */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600"><Building2 size={24} /></div>
-              <h3 className="text-lg font-bold text-slate-900">Add New School</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => !saving && setShowAddModal(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600"><Building2 size={20} /></div>
+                <h3 className="text-base font-bold text-slate-900">Add New School</h3>
+              </div>
+              <button onClick={() => !saving && setShowAddModal(false)} disabled={saving} className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-40"><X size={18} /></button>
             </div>
-            <p className="text-sm text-slate-500 mb-4">New schools are created from the login page by a school admin signing up. As a super admin, you can edit existing schools' plans, limits, and activation status from this page.</p>
-            <button onClick={() => setShowAddModal(false)} className="w-full px-4 py-2.5 rounded-lg bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800">Got it</button>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">School Name <span className="text-red-500">*</span></label>
+                <input
+                  value={addForm.name}
+                  onChange={e => {
+                    const name = e.target.value
+                    const suggested = name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+                    setAddForm({ ...addForm, name, school_code: suggested })
+                  }}
+                  placeholder="e.g., Graceville Academy"
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">School Code <span className="text-red-500">*</span></label>
+                <input
+                  value={addForm.school_code}
+                  onChange={e => setAddForm({ ...addForm, school_code: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                  placeholder="e.g., graceville"
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Lowercase letters, numbers, hyphens only. Used in the login URL: /s/&lt;code&gt;</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Plan</label>
+                  <select
+                    value={addForm.subscription_plan}
+                    onChange={e => setAddForm({ ...addForm, subscription_plan: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  >
+                    <option value="free">Free</option>
+                    <option value="basic">Basic</option>
+                    <option value="premium">Premium</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
+                  <select
+                    value={addForm.subscription_status}
+                    onChange={e => setAddForm({ ...addForm, subscription_status: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  >
+                    <option value="trialing">Trial</option>
+                    <option value="active">Active</option>
+                    <option value="past_due">Past Due</option>
+                    <option value="canceled">Canceled</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Max Students</label>
+                  <input
+                    type="number"
+                    value={addForm.max_students}
+                    onChange={e => setAddForm({ ...addForm, max_students: Number(e.target.value) || 0 })}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Max Teachers</label>
+                  <input
+                    type="number"
+                    value={addForm.max_teachers}
+                    onChange={e => setAddForm({ ...addForm, max_teachers: Number(e.target.value) || 0 })}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={addForm.is_active}
+                  onChange={e => setAddForm({ ...addForm, is_active: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                />
+                <span className="text-sm text-slate-700">Activate school immediately</span>
+              </label>
+            </div>
+            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+              <button
+                onClick={() => setShowAddModal(false)}
+                disabled={saving}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddSubmit}
+                disabled={saving || !addForm.name.trim() || !addForm.school_code.trim()}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+                {saving ? 'Creating…' : 'Create School'}
+              </button>
+            </div>
           </div>
         </div>
       )}
