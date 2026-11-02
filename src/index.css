@@ -69,3 +69,19 @@
   background: #f3f4f6;
   font-weight: 600;
 }
+
+
+/* Premium typography */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scroll for in-page anchors */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar on body when mobile menu open (optional polish) */
+body { overflow-x: hidden; }
