@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight, BookOpen, BarChart3, Shield, ChevronDown,
   ChevronUp, MessageCircle, Calendar, Wallet, Video, Lock,
-  Users, GraduationCap, Building2, Award, CheckCircle2, Sparkles,
+  Users, GraduationCap, Building2, Award, CheckCircle2,
   Quote, Menu, X, LayoutDashboard,
 } from 'lucide-react'
 
@@ -103,11 +103,11 @@ export default function HomePage() {
       {/* ── Nav ── */}
       <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-xl shadow-sm border-b border-slate-200/60' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <a href="#home" className="flex items-center gap-2.5 group">
+          <a href="#home" className="flex items-center gap-2 group">
             <div className="relative">
               <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 blur-md opacity-50 group-hover:opacity-75 transition" />
-              <div className="relative w-11 h-11 rounded-xl bg-white shadow-md flex items-center justify-center ring-1 ring-slate-200 overflow-hidden">
-                <img src="/smartedu-logo.png" alt="SmartEdu" className="w-full h-full object-contain p-0.5"
+              <div className="relative h-12 px-2 rounded-xl bg-white shadow-md flex items-center justify-center ring-1 ring-slate-200 overflow-hidden">
+                <img src="/smartedu-logo.png" alt="SmartEdu" className="h-full w-auto object-contain"
                   onError={(e) => {
                     const t = e.target as HTMLImageElement
                     t.onerror = null
@@ -116,13 +116,12 @@ export default function HomePage() {
                       const parent = t.parentElement
                       if (parent) {
                         t.style.display = 'none'
-                        parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">S</div>'
+                        parent.innerHTML = '<div class="h-full px-3 bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">SmartEdu</div>'
                       }
                     }
                   }} />
               </div>
             </div>
-            <span className="font-bold text-lg tracking-tight text-slate-900">SmartEdu</span>
           </a>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -177,10 +176,6 @@ export default function HomePage() {
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-6">
-              <Sparkles size={12} className="text-emerald-400" strokeWidth={2.4} />
-              <span className="text-xs font-medium text-white/80">School Management, reimagined</span>
-            </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.1]">
               Run your school on a platform
@@ -222,7 +217,7 @@ export default function HomePage() {
               { icon: Users, label: 'Multi-tenant' },
               { icon: Calendar, label: '24/7 Access' },
               { icon: Award, label: 'CBT Ready' },
-              { icon: Sparkles, label: 'No Setup Fees' },
+              { icon: Award, label: 'No Setup Fees' },
             ].map((b) => {
               const Icon = b.icon
               return (
@@ -503,7 +498,7 @@ export default function HomePage() {
                       }} />
                   </div>
                 </div>
-                <span className="font-bold text-lg">SmartEdu</span>
+                <span className="font-bold text-xl">SmartEdu</span>
               </div>
               <p className="text-sm text-white/50 leading-relaxed max-w-xs">
                 A secure, multi-tenant school management platform built for Nigerian and international schools.
