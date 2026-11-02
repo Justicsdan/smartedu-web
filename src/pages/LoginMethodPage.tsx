@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { School, Hash, ArrowRight, ArrowLeft } from 'lucide-react'
+import { School, Hash, ArrowRight, ArrowLeft, Shield } from 'lucide-react'
 
 export default function LoginMethodPage() {
   const navigate = useNavigate()
   const [schoolCode, setSchoolCode] = useState('')
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #060B1E, #0F1F4B)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #060B1E, #0F1F4B)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', position: 'relative' }}>
       <div style={{ width: '100%', maxWidth: '420px' }}>
         <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '13px', cursor: 'pointer', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ArrowLeft size={14} /> Back
@@ -59,6 +59,30 @@ export default function LoginMethodPage() {
           </div>
         </div>
       </div>
+
+      {/* Super-admin access — bottom-right shield */}
+      <button
+        type="button"
+        onClick={() => navigate('/super-admin-login')}
+        aria-label="Super admin login"
+        style={{
+          position: 'fixed',
+          bottom: '12px',
+          right: '12px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          opacity: 0.55,
+          zIndex: 50,
+          padding: '10px',
+          color: 'white',
+          borderRadius: '9999px',
+          background: 'rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(4px)',
+        }}
+      >
+        <Shield size={36} />
+      </button>
     </div>
   )
 }

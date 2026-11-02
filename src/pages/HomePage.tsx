@@ -351,6 +351,30 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Super-admin access — bottom-right shield, low opacity */}
+      <button
+        type="button"
+        onClick={() => navigate('/super-admin-login')}
+        aria-label="Super admin login"
+        style={{
+          position: 'fixed',
+          bottom: '12px',
+          right: '12px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          opacity: 0.55,
+          zIndex: 50,
+          padding: '10px',
+          color: '#0f172a',
+          borderRadius: '9999px',
+          background: 'rgba(255,255,255,0.7)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        }}
+      >
+        <Shield size={36} />
+      </button>
     </div>
   )
 }

@@ -26,7 +26,9 @@ import LiveClassPage from './pages/admin/LiveClassPage'
 import ReportsPage from './pages/admin/ReportsPage'
 import StudentLayout from './layouts/StudentLayout'
 import TeacherLayout from './layouts/TeacherLayout'
+import SuperAdminLayout from './layouts/SuperAdminLayout'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
 import TeacherScores from './pages/teacher/TeacherScores'
 import TeacherClasses from './pages/teacher/TeacherClasses'
 import TeacherAttendance from './pages/teacher/TeacherAttendance'
@@ -95,7 +97,10 @@ function App() {
           <Route path="live-class" element={<StudentLiveClassPage />} />
         </Route>
 
-        <Route path="/dashboard/superadmin" element={<div className="p-8">Super Admin Dashboard coming soon...</div>} />
+        <Route path="/dashboard/superadmin" element={<SuperAdminLayout />}>
+          <Route index element={<SuperAdminDashboard />} />
+          <Route path="schools" element={<div className="p-8 text-slate-500">Schools management page coming soon...</div>} />
+        </Route>
 
               <Route path="/dashboard/teacher" element={<TeacherLayout />}>
           <Route index element={<TeacherDashboard />} />
