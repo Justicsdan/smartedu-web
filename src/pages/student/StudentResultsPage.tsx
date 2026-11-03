@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
+import { printReportCard } from '../../lib/printReportCard'
+import { printAceReportCard } from '../../lib/printAceReportCard'
 import {
   Award, BookOpen, TrendingUp, Target, Loader2, AlertCircle, RefreshCw,
   Printer, Calendar, GraduationCap, ClipboardList, MessageSquare, Star,
@@ -37,6 +39,16 @@ function getGradeColor(grade: string): string {
   return '#64748b'
 }
 
+function ratingColor(val: string): string {
+  const v = (val || '').toLowerCase()
+  if (v === 'excellent') return '#10b981'
+  if (v === 'very good') return '#3b82f6'
+  if (v === 'good') return '#0891b2'
+  if (v === 'fair') return '#f59e0b'
+  if (v === 'poor') return '#ef4444'
+  return '#64748b'
+}
+
 function StatCard({ icon: Icon, label, value, sub, accent }: {
   icon: any; label: string; value: string; sub?: string; accent: string
 }) {
@@ -66,7 +78,11 @@ export default function StudentResultsPage() {
   const [settings, setSettings] = useState<any>(null)
   const [classInfo, setClassInfo] = useState<any>(null)
   const [student, setStudent] = useState<any>(null)
+  const [schoolInfo, setSchoolInfo] = useState<any>(null)
   const [selectedTermId, setSelectedTermId] = useState<string>('')
+  const [curriculumMode, setCurriculumMode] = useState<string>('traditional')
+  const [acePaceScores, setAcePaceScores] = useState<any[]>([])
+  const [aceTermReport, setAceTermReport] = useState<any>(null)
   const studentId = user?.id || user?.student_id || user?.studentId || ''
   const schoolId = user?.school_id || user?.schoolId || ''
 
@@ -74,34 +90,41 @@ export default function StudentResultsPage() {
     if (!user) return
     setLoading(true); setError('')
     try {
-      // Use user object directly — student role can't SELECT from students table (RLS)
-      // The auth Edge Function already returns all needed student fields in the JWT payload
       let stu: any = user
       setStudent(stu)
-      const tasks: Promise<any>[] = []
-      const keys: string[] = []
-      tasks.push(dbProxy.from('scores').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }))
-      keys.push('scores')
-      tasks.push(dbProxy.from('subjects').select('*').eq('school_id', schoolId || stu.school_id).order('name'))
-      keys.push('subjects')
-      tasks.push(dbProxy.from('student_term_summaries').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }))
-      keys.push('summaries')
-      tasks.push(dbProxy.from('term_comments').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }))
-      keys.push('comments')
-      tasks.push(dbProxy.from('student_behavioural_ratings').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }))
-      keys.push('ratings')
-      tasks.push(dbProxy.from('terms').select('*').eq('school_id', schoolId || stu.school_id).order('name'))
-      keys.push('terms')
-      tasks.push(dbProxy.from('school_settings').select('*').eq('school_id', schoolId || stu.school_id).maybeSingle())
-      keys.push('settings')
+
+      // Batched fetches (3 at a time) — much faster than sequential, avoids 429
+      const allTasks: Array<{key: string, promise: Promise<any>}> = [
+        { key: 'scores', promise: dbProxy.from('scores').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }) },
+        { key: 'subjects', promise: dbProxy.from('subjects').select('*').eq('school_id', schoolId || stu.school_id).order('name') },
+        { key: 'summaries', promise: dbProxy.from('student_term_summaries').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }) },
+        { key: 'comments', promise: dbProxy.from('term_comments').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }) },
+        { key: 'ratings', promise: dbProxy.from('student_behavioural_ratings').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }) },
+        { key: 'paceScores', promise: dbProxy.from('ace_pace_scores').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }) },
+        { key: 'aceReports', promise: dbProxy.from('ace_term_reports').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false }) },
+        { key: 'terms', promise: dbProxy.from('terms').select('*').eq('school_id', schoolId || stu.school_id).order('name') },
+        { key: 'school', promise: dbProxy.from('schools').select('id, name, logo_url, motto, address, official_phone, official_email').eq('id', schoolId || stu.school_id).maybeSingle() },
+        { key: 'settings', promise: dbProxy.from('school_settings').select('*').eq('school_id', schoolId || stu.school_id).maybeSingle() },
+      ]
       if (stu.class_id) {
-        tasks.push(dbProxy.from('classes').select('*').eq('id', stu.class_id).maybeSingle())
-        keys.push('class')
+        allTasks.push({ key: 'class', promise: dbProxy.from('classes').select('*').eq('id', stu.class_id).maybeSingle() })
       }
-      const results = await Promise.all(tasks)
+      const seqResults: any[] = []
+      for (let i = 0; i < allTasks.length; i += 3) {
+        const batch = allTasks.slice(i, i + 3)
+        const batchResults = await Promise.all(
+          batch.map(async (t: any) => {
+            try { const res = await t.promise; return { key: t.key, res } }
+            catch (e) { console.warn(`load: ${t.key} error:`, e); return { key: t.key, res: { error: e } } }
+          })
+        )
+        seqResults.push(...batchResults)
+      }
       let termsData: any[] = []
-      results.forEach((res: any, i: number) => {
-        const key = keys[i]
+      let aceReportsData: any[] = []
+      seqResults.forEach((item: any) => {
+        const key = item.key
+        const res = item.res
         if (res.error) { console.warn(`load: ${key} error:`, res.error); return }
         const data = res.data
         if (key === 'scores') setScores(data || [])
@@ -109,8 +132,11 @@ export default function StudentResultsPage() {
         else if (key === 'summaries') setSummaries(data || [])
         else if (key === 'comments') setComments(data || [])
         else if (key === 'ratings') setRatings(data || [])
+        else if (key === 'paceScores') setAcePaceScores(data || [])
+        else if (key === 'aceReports') { aceReportsData = data || []; setAceTermReport(aceReportsData[0] || null) }
         else if (key === 'terms') { setTerms(data || []); termsData = data || [] }
-        else if (key === 'settings') setSettings(data)
+        else if (key === 'school') setSchoolInfo(data)
+        else if (key === 'settings') { setSettings(data); if (data?.curriculum_mode) setCurriculumMode(data.curriculum_mode) }
         else if (key === 'class') setClassInfo(data)
       })
       const currentTerm = termsData.find((t: any) => t.is_current)
@@ -129,34 +155,37 @@ export default function StudentResultsPage() {
     return m
   }, [subjects])
 
+  const publishedSummaries = useMemo(() => summaries.filter((s) => s.is_published), [summaries])
+  const publishedTermIds = useMemo(() => new Set(publishedSummaries.map((s) => s.term_id).filter(Boolean)), [publishedSummaries])
   const termScores = useMemo(() => {
     if (!selectedTermId) return scores
     return scores.filter((s) => s.term_id === selectedTermId)
   }, [scores, selectedTermId])
 
-  const publishedSummaries = useMemo(() => summaries.filter((s) => s.is_published), [summaries])
+  // ACE: filter PACE scores + term report by selected term
+  const visiblePaceScores = useMemo(() => {
+    if (!selectedTermId) return acePaceScores
+    return acePaceScores.filter((p: any) => p.term_id === selectedTermId)
+  }, [acePaceScores, selectedTermId])
+
+  const currentAceReport = useMemo(() => {
+    if (!aceTermReport) return null
+    if (!selectedTermId) return aceTermReport
+    return aceTermReport.term_id === selectedTermId ? aceTermReport : null
+  }, [aceTermReport, selectedTermId])
+  const visibleScores = useMemo(() => termScores.filter((s) => !s.term_id || publishedTermIds.has(s.term_id)), [termScores, publishedTermIds])
   const currentSummary = useMemo(() => {
     if (!selectedTermId) return publishedSummaries[0] || null
     return publishedSummaries.find((s) => s.term_id === selectedTermId) || null
   }, [publishedSummaries, selectedTermId])
-
-  const currentComments = useMemo(() => {
+  const currentComment = useMemo(() => {
     if (!selectedTermId) return comments[0] || null
     return comments.find((c) => c.term_id === selectedTermId) || null
   }, [comments, selectedTermId])
-
   const currentRatings = useMemo(() => {
     if (!selectedTermId) return ratings[0] || null
     return ratings.find((r) => r.term_id === selectedTermId) || null
   }, [ratings, selectedTermId])
-
-  const publishedTermIds = useMemo(() => {
-    return new Set(publishedSummaries.map((s) => s.term_id).filter(Boolean))
-  }, [publishedSummaries])
-
-  const visibleScores = useMemo(() => {
-    return termScores.filter((s) => !s.term_id || publishedTermIds.has(s.term_id))
-  }, [termScores, publishedTermIds])
 
   const assessmentTypes = useMemo(() => {
     const raw = settings?.assessment_types
@@ -208,18 +237,6 @@ export default function StudentResultsPage() {
     ]
   }, [settings])
 
-  const ratingColor = (val: string): string => {
-    const v = (val || '').toLowerCase()
-    if (v === 'excellent') return '#10b981'
-    if (v === 'very good') return '#3b82f6'
-    if (v === 'good') return '#0891b2'
-    if (v === 'fair') return '#f59e0b'
-    if (v === 'poor') return '#ef4444'
-    return '#64748b'
-  }
-
-  const handlePrint = () => { window.print() }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -236,47 +253,185 @@ export default function StudentResultsPage() {
   const currentTermName = terms.find((t) => t.id === selectedTermId)?.name || 'Current Term'
   const displayName = [student?.first_name, student?.middle_name, student?.last_name].filter(Boolean).join(' ').trim() || 'Student'
   const admissionNo = pickString(student, 'admission_no')
+  const studentClass = classInfo ? (classInfo.name + (classInfo.section ? ' ' + classInfo.section : '')) : (student?.class_name || '')
+
+  const handleAcePrint = () => {
+    printAceReportCard({
+      schoolName: schoolInfo?.name || student?.school_name || 'SmartEdu School',
+      schoolMotto: schoolInfo?.motto || '',
+      schoolLogo: schoolInfo?.logo_url || '',
+      schoolAddress: schoolInfo?.address || '',
+      studentName: displayName,
+      admissionNo,
+      sessionName: '',
+      termName: currentTermName,
+      passportUrl: student?.passport_url || '',
+      paceScores: visiblePaceScores.map((p: any) => ({
+        subject_id: p.subject_id,
+        pace_no: p.pace_no,
+        pt_score: p.pt_score !== null && p.pt_score !== undefined ? Number(p.pt_score) : null,
+      })),
+      subjects: subjects.map((s: any) => ({ id: s.id, name: s.name })),
+      report: currentAceReport ? {
+        reading_wpm: currentAceReport.reading_wpm,
+        reading_comprehension: currentAceReport.reading_comprehension,
+        reading_composite: currentAceReport.reading_composite,
+        paces_completed: currentAceReport.paces_completed,
+        paces_avg: currentAceReport.paces_avg,
+        paces_total: currentAceReport.paces_total,
+        day_in_term: currentAceReport.day_in_term,
+        days_absent: currentAceReport.days_absent,
+        supervisor_comment: currentAceReport.supervisor_comment,
+        principal_comment: currentAceReport.principal_comment,
+        hacs_score: currentAceReport.hacs_score,
+        nce_score: currentAceReport.nce_score,
+        total_score: currentAceReport.total_score,
+      } : null,
+    })
+  }
+
+  const handlePrint = () => {
+    if (curriculumMode === 'ace') {
+      handleAcePrint()
+      return
+    }
+    const totalSubjects = visibleScores.length
+    const totalScore = visibleScores.reduce((sum, sc) => sum + pickNumber(sc, 'total'), 0)
+    const averageScore = totalSubjects > 0 ? (totalScore / totalSubjects).toFixed(2) : '0'
+    const passed = visibleScores.filter((sc) => pickNumber(sc, 'total') >= passMark).length
+    const failed = totalSubjects - passed
+
+    printReportCard({
+      schoolName: schoolInfo?.name || student?.school_name || 'SmartEdu School',
+      schoolMotto: schoolInfo?.motto || '',
+      schoolLogo: schoolInfo?.logo_url || '',
+      schoolAddress: schoolInfo?.address || '',
+      schoolPhone: schoolInfo?.official_phone || '',
+      schoolEmail: schoolInfo?.official_email || '',
+      principalName: settings?.principal_name || '',
+      principalSignatureUrl: '',
+      schoolStampUrl: '',
+      passportUrl: student?.passport_url || '',
+      reportTitle: currentTermName,
+      sessionName: '',
+      studentName: displayName,
+      admissionNo,
+      studentClass,
+      gender: student?.gender || '',
+      position: currentSummary?.position ? (currentSummary.position + ' of ' + (currentSummary.position_out_of || totalSubjects)) : '—',
+      positionOutOf: currentSummary?.position_out_of || totalSubjects || '—',
+      totalScore,
+      averageScore,
+      grade: currentSummary?.grade || '',
+      totalSubjects,
+      passed,
+      failed,
+      daysPresent: currentSummary?.days_present ?? 0,
+      daysAbsent: currentSummary?.days_absent ?? 0,
+      teacherComment: currentComment?.teacher_comment || '',
+      principalComment: currentComment?.principal_comment || '',
+      assessmentHeaders: assessmentTypes.map((a: any, i: number) => {
+        const aStr = typeof a === 'string' ? a : (a?.name || a?.id || `col${i}`)
+        const max = typeof a === 'object' ? (a?.max || 0) : 0
+        return { id: aStr.toLowerCase().replace(/[\s-]/g, '_'), name: aStr, max }
+      }),
+      scoreRows: visibleScores.map((sc) => {
+        const subj = subjectMap[sc.subject_id]
+        const scoresJson = parseScoresJson(sc.scores_json)
+        const total = pickNumber(sc, 'total')
+        const grade = pickString(sc, 'grade')
+        const isPass = total >= passMark
+        const gradeEntry = gradingSystem.find((g: any) => (g.grade || g.name) === grade)
+        const remark = gradeEntry?.remark || (isPass ? 'Pass' : 'Fail')
+        return {
+          subject: subj?.name || subj?.code || 'Subject',
+          cells: assessmentTypes.map((a: any) => {
+            const aStr = typeof a === 'string' ? a : (a?.id || a?.name || '')
+            const colKey = aStr.toLowerCase().replace(/[\s-]/g, '_')
+            return scoresJson[colKey] ?? scoresJson[aStr] ?? '—'
+          }),
+          total,
+          grade,
+          remark,
+          isPass,
+        }
+      }),
+      behavioralRows: behavioralFields.map((f) => ({
+        label: f.label,
+        value: currentRatings?.[f.key] || '—',
+        color: ratingColor(currentRatings?.[f.key] || ''),
+      })),
+      gradingScale: gradingSystem.map((g: any) => ({
+        grade: g.grade || g.name || '',
+        range: (g.min || g.lower_bound || 0) + ' – ' + (g.max || g.upper_bound || 100),
+        remark: g.remark || '',
+      })),
+      primaryColor: settings?.primary_color || '#0d47a1',
+    })
+  }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
-      <div className="flex items-start justify-between gap-4 print:hidden">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Results</h1>
-          <p className="mt-0.5 text-sm text-slate-500">{publishedSummaries.length} published term{publishedSummaries.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">My Results</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">{currentTermName} {curriculumMode === 'ace' && <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-violet-100 text-violet-700">ACE Mode</span>}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={loadAll} disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition text-slate-700 font-semibold text-sm shadow-sm">
+          <button onClick={loadAll}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-slate-300 transition text-sm font-semibold text-slate-700">
             <RefreshCw size={14} strokeWidth={2.2} className={loading ? 'animate-spin' : ''} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
-          <button onClick={handlePrint} disabled={!currentSummary}
+          <button onClick={handlePrint} disabled={!currentSummary && curriculumMode !== 'ace'}
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 transition text-white font-semibold text-sm shadow-sm disabled:opacity-50">
-            <Printer size={14} strokeWidth={2.4} /><span>Print</span>
+            <Printer size={14} strokeWidth={2.4} /><span>Print Report</span>
           </button>
         </div>
       </div>
 
-      {publishedSummaries.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap print:hidden">
-          {publishedSummaries.map((s) => {
-            const term = terms.find((t) => t.id === s.term_id)
-            const isActive = selectedTermId === s.term_id
-            return (
-              <button key={s.id} onClick={() => setSelectedTermId(s.term_id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  isActive ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:border-emerald-400'
-                }`}>
-                {term?.name || 'Term'}
-              </button>
-            )
-          })}
-        </div>
-      )}
+      {(() => {
+        // Build list of terms that have data (published summaries for Traditional, PACE scores or ACE reports for ACE)
+        const termsWithData = new Set<string>()
+        if (curriculumMode === 'ace') {
+          acePaceScores.forEach((p: any) => { if (p.term_id) termsWithData.add(p.term_id) })
+          // Also include terms from ace_term_reports (use the loaded aceReports data)
+          // aceTermReport is already filtered, but we need all reports — let's use the raw data
+          // Actually we set aceTermReport to only the first one. Let's check acePaceScores for all term_ids
+        } else {
+          publishedSummaries.forEach((s: any) => { if (s.term_id) termsWithData.add(s.term_id) })
+        }
+        if (termsWithData.size === 0) return null
+        // Sort terms by session then name
+        const sortedTerms = terms
+          .filter((t: any) => termsWithData.has(t.id))
+          .slice()
+          .sort((a: any, b: any) => {
+            // Sort by session_id first, then by name
+            if (a.session_id !== b.session_id) return String(a.session_id || '').localeCompare(String(b.session_id || ''))
+            return String(a.name || '').localeCompare(String(b.name || ''))
+          })
+        return (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-slate-500 mr-1">View results for:</span>
+            {sortedTerms.map((term: any) => {
+              const isActive = selectedTermId === term.id
+              return (
+                <button key={term.id} onClick={() => setSelectedTermId(term.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    isActive ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:border-emerald-400'
+                  }`}>
+                  {term?.name || 'Term'}
+                </button>
+              )
+            })}
+          </div>
+        )
+      })()}
 
       {error && (
-        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800 print:hidden">
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
           <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
           <div className="flex-1 text-sm">
             <div className="font-semibold">Couldn't load results</div>
@@ -285,197 +440,320 @@ export default function StudentResultsPage() {
         </div>
       )}
 
-      {publishedSummaries.length === 0 && !error && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 flex flex-col items-center justify-center text-center print:hidden">
-          <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 mb-4">
-            <Award size={32} strokeWidth={2} />
-          </div>
-          <h3 className="text-base font-bold text-slate-900">No published results yet</h3>
-          <p className="mt-1 text-sm text-slate-500 max-w-xs">Your school administrator will publish results once they're finalized for this term.</p>
+      {currentSummary && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard icon={TrendingUp} label="Average" value={String(currentSummary.average_score ?? '—')} accent="#10b981" />
+          <StatCard icon={Award} label="Position" value={currentSummary.position ? `${currentSummary.position}/${currentSummary.position_out_of}` : '—'} accent="#3b82f6" />
+          <StatCard icon={BookOpen} label="Subjects" value={String(currentSummary.subjects_taken ?? visibleScores.length)} accent="#f59e0b" />
+          <StatCard icon={Target} label="Grade" value={currentSummary.grade || '—'} accent="#8b5cf6" />
         </div>
       )}
 
-      {publishedSummaries.length > 0 && currentSummary && (
+      {curriculumMode === 'ace' ? (
         <>
-          <div className="hidden print:block">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold">{settings?.result_header_text || 'Result Sheet'}</h1>
-              <p className="mt-1">{currentTermName}</p>
-            </div>
-            <div className="mb-4">
-              <p><strong>Name:</strong> {displayName}</p>
-              <p><strong>Admission No:</strong> {admissionNo}</p>
-              <p><strong>Class:</strong> {classInfo?.name} {classInfo?.section}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:hidden">
-            <StatCard icon={TrendingUp} label="Total Score" value={String(currentSummary.total_score || 0)} sub={`out of ${visibleScores.length * subjectMax}`} accent="#2563eb" />
-            <StatCard icon={Target} label="Average" value={`${currentSummary.average_score || 0}`} sub={`Pass: ${passMark}`} accent="#0891b2" />
-            <StatCard icon={Award} label="Grade" value={currentSummary.grade || '—'} sub={`Position ${currentSummary.position || '—'}${currentSummary.position_out_of ? `/${currentSummary.position_out_of}` : ''}`} accent="#7c3aed" />
-            <StatCard icon={BookOpen} label="Subjects" value={String(currentSummary.subjects_taken || visibleScores.length)} sub="taken this term" accent="#10b981" />
-          </div>
-
+          {/* ACE PACE Scores Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-              <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
-                <ClipboardList size={18} strokeWidth={2.2} />
+            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
+              <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
+                <BookOpen size={18} strokeWidth={2.2} />
               </div>
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">Subject Scores</h3>
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">PACE Scores</h3>
+              <span className="ml-auto text-xs text-slate-500">{acePaceScores.length} PACEs completed</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Subject</th>
-                    {assessmentTypes.map((a: any, i: number) => {
-                      const aStr = typeof a === 'string' ? a : (a?.name || a?.id || a?.key || `col-${i}`)
-                      return <th key={aStr} className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">{aStr}</th>
-                    })}
-                    <th className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Total</th>
-                    <th className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Grade</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {visibleScores.length === 0 ? (
-                    <tr>
-                      <td colSpan={assessmentTypes.length + 3} className="px-4 py-8 text-center text-slate-400">
-                        No scores published for this term.
-                      </td>
-                    </tr>
-                  ) : (
-                    visibleScores.map((sc, i) => {
-                      const subj = subjectMap[sc.subject_id]
-                      const name = subj?.name || subj?.code || `Subject`
-                      const scoresJson = parseScoresJson(sc.scores_json)
-                      const total = pickNumber(sc, 'total')
-                      const grade = pickString(sc, 'grade')
-                      const isPass = total >= passMark
-                      return (
-                        <tr key={i} className="hover:bg-slate-50/50">
-                          <td className="px-4 py-3 font-semibold text-slate-900">{name}</td>
-                          {assessmentTypes.map((a: string) => {
-                            const aStr = typeof a === 'string' ? a : (a?.id || a?.name || a?.key || String(a || ''))
-                            const colKey = aStr.toLowerCase().replace(/[\s-]/g, '_')
-                            const val = scoresJson[colKey] ?? scoresJson[aStr] ?? '—'
-                            return (<td key={aStr} className="text-center px-3 py-3 text-slate-700">{val}</td>)
-                          })}
-                          <td className="text-center px-3 py-3">
-                            <span className={`font-bold ${isPass ? 'text-emerald-700' : 'text-red-700'}`}>{total}</span>
-                            <span className="text-slate-400 text-xs">/{subjectMax}</span>
-                          </td>
-                          <td className="text-center px-3 py-3">
-                            <span className="inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold text-white"
-                              style={{ backgroundColor: getGradeColor(grade) }}>
-                              {grade || (isPass ? 'P' : 'F')}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {visiblePaceScores.length === 0 ? (
+              <div className="p-8 text-center">
+                <ClipboardList size={32} className="text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">No PACE scores recorded for this term.</p>
+              </div>
+            ) : (() => {
+              // Group PACE scores by subject (like the PDF does)
+              const bySubject: Record<string, any[]> = {}
+              visiblePaceScores.forEach((sc: any) => {
+                const sid = sc.subject_id || ''
+                if (!bySubject[sid]) bySubject[sid] = []
+                bySubject[sid].push(sc)
+              })
+              // Sort subjects: Math first, English second, then alphabetical
+              const sortedSubjects = Object.keys(bySubject).sort((a, b) => {
+                const an = (subjectMap[a]?.name || '').toLowerCase()
+                const bn = (subjectMap[b]?.name || '').toLowerCase()
+                if (an.includes('math')) return -1
+                if (bn.includes('math')) return 1
+                if (an.includes('english')) return -1
+                if (bn.includes('english')) return 1
+                return an.localeCompare(bn)
+              })
+              const maxP = Math.max(...sortedSubjects.map(sid => bySubject[sid].length))
+              return (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Subject</th>
+                        {Array.from({ length: maxP }).map((_, i) => (
+                          <Fragment key={i}>
+                            <th className="text-center px-2 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">P{i + 1} No.</th>
+                            <th className="text-center px-2 py-3 font-bold text-slate-700 uppercase text-[10px] tracking-wider">PT</th>
+                          </Fragment>
+                        ))}
+                        <th className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {sortedSubjects.map((sid, idx) => {
+                        const subj = subjectMap[sid]
+                        const name = subj?.name || subj?.code || 'Subject'
+                        const scores = bySubject[sid].slice().sort((a: any, b: any) => String(a.pace_no || '').localeCompare(String(b.pace_no || '')))
+                        const validPts = scores.filter((s: any) => s.pt_score !== null && s.pt_score !== undefined).map((s: any) => Number(s.pt_score))
+                        const total = validPts.length > 0 ? validPts.reduce((a: number, b: number) => a + b, 0) : 0
+                        const totalColor = total < 80 ? 'text-red-700' : 'text-emerald-700'
+                        return (
+                          <tr key={sid} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}>
+                            <td className="px-4 py-3 font-semibold text-slate-900">{name}</td>
+                            {Array.from({ length: maxP }).map((_, i) => {
+                              const sc = scores[i]
+                              if (!sc) {
+                                return (
+                                  <Fragment key={i}>
+                                    <td className="text-center px-2 py-3 text-slate-300">—</td>
+                                    <td className="text-center px-2 py-3 text-slate-300">—</td>
+                                  </Fragment>
+                                )
+                              }
+                              const pt = sc.pt_score !== null && sc.pt_score !== undefined ? Number(sc.pt_score) : null
+                              const isPass = pt !== null && pt >= 80
+                              return (
+                                <Fragment key={i}>
+                                  <td className="text-center px-2 py-3 text-slate-600 font-mono text-xs">{sc.pace_no || '—'}</td>
+                                  <td className={`text-center px-2 py-3 font-bold ${pt !== null ? (isPass ? 'text-slate-900' : 'text-red-700') : 'text-slate-300'}`}>{pt !== null ? pt : '—'}</td>
+                                </Fragment>
+                              )
+                            })}
+                            <td className={`text-center px-3 py-3 font-bold ${totalColor}`}>{total}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })()}
           </div>
 
-          {currentRatings && (
+          {/* ACE Term Report Summary */}
+          {currentAceReport && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
-                  <Star size={18} strokeWidth={2.2} />
+              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
+                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+                  <Award size={18} strokeWidth={2.2} />
                 </div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">Behavioral Ratings</h3>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">Term Report Summary</h3>
+                <span className={`ml-auto text-xs font-bold px-2 py-1 rounded ${currentAceReport.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {currentAceReport.is_published ? 'PUBLISHED' : 'DRAFT'}
+                </span>
               </div>
-              <div className="px-5 py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {behavioralFields.map((f) => {
-                    const val = pickString(currentRatings, f.key)
-                    const color = val ? ratingColor(val) : '#cbd5e1'
-                    return (
-                      <div key={f.key}
-                        className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-slate-50 border-l-4"
-                        style={{ borderLeftColor: color }}>
-                        <span className="text-xs sm:text-sm font-medium text-slate-700 leading-tight">{f.label}</span>
-                        {val ? (
-                          <span className="flex-shrink-0 inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] font-bold text-white uppercase tracking-wide min-w-[78px] text-center"
-                            style={{ backgroundColor: color }}>{val}</span>
-                        ) : (
-                          <span className="flex-shrink-0 inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-400 bg-slate-200 min-w-[78px] text-center">N/A</span>
-                        )}
+
+              {/* Scores Section */}
+              <div className="p-5">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Scores</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-blue-600">HACS Score</div>
+                    <div className="text-2xl font-bold text-blue-700 mt-1">{currentAceReport.hacs_score ?? '—'}</div>
+                  </div>
+                  <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-orange-600">NCE Score</div>
+                    <div className="text-2xl font-bold text-orange-600 mt-1">{currentAceReport.nce_score ?? '—'}</div>
+                  </div>
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-600">Total Score</div>
+                    <div className="text-2xl font-bold text-emerald-600 mt-1">{currentAceReport.total_score ?? '—'}</div>
+                  </div>
+                  <div className="bg-violet-50 border border-violet-100 rounded-lg p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-violet-600">PACEs Avg</div>
+                    <div className="text-2xl font-bold text-violet-600 mt-1">{currentAceReport.paces_avg ?? '—'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attendance Section — only show if data exists */}
+              {(currentAceReport.day_in_term != null || currentAceReport.days_absent != null) && (
+                <div className="px-5 pb-4">
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Attendance</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs text-slate-600 font-medium">Days in Term</span>
+                        <span className="text-sm font-bold text-slate-900">{currentAceReport.day_in_term ?? '—'}</span>
                       </div>
-                    )
-                  })}
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] text-slate-600">
-                  <span className="font-semibold uppercase tracking-wider text-slate-500">Legend:</span>
-                  {['Excellent', 'Very Good', 'Good', 'Fair', 'Poor'].map((label) => (
-                    <span key={label} className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: ratingColor(label) }} />
-                      {label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {currentComments && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
-                  <MessageSquare size={18} strokeWidth={2.2} />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">Teacher & Principal Comments</h3>
-              </div>
-              <div className="px-5 py-4 space-y-4">
-                {currentComments.teacher_comment && (
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-1">Teacher's Comment</div>
-                    <p className="text-sm text-slate-800 leading-relaxed italic">"{currentComments.teacher_comment}"</p>
-                  </div>
-                )}
-                {currentComments.principal_comment && (
-                  <div className="pt-3 border-t border-slate-100">
-                    <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-1">Principal's Comment</div>
-                    <p className="text-sm text-slate-800 leading-relaxed italic">"{currentComments.principal_comment}"</p>
-                  </div>
-                )}
-                {!currentComments.teacher_comment && !currentComments.principal_comment && (
-                  <p className="text-sm text-slate-400 italic">No comments recorded for this term.</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {gradingSystem.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700">
-                  <GraduationCap size={18} strokeWidth={2.2} />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">Grading Key</h3>
-              </div>
-              <div className="px-5 py-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {gradingSystem.map((g: any, i: number) => {
-                  const grade = typeof g === 'object' ? (g.grade || g.label || '') : String(g)
-                  const range = typeof g === 'object' ? (g.range || g.min || '') : ''
-                  const color = getGradeColor(grade)
-                  return (
-                    <div key={i} className="flex items-center gap-2 p-2 rounded-lg border border-slate-200">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold text-white"
-                        style={{ backgroundColor: color }}>{grade}</span>
-                      <div className="min-w-0">
-                        <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">Grade</div>
-                        <div className="text-xs font-semibold text-slate-800">{range || grade}</div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs text-slate-600 font-medium">Days Absent</span>
+                        <span className="text-sm font-bold text-slate-900">{currentAceReport.days_absent ?? '—'}</span>
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                </div>
+              )}
+
+              {/* Reading Progress Section — only show if any reading metric has a value > 0 */}
+              {((currentAceReport.reading_wpm && Number(currentAceReport.reading_wpm) > 0) ||
+                (currentAceReport.reading_comprehension && Number(currentAceReport.reading_comprehension) > 0) ||
+                (currentAceReport.reading_composite && Number(currentAceReport.reading_composite) > 0)) && (
+                <div className="px-5 pb-4">
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Reading Progress</div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs text-slate-600 font-medium">WPM</span>
+                        <span className="text-sm font-bold text-slate-900">{currentAceReport.reading_wpm ?? '—'}</span>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs text-slate-600 font-medium">Comprehension</span>
+                        <span className="text-sm font-bold text-slate-900">{currentAceReport.reading_comprehension ?? '—'}</span>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 flex items-center justify-between">
+                        <span className="text-xs text-slate-600 font-medium">Composite</span>
+                        <span className="text-sm font-bold text-slate-900">{currentAceReport.reading_composite ?? '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ACE Comments */}
+          {currentAceReport && (currentAceReport.supervisor_comment || currentAceReport.principal_comment) && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+                  <MessageSquare size={18} strokeWidth={2.2} />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">Comments</h3>
               </div>
+              {currentAceReport.supervisor_comment && (
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Supervisor's Comment</div>
+                  <p className="text-sm text-slate-700 italic">"{currentAceReport.supervisor_comment}"</p>
+                </div>
+              )}
+              {currentAceReport.principal_comment && (
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Principal's Comment</div>
+                  <p className="text-sm text-slate-700 italic">"{currentAceReport.principal_comment}"</p>
+                </div>
+              )}
             </div>
           )}
         </>
+      ) : visibleScores.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+          <ClipboardList size={32} className="text-slate-300 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">No scores published for this term.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
+            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+              <BookOpen size={18} strokeWidth={2.2} />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Subject Scores</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left px-4 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Subject</th>
+                  {assessmentTypes.map((a: any, i: number) => {
+                    const aStr = typeof a === 'string' ? a : (a?.name || a?.id || `col${i}`)
+                    return (
+                      <th key={i} className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">{aStr}</th>
+                    )
+                  })}
+                  <th className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Total</th>
+                  <th className="text-center px-3 py-3 font-bold text-slate-700 uppercase text-[11px] tracking-wider">Grade</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {visibleScores.map((sc, i) => {
+                  const subj = subjectMap[sc.subject_id]
+                  const name = subj?.name || subj?.code || 'Subject'
+                  const scoresJson = parseScoresJson(sc.scores_json)
+                  const total = pickNumber(sc, 'total')
+                  const grade = pickString(sc, 'grade')
+                  const isPass = total >= passMark
+                  return (
+                    <tr key={i} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-3 font-semibold text-slate-900">{name}</td>
+                      {assessmentTypes.map((a: any, j: number) => {
+                        const aStr = typeof a === 'string' ? a : (a?.id || a?.name || '')
+                        const colKey = aStr.toLowerCase().replace(/[\s-]/g, '_')
+                        const val = scoresJson[colKey] ?? scoresJson[aStr] ?? '—'
+                        return <td key={j} className="text-center px-3 py-3 text-slate-700">{val}</td>
+                      })}
+                      <td className="text-center px-3 py-3">
+                        <span className={`font-bold ${isPass ? 'text-emerald-700' : 'text-red-700'}`}>{total}</span>
+                        <span className="text-slate-400 text-xs">/{subjectMax}</span>
+                      </td>
+                      <td className="text-center px-3 py-3">
+                        <span className="inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold text-white"
+                          style={{ backgroundColor: getGradeColor(grade) }}>
+                          {grade || (isPass ? 'P' : 'F')}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {currentRatings && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
+            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
+              <Star size={18} strokeWidth={2.2} />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Behavioral Ratings</h3>
+          </div>
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {behavioralFields.map((f) => {
+              const val = currentRatings?.[f.key] || '—'
+              return (
+                <div key={f.key} className="flex items-center justify-between p-3 rounded-lg bg-slate-50/60 border border-slate-100">
+                  <span className="text-sm text-slate-700">{f.label}</span>
+                  <span className="text-xs font-bold px-2 py-1 rounded text-white"
+                    style={{ backgroundColor: ratingColor(val) }}>{val}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {currentComment && (currentComment.teacher_comment || currentComment.principal_comment) && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+              <MessageSquare size={18} strokeWidth={2.2} />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Comments</h3>
+          </div>
+          {currentComment.teacher_comment && (
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Teacher's Comment</div>
+              <p className="text-sm text-slate-700 italic">"{currentComment.teacher_comment}"</p>
+            </div>
+          )}
+          {currentComment.principal_comment && (
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Principal's Comment</div>
+              <p className="text-sm text-slate-700 italic">"{currentComment.principal_comment}"</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

@@ -75,7 +75,7 @@ export default function StudentFeesPage() {
     setLoading(true); setError('')
     try {
       const [aRes, pRes, fRes, sRes] = await Promise.all([
-        dbProxy.from('assignments').select('*').eq('student_id', studentId || user.id).order('assigned_at', { ascending: false }),
+        dbProxy.from('fee_assignments').select('*').eq('student_id', studentId || user.id).order('assigned_at', { ascending: false }),
         dbProxy.from('fee_payments').select('*').eq('student_id', studentId || user.id).order('payment_date', { ascending: false }),
         dbProxy.from('fee_types').select('*').eq('school_id', schoolId).order('name'),
         dbProxy.from('school_settings').select('*').eq('school_id', schoolId).maybeSingle(),

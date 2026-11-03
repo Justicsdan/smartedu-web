@@ -34,8 +34,23 @@ export default function StudentLayout() {
   // For student: user.id = student.id, user.school_id = school.id
   const studentId = user.id || ''
   const schoolId = user.school_id || user.schoolId || ''
-  const schoolName = user.school_name || user.schoolName || 'Student Portal'
-  const schoolLogoUrl = user.school_logo_url || user.schoolLogoUrl || ''
+  const [schoolName, setSchoolName] = useState(user.school_name || user.schoolName || 'Student Portal')
+  const [schoolLogo, setSchoolLogo] = useState(user.logo_url || '')
+
+  useEffect(() => {
+    const fetchSchool = async () => {
+      if (!user?.school_id) return
+      try {
+        const { data } = await dbProxy.from('schools').select('name, logo_url').eq('id', user.school_id).maybeSingle()
+        if (data?.name) setSchoolName(data.name)
+        if (data?.logo_url) setSchoolLogo(data.logo_url)
+      } catch (e) {
+        console.warn('Could not fetch school info:', e)
+      }
+    }
+    fetchSchool()
+  }, [user?.school_id])
+  const schoolLogoUrl = schoolLogo || user.school_logo_url || user.schoolLogoUrl || user.logo_url || ''
   const studentName = [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ') || 'Student'
   const admissionNo = user.admission_no || ''
   const passportUrl = user.passport_url || ''
@@ -83,7 +98,7 @@ export default function StudentLayout() {
     <div className="w-[260px] bg-[#2E7D32] h-full flex flex-col shrink-0">
       <div className="p-5 flex items-center gap-3">
         {schoolLogoUrl ? (
-          <img src={schoolLogoUrl + '?width=80&height=80'} alt="Logo" className="w-10 h-10 rounded-full object-cover border border-white/20" />
+          <div className="relative"><div className="absolute inset-0 rounded-xl bg-white/20 blur-md"></div><div className="relative w-16 h-16 rounded-xl bg-white shadow-lg ring-1 ring-white/40 overflow-hidden"><img src={schoolLogoUrl} alt="Logo" className="w-full h-full object-cover" /></div></div>
         ) : (
           <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
             <GraduationCap size={20} className="text-white" />
@@ -148,7 +163,7 @@ export default function StudentLayout() {
           </button>
 
           {schoolLogoUrl && (
-            <img src={schoolLogoUrl + '?width=80&height=80'} alt="Logo" className="hidden md:block w-10 h-10 rounded-full object-cover border border-gray-200" />
+            <div className="hidden md:flex w-14 h-14 rounded-lg bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden"><img src={schoolLogoUrl} alt="Logo" className="w-full h-full object-cover" /></div>
           )}
 
           <div className="flex-1 min-w-0">
@@ -168,7 +183,7 @@ export default function StudentLayout() {
           )}
 
           {passportUrl ? (
-            <img src={passportUrl + '?width=80&height=80'} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+            <div className="w-16 h-16 rounded-xl bg-white p-1 shadow-md ring-1 ring-slate-200"><img src={passportUrl} alt="" className="w-full h-full rounded-lg object-cover" /></div>
           ) : (
             <div className="w-10 h-10 rounded-full bg-[#2E7D32]/10 flex items-center justify-center">
               <span className="text-[14px] font-bold text-[#2E7D32]">{initials}</span>

@@ -114,8 +114,6 @@ export default function StudentLiveClassPage() {
         subjects: c.subject_id ? subjectMap[c.subject_id] : null,
         teachers: (c.created_by || c.teacher_id) ? teacherMap[c.created_by || c.teacher_id] : null,
       }))
-
-      console.log('[LiveClass] rawClasses:', allClasses.length, 'enriched:', enriched.length, 'classId:', classId)
       const visible = enriched.filter((c: any) => {
         const audience = (c.audience || 'class').toLowerCase()
         if (audience === 'all' || audience === 'students') return true

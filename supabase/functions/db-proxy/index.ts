@@ -155,6 +155,7 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     class_subjects: ['select'],
     schools: ['select', 'update'],
     students: ['select'],
+    teachers: ['select'],
     scores: ['select'],
     assignments: ['select'],
     attendance: ['select'],

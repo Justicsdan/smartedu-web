@@ -314,6 +314,9 @@ export default function StudentDashboard() {
   const [settings, setSettings] = useState<any>(null)
   const [scores, setScores] = useState<any[]>([])
   const [subjects, setSubjects] = useState<any[]>([])
+  const [acePaceScores, setAcePaceScores] = useState<any[]>([])
+  const [aceTermReport, setAceTermReport] = useState<any>(null)
+  const [curriculumMode, setCurriculumMode] = useState<string>('traditional')
   const [attendance, setAttendance] = useState<any[]>([])
   const [summaries, setSummaries] = useState<any[]>([])
   const [sessionTerms, setSessionTerms] = useState<any[]>([])
@@ -327,15 +330,8 @@ export default function StudentDashboard() {
     setLoading(true)
     setError('')
     try {
+      // Use user object directly — students table RLS blocks SELECT for students
       let stu: any = user
-      if (studentId) {
-        const { data: sData, error: sErr } = await dbProxy
-          .from('students')
-          .select('*')
-          .eq('id', studentId)
-          .maybeSingle()
-        if (!sErr && sData) stu = sData
-      }
       setStudent(stu)
 
       const tasks: Promise<any>[] = []
@@ -356,11 +352,19 @@ export default function StudentDashboard() {
       )
       keys.push('scores')
       tasks.push(
+        dbProxy.from('ace_pace_scores').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false })
+      )
+      keys.push('paceScores')
+      tasks.push(
+        dbProxy.from('ace_term_reports').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false })
+      )
+      keys.push('aceReports')
+      tasks.push(
         dbProxy.from('attendance').select('*').eq('student_id', studentId || stu.id).order('date', { ascending: false }).limit(500)
       )
       keys.push('attendance')
       tasks.push(
-        dbProxy.from('summaries').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false })
+        dbProxy.from('student_term_summaries').select('*').eq('student_id', studentId || stu.id).order('created_at', { ascending: false })
       )
       keys.push('summaries')
       if (stu.school_id || schoolId) {
@@ -369,17 +373,36 @@ export default function StudentDashboard() {
         keys.push('subjects')
       }
 
-      const results = await Promise.all(tasks)
+      // Batched fetches (3 at a time) to balance speed + 429 rate limit
+      const results: any[] = []
+      for (let i = 0; i < tasks.length; i += 3) {
+        const batch = tasks.slice(i, i + 3)
+        const batchResults = await Promise.all(
+          batch.map(async (task: any) => {
+            try { return await task } catch (e) { return { error: e } }
+          })
+        )
+        results.push(...batchResults)
+      }
       results.forEach((res: any, i: number) => {
         const key = keys[i]
         if (res.error) { console.warn(`loadAll: ${key} error:`, res.error); return }
         const data = res.data
         if (key === 'class') setClassInfo(data || null)
-        else if (key === 'settings') setSettings(data || null)
+        else if (key === 'settings') {
+          setSettings(data || null)
+          if (data?.curriculum_mode) setCurriculumMode(data.curriculum_mode)
+        }
         else if (key === 'scores') setScores(data || [])
         else if (key === 'attendance') setAttendance(data || [])
         else if (key === 'summaries') setSummaries(data || [])
         else if (key === 'subjects') setSubjects(data || [])
+        else if (key === 'paceScores') {
+          setAcePaceScores(data || [])
+          // Fallback: if student has PACE scores and we haven't detected ACE yet, switch to ACE
+          if (data && data.length > 0) setCurriculumMode(prev => prev === 'traditional' ? 'ace' : prev)
+        }
+        else if (key === 'aceReports') setAceTermReport((data || [])[0] || null)
       })
 
       const sid = stu.school_id || schoolId
@@ -539,12 +562,73 @@ export default function StudentDashboard() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={BookOpen} label="Subjects" value={String(currentTermScores.length)} sub={`${subjects.length} total in class`} accent="#2563eb" />
-        <StatCard icon={TrendingUp} label="Average" value={String(avgScore)} sub={`out of ${subjectMax}`} accent="#0891b2" />
-        <StatCard icon={Target} label="Attendance" value={`${attendancePct}%`} sub={`${attendanceStats.present}/${attendanceStats.total} days`} accent="#10b981" />
-        <StatCard icon={Award} label="Position" value={latestSummary?.position ? `${latestSummary.position}${latestSummary.position_out_of ? `/${latestSummary.position_out_of}` : ''}` : '—'} sub={latestSummary?.grade ? `Grade ${latestSummary.grade}` : 'Not ranked'} accent="#7c3aed" />
+        {curriculumMode === 'ace' ? (
+          <>
+            <StatCard icon={BookOpen} label="Subjects" value={String(new Set(acePaceScores.map((p: any) => p.subject_id)).size)} sub={`${subjects.length} total in class`} accent="#2563eb" />
+            <StatCard icon={TrendingUp} label="PACEs Done" value={String(acePaceScores.length)} sub={aceTermReport?.is_published ? 'Published' : 'In Progress'} accent="#0891b2" />
+            <StatCard icon={Target} label="HACS Score" value={aceTermReport?.hacs_score ? String(aceTermReport.hacs_score) : '—'} sub={aceTermReport?.nce_score ? `NCE: ${aceTermReport.nce_score}` : 'NCE: —'} accent="#10b981" />
+            <StatCard icon={Award} label="Total Score" value={aceTermReport?.total_score ? String(aceTermReport.total_score) : '—'} sub={aceTermReport?.paces_avg ? `Avg: ${aceTermReport.paces_avg}` : 'Not computed'} accent="#7c3aed" />
+          </>
+        ) : (
+          <>
+            <StatCard icon={BookOpen} label="Subjects" value={String(currentTermScores.length)} sub={`${subjects.length} total in class`} accent="#2563eb" />
+            <StatCard icon={TrendingUp} label="Average" value={String(avgScore)} sub={`out of ${subjectMax}`} accent="#0891b2" />
+            <StatCard icon={Target} label="Attendance" value={`${attendancePct}%`} sub={`${attendanceStats.present}/${attendanceStats.total} days`} accent="#10b981" />
+            <StatCard icon={Award} label="Position" value={latestSummary?.position ? `${latestSummary.position}${latestSummary.position_out_of ? `/${latestSummary.position_out_of}` : ''}` : '—'} sub={latestSummary?.grade ? `Grade ${latestSummary.grade}` : 'Not ranked'} accent="#7c3aed" />
+          </>
+        )}
       </div>
 
+      {curriculumMode === 'ace' ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
+                <BookOpen size={18} strokeWidth={2.2} />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">Recent PACEs</h3>
+            </div>
+            <span className="text-xs text-slate-500">{acePaceScores.length} total</span>
+          </div>
+          <div className="px-5 py-3">
+            {acePaceScores.length === 0 ? (
+              <div className="py-6 text-center text-sm text-slate-400">No PACEs completed yet this term.</div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {acePaceScores
+                  .slice()
+                  .sort((a: any, b: any) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+                  .slice(0, 8)
+                  .map((sc: any, i: number) => {
+                    const subj = subjectMap[sc.subject_id]
+                    const name = subj?.name || subj?.code || 'Subject'
+                    const ptScore = sc.pt_score !== null && sc.pt_score !== undefined ? Number(sc.pt_score) : 0
+                    const isPass = ptScore >= 80
+                    return (
+                      <div key={i} className="flex items-center justify-between py-3 gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold ${isPass ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                            {String(sc.pace_no || '?').slice(-2)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-slate-900 truncate">{name}</div>
+                            <div className="text-[11px] text-slate-500">PACE {sc.pace_no}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${Math.min(100, ptScore)}%`, backgroundColor: isPass ? '#10b981' : '#ef4444' }} />
+                          </div>
+                          <span className="text-sm font-bold text-slate-900 w-8 text-right">{ptScore}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/60">
           <div className="flex items-center gap-3">
@@ -590,6 +674,9 @@ export default function StudentDashboard() {
         </div>
       </div>
 
+      )}
+      {curriculumMode !== 'ace' && (
+      <>
       <div className="flex items-center gap-3 pt-2">
         <BarChart3 size={18} className="text-slate-700" strokeWidth={2.2} />
         <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">Performance Charts</h2>
@@ -646,6 +733,8 @@ export default function StudentDashboard() {
         </div>
       </div>
 
+      </>
+      )}
       <div className="pt-2 pb-4 flex items-center justify-center gap-2 text-[11px] text-slate-400">
         <Clock size={11} strokeWidth={2} />
         <span>Last updated {new Date().toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}</span>
