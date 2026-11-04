@@ -1,9 +1,8 @@
 [{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.smartedu.app",
-    "sha256_cert_fingerprints":
-      ["8F:3D:0E:2B:5C:7A:1D:9F:4E:8B:2C:3A:6D:5F:1E:7A:9C:4D:8B:2E:5C:7A:1D:9F:4E:8B:2C:3A:6D:5F:1E:7A"]
-  }
-}]
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.smartedupro.twa",
+        "sha256_cert_fingerprints": ["B1:6C:C8:F4:B2:F7:CB:BE:C9:AB:A5:6B:61:38:7C:48:97:4B:1A:18:F8:50:A7:76:FB:7D:F4:8C:15:31:1A:77"]
+      }
+    }]
