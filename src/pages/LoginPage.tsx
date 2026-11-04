@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  School, User, Shield, Lock, ArrowLeft, Hash, Eye, EyeOff, Loader2, AlertCircle, Sparkles,
+  School, User, Shield, Lock, ArrowLeft, Hash, IdCard, Eye, EyeOff, Loader2, AlertCircle, Sparkles,
 } from 'lucide-react'
 
 const AUTH_URL = 'https://tcjsmkhmfjigutfhjtem.supabase.co/functions/v1/auth'
@@ -10,7 +10,7 @@ const ANON_KEY = 'sb_publishable_zWDvjhEldcV8eutnlRypGA_LGpOUhkg'
 
 function getRoleConfig(role: string) {
   switch (role) {
-    case 'Student': return { color: '#10b981', colorRgb: '16,185,129', icon: School, fieldOneLabel: 'Admission Number', fieldTwoLabel: 'PIN', fieldOneIcon: Hash, isFieldTwoPassword: false, dashboard: '/dashboard/student' }
+    case 'Student': return { color: '#10b981', colorRgb: '16,185,129', icon: School, fieldOneLabel: 'Admission Number', fieldTwoLabel: 'PIN', fieldOneIcon: IdCard, isFieldTwoPassword: false, dashboard: '/dashboard/student' }
     case 'School Admin': return { color: '#3b82f6', colorRgb: '59,130,246', icon: Shield, fieldOneLabel: 'Username', fieldTwoLabel: 'Password', fieldOneIcon: User, isFieldTwoPassword: true, dashboard: '/dashboard/schooladmin' }
     case 'Teacher': return { color: '#f59e0b', colorRgb: '245,158,11', icon: User, fieldOneLabel: 'Username', fieldTwoLabel: 'Password', fieldOneIcon: User, isFieldTwoPassword: true, dashboard: '/dashboard/teacher' }
     case 'Super Admin': return { color: '#8b5cf6', colorRgb: '139,92,246', icon: Shield, fieldOneLabel: 'Username', fieldTwoLabel: 'Password', fieldOneIcon: User, isFieldTwoPassword: true, dashboard: '/dashboard/superadmin' }

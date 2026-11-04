@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
+import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import LoginMethodPage from './pages/LoginMethodPage'
 import RoleSelectionPage from './pages/RoleSelectionPage'
@@ -67,7 +68,7 @@ function App() {
         <Route path="/s/:code" element={<SchoolCodeLoginPage />} />
         <Route path="/super-admin-login" element={<SuperAdminLoginPage />} />
 
-        <Route path="/dashboard/schooladmin" element={<AdminLayout />}>
+        <Route path="/dashboard/schooladmin" element={<ProtectedRoute allowedRoles={['school_admin', 'super_admin']}><AdminLayout /></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="students" element={<StudentsPage />} />
           <Route path="teachers" element={<TeachersPage />} />
@@ -86,7 +87,7 @@ function App() {
           <Route path="live-class" element={<LiveClassPage />} />
         </Route>
 
-        <Route path="/dashboard/student" element={<StudentLayout />}>
+        <Route path="/dashboard/student" element={<ProtectedRoute allowedRoles={['student']}><StudentLayout /></ProtectedRoute>}>
           <Route index element={<StudentDashboard />} />
           <Route path="results" element={<StudentResultsPage />} />
           <Route path="assignments" element={<StudentAssignmentsPage />} />
@@ -100,14 +101,14 @@ function App() {
           <Route path="live-class" element={<StudentLiveClassPage />} />
         </Route>
 
-        <Route path="/dashboard/superadmin" element={<SuperAdminLayout />}>
+        <Route path="/dashboard/superadmin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminLayout /></ProtectedRoute>}>
           <Route index element={<SuperAdminDashboard />} />
           <Route path="schools" element={<SchoolsManagement />} />
           <Route path="users" element={<SuperAdminUsers />} />
           <Route path="audit-log" element={<SuperAdminAuditLog />} />
         </Route>
 
-              <Route path="/dashboard/teacher" element={<TeacherLayout />}>
+              <Route path="/dashboard/teacher" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherLayout /></ProtectedRoute>}>
           <Route index element={<TeacherDashboard />} />
           <Route path="my-class" element={<TeacherMyClass />} />
           <Route path="my-students" element={<TeacherMyStudents />} />
