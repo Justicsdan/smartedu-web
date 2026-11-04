@@ -10,6 +10,8 @@ export interface AceReportData {
   admissionNo: string
   sessionName: string
   termName: string
+  termEndDate: string
+  nextTermBegins: string
   passportUrl: string
   paceScores: Array<{ subject_id: string; pace_no: string; pt_score: number | null }>
   subjects: Array<{ id: string; name: string }>
@@ -244,6 +246,7 @@ export function printAceReportCard(data: AceReportData) {
     '<div style="font-size:9px;"><span style="font-weight:700;">Name:</span> ' + D(data.studentName) + ' &nbsp;&nbsp; <span style="font-weight:700;">Adm No:</span> ' + D(data.admissionNo || '-') + '</div>',
     '<div style="height:2px;"></div>',
     '<div style="font-size:9px;"><span style="font-weight:700;">Session:</span> ' + D(data.sessionName || '-') + ' &nbsp;&nbsp; <span style="font-weight:700;">Term:</span> ' + D(data.termName || '-') + '</div>',
+    '<div style="font-size:9px;"><span style="font-weight:700;">Term Ends:</span> ' + D(data.termEndDate || '—') + ' &nbsp;&nbsp; <span style="font-weight:700;">Next Term:</span> ' + D(data.nextTermBegins || '—') + '</div>',
     '</div>',
     '</div>',
     '<div style="height:10px;"></div>',

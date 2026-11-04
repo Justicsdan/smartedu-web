@@ -265,6 +265,17 @@ export default function StudentResultsPage() {
       admissionNo,
       sessionName: '',
       termName: currentTermName,
+      termEndDate: (() => {
+        const t = terms.find((tr: any) => tr.id === selectedTermId)
+        return t?.term_end_date ? new Date(t.term_end_date).toLocaleDateString() : '—'
+      })(),
+      nextTermBegins: (() => {
+        // Find the next term chronologically
+        const current = terms.find((tr: any) => tr.id === selectedTermId)
+        if (!current) return '—'
+        const next = terms.find((tr: any) => new Date(tr.term_start_date) > new Date(current.term_end_date))
+        return next?.term_start_date ? new Date(next.term_start_date).toLocaleDateString() : '—'
+      })(),
       passportUrl: student?.passport_url || '',
       paceScores: visiblePaceScores.map((p: any) => ({
         subject_id: p.subject_id,
@@ -314,6 +325,11 @@ export default function StudentResultsPage() {
       passportUrl: student?.passport_url || '',
       reportTitle: currentTermName,
       sessionName: '',
+      termEndDate: (() => {
+        const t = terms.find((tr: any) => tr.id === selectedTermId)
+        return t?.term_end_date ? new Date(t.term_end_date).toLocaleDateString() : '—'
+      })(),
+      nextTermBegins: '—',
       studentName: displayName,
       admissionNo,
       studentClass,
