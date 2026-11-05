@@ -346,7 +346,8 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
         answers: answers, score, total_marks: totalMarks,
         time_started: new Date(Date.now() - (pickNumber(exam, 'duration_minutes') * 60 - remaining) * 1000).toISOString(),
         time_submitted: new Date().toISOString(),
-        auto_submitted: autoSubmitted,
+        is_submitted: true,
+        attempt_number: 1,
       }
       const insRes = await dbProxy.from('cbt_attempts').insert(attemptPayload).select()
       const data = Array.isArray(insRes.data) ? insRes.data[0] : insRes.data
