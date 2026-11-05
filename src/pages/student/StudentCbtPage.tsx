@@ -349,11 +349,14 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
         is_submitted: true,
         attempt_number: 1,
       }
+      
+      // 1. Update UI instantly with local data (no waiting for database)
+      setSubmittedAttempt(attemptPayload)
+      
+      // 2. Save to database in the background
       const insRes = await dbProxy.from('cbt_attempts').insert(attemptPayload).select()
-      const data = Array.isArray(insRes.data) ? insRes.data[0] : insRes.data
       const insErr = insRes.error
       if (insErr) throw insErr
-      setSubmittedAttempt(data)
     } catch (e: any) {
       console.error('Submit error:', e)
       setError(e?.message || 'Failed to submit exam')
