@@ -220,7 +220,7 @@ export function printAceReportCard(data: AceReportData) {
     '</head>',
     '<body>',
     '<div class="toolbar no-print">',
-    '<button class="btn-back" onclick="history.back()">← Back</button>',
+    '<button class="btn-back" onclick="parent.closePrintFrame()">← Back</button>',
     '<button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>',
     '<span style="margin-left:auto;font-size:11px;color:#94a3b8;">' + D(fileName) + '</span>',
     '</div>',
@@ -277,7 +277,30 @@ export function printAceReportCard(data: AceReportData) {
   ].join('\n')
 
   // Open in same tab
-  const newDoc = window.document.open('text/html', '_self')
-  newDoc.write(html)
-  newDoc.close()
+  // Use iframe overlay to avoid breaking app navigation
+  const existingFrame = document.getElementById('print-overlay-frame')
+  if (existingFrame) existingFrame.remove()
+
+  const frame = document.createElement('iframe')
+  frame.id = 'print-overlay-frame'
+  frame.style.position = 'fixed'
+  frame.style.top = '0'
+  frame.style.left = '0'
+  frame.style.width = '100%'
+  frame.style.height = '100%'
+  frame.style.border = 'none'
+  frame.style.zIndex = '9999'
+  frame.style.backgroundColor = '#e5e7eb'
+
+  document.body.appendChild(frame)
+
+  const frameDoc = frame.contentWindow.document
+  frameDoc.open()
+  frameDoc.write(html)
+  frameDoc.close()
+
+  // Expose a global function to close the frame
+  (window as any).closePrintFrame = () => {
+    frame.remove()
+  }
 }
