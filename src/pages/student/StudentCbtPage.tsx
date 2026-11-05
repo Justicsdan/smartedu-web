@@ -348,7 +348,9 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
         time_submitted: new Date().toISOString(),
         auto_submitted: autoSubmitted,
       }
-      const { data, error: insErr } = await dbProxy.from('cbt_attempts').insert(attemptPayload).select().single()
+      const insRes = await dbProxy.from('cbt_attempts').insert(attemptPayload).select()
+      const data = Array.isArray(insRes.data) ? insRes.data[0] : insRes.data
+      const insErr = insRes.error
       if (insErr) throw insErr
       setSubmittedAttempt(data)
     } catch (e: any) {
