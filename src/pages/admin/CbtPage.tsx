@@ -194,6 +194,7 @@ export default function CbtPage() {
   const [attempts, setAttempts] = useState<AttemptRow[]>([])
   const [studentMap, setStudentMap] = useState<Record<string, any>>({})
   const [showAttempts, setShowAttempts] = useState(false)
+  const [showQuestions, setShowQuestions] = useState(false)
 
   const [showExamModal, setShowExamModal] = useState(false)
   const [editingExamId, setEditingExamId] = useState<string | null>(null)
@@ -613,6 +614,19 @@ export default function CbtPage() {
                       </button>
                       <button
                         onClick={() => {
+                          if (showQuestions && expandedExamId === exam.id) {
+                            setShowQuestions(false)
+                          } else {
+                            setShowQuestions(true)
+                            loadQuestions(exam.id)
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg text-xs font-medium hover:bg-cyan-100 transition"
+                      >
+                        <FileText className="w-3.5 h-3.5" /> Manage Questions
+                      </button>
+                      <button
+                        onClick={() => {
                           if (showAttempts && expandedExamId === exam.id) {
                             setShowAttempts(false)
                           } else {
@@ -668,6 +682,7 @@ export default function CbtPage() {
                     )}
 
                     {/* Questions section */}
+                    {showQuestions && (
                     <div className="bg-white rounded-lg border border-gray-100 p-3">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-medium text-gray-700">Questions ({questions.length})</p>
@@ -705,6 +720,7 @@ export default function CbtPage() {
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
+                    )}
                               <div className="grid grid-cols-2 gap-1 text-[11px]">
                                 {(['a', 'b', 'c', 'd'] as const).map(opt => {
                                   const text = q[`option_${opt}` as keyof Question] as string
