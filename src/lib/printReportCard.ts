@@ -48,7 +48,7 @@ export function printReportCard(data: ReportData) {
   const grey = '#64748b'
   const dark = '#0f172a'
 
-  const fileName = [data.studentName, data.reportTitle || 'result'].filter(Boolean).join('_').replace(/\s+/g, '_').replace(/[^\w-]/g, '') + '.pdf'
+  const fileName = (data.studentName || 'Student').replace(/\s+/g, '_') + '.pdf'
 
   // ─── Score table ───
   const assessmentTh = data.assessmentHeaders.map(h => '<th style="padding:6px 4px;">' + D(h.name) + '<br><span style="font-weight:400;font-size:8px;">(' + D(h.max) + ')</span></th>').join('')
@@ -118,6 +118,15 @@ export function printReportCard(data: ReportData) {
 
   frame.srcdoc = html
   document.body.appendChild(frame)
+  
+  // Explicitly set the title after the iframe loads to ensure the browser uses it for the filename
+  frame.onload = () => {
+    try {
+      frame.contentWindow.document.title = fileName
+    } catch (e) {
+      console.warn('Could not set iframe title:', e)
+    }
+  }
 
   // Expose a global function to close the frame
   (window as any).closePrintFrame = () => {
