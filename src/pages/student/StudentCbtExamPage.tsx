@@ -37,7 +37,8 @@ export default function StudentCbtExamPage() {
   const startExam = async () => {
     try {
       // Check if already attempted
-      const { data: existing } = await dbProxy.from('cbt_attempts').select('id').eq('exam_id', examId).eq('student_id', studentId).eq('is_submitted', true).maybeSingle()
+      const existingRes = await dbProxy.from('cbt_attempts').select('id').eq('exam_id', examId).eq('student_id', studentId).eq('is_submitted', true)
+      const existing = Array.isArray(existingRes.data) ? existingRes.data[0] : existingRes.data
       if (existing) {
         setError('You have already taken this exam.')
         setLoading(false)
@@ -45,7 +46,9 @@ export default function StudentCbtExamPage() {
       }
 
       // Load exam
-      const { data: examData, error: examErr } = await dbProxy.from('cbt_exams').select('id, title, duration_minutes, total_questions, pass_mark, show_result_immediately').eq('id', examId).eq('school_id', schoolId).eq('is_active', true).maybeSingle()
+      const examRes = await dbProxy.from('cbt_exams').select('id, title, duration_minutes, total_questions, pass_mark, show_result_immediately').eq('id', examId).eq('school_id', schoolId).eq('is_active', true)
+      const examData = Array.isArray(examRes.data) ? examRes.data[0] : examRes.data
+      const examErr = examRes.error
       if (examErr || !examData) {
         setError('Exam not available')
         setLoading(false)
@@ -54,7 +57,9 @@ export default function StudentCbtExamPage() {
       setExam(examData)
 
       // Load questions
-      const { data: qData, error: qErr } = await dbProxy.from('cbt_questions').select('id, question_text, option_a, option_b, option_c, option_d, correct_option, marks, question_order').eq('exam_id', examId).eq('school_id', schoolId).order('question_order', { ascending: true }).get()
+      const qRes = await dbProxy.from('cbt_questions').select('id, question_text, option_a, option_b, option_c, option_d, correct_option, marks, question_order').eq('exam_id', examId).eq('school_id', schoolId).order('question_order', { ascending: true })
+      const qData = qRes.data
+      const qErr = qRes.error
       if (qErr) throw qErr
       setQuestions(qData || [])
 
