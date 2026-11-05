@@ -116,12 +116,8 @@ export function printReportCard(data: ReportData) {
   frame.style.zIndex = '9999'
   frame.style.backgroundColor = '#e5e7eb'
 
+  frame.srcdoc = html
   document.body.appendChild(frame)
-
-  const frameDoc = frame.contentWindow.document
-  frameDoc.open()
-  frameDoc.write(html)
-  frameDoc.close()
 
   // Expose a global function to close the frame
   (window as any).closePrintFrame = () => {
