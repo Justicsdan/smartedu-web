@@ -192,6 +192,7 @@ export default function CbtPage() {
   const [loadingQuestions, setLoadingQuestions] = useState(false)
   const [showAddQuestion, setShowAddQuestion] = useState(false)
   const [attempts, setAttempts] = useState<AttemptRow[]>([])
+  const [studentMap, setStudentMap] = useState<Record<string, any>>({})
   const [showAttempts, setShowAttempts] = useState(false)
 
   const [showExamModal, setShowExamModal] = useState(false)
@@ -287,7 +288,23 @@ export default function CbtPage() {
         .eq('exam_id', examId)
         .order('time_started', { ascending: false })
       if (error) throw error
-      setAttempts((data || []) as AttemptRow[])
+      const attemptData = (data || []) as AttemptRow[]
+      setAttempts(attemptData)
+      
+      // Fetch student names for these attempts
+      if (attemptData.length > 0) {
+        const studentIds = [...new Set(attemptData.map(a => a.student_id))]
+        const stuRes = await dbProxy
+          .from('students')
+          .select('id, first_name, last_name, admission_no')
+          .in('id', studentIds)
+        const stuData = Array.isArray(stuRes.data) ? stuRes.data : []
+        const map: Record<string, any> = {}
+        for (const st of stuData) {
+          map[st.id] = st
+        }
+        setStudentMap(map)
+      }
     } catch (e: any) {
       setError(e.message || 'Failed to load attempts')
       setAttempts([])
@@ -633,9 +650,9 @@ export default function CbtPage() {
                               <div key={a.id} className="flex items-center justify-between py-1.5 px-2 bg-gray-50 rounded text-xs">
                                 <div>
                                   <p className="font-medium text-gray-800">
-                                    {a.students?.first_name} {a.students?.last_name}
+                                    {studentMap[a.student_id]?.first_name || 'Unknown'} {studentMap[a.student_id]?.last_name || 'Student'}
                                   </p>
-                                  <p className="text-gray-400">Attempt #{a.attempt_number} · {a.students?.admission_no || '-'}</p>
+                                  <p className="text-gray-400">Attempt #{a.attempt_number} · {studentMap[a.student_id]?.admission_no || '-'}</p>
                                 </div>
                                 <div className="text-right">
                                   <p className="font-semibold text-gray-800">{a.score}/{a.total_marks}</p>
