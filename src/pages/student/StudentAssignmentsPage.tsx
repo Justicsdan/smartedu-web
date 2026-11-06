@@ -213,10 +213,10 @@ export default function StudentAssignmentsPage() {
 
       {assignments.length === 0 && !error && (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white mb-5 shadow-xl shadow-emerald-500/30">
             <Inbox size={32} strokeWidth={2} />
           </div>
-          <h3 className="text-base font-bold text-slate-900">No assignments yet</h3>
+          <h3 className="text-lg font-bold text-slate-900 tracking-tight">No assignments yet</h3>
           <p className="mt-1 text-sm text-slate-500 max-w-xs">Your teachers haven't posted any assignments for your class yet. Check back later.</p>
         </div>
       )}
@@ -338,7 +338,7 @@ export default function StudentAssignmentsPage() {
           <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/30">
                   <Send size={18} strokeWidth={2.2} />
                 </div>
                 <div className="min-w-0">

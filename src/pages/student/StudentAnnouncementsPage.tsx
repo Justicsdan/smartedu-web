@@ -220,7 +220,7 @@ export default function StudentAnnouncementsPage() {
         <button
           onClick={loadAnnouncements}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition text-slate-700 font-semibold text-sm shadow-sm disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all text-slate-700 font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
         >
           <RefreshCw size={14} strokeWidth={2.2} className={loading ? 'animate-spin' : ''} />
           <span className="hidden sm:inline">Refresh</span>
@@ -247,10 +247,10 @@ export default function StudentAnnouncementsPage() {
       {/* ── Empty state ─────────────────────────────────────────── */}
       {announcements.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 px-4">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white mb-5 shadow-xl shadow-emerald-500/30">
             <Megaphone size={32} strokeWidth={2} />
           </div>
-          <h3 className="text-base font-bold text-slate-900">No announcements</h3>
+          <h3 className="text-lg font-bold text-slate-900 tracking-tight">No announcements</h3>
           <p className="mt-1 text-sm text-slate-500 text-center max-w-xs">
             Announcements from your school will appear here. Check back later.
           </p>

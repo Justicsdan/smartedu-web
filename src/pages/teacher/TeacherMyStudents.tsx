@@ -61,7 +61,7 @@ export default function TeacherMyStudents() {
       <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400"><Users size={32} strokeWidth={2} /></div>
-          <h3 className="text-base font-bold text-slate-900 mb-1">Not a Form Master</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">Not a Form Master</h3>
           <p className="text-sm text-slate-500">Only form masters can view their class students.</p>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function TeacherMyStudents() {
           <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-blue-400 to-cyan-5000 animate-pulse"></span>
               My Students
             </span>
           </div>
@@ -105,7 +105,7 @@ export default function TeacherMyStudents() {
               const isFemale = (s.gender || '').toLowerCase() === 'female'
               return (
                 <div key={s.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/50 transition">
-                  <div className={`flex-shrink-0 w-11 h-11 rounded-full p-0.5 ${isFemale ? 'bg-pink-50' : 'bg-blue-50'}`}>
+                  <div className={`flex-shrink-0 w-11 h-11 rounded-full p-0.5 ${isFemale ? 'bg-gradient-to-br from-pink-400 to-rose-500' : 'bg-gradient-to-br from-blue-400 to-cyan-500'}`}>
                     <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
                       <span className={`text-sm font-bold ${isFemale ? 'text-pink-600' : 'text-blue-700'}`}>{studentName(s).charAt(0) || '?'}</span>
                     </div>
@@ -113,7 +113,7 @@ export default function TeacherMyStudents() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-slate-900 truncate">{studentName(s)}</div>
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold text-blue-700 bg-blue-50">{s.admission_no || '-'}</span>
+                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold text-blue-700 bg-gradient-to-br from-blue-400 to-cyan-500">{s.admission_no || '-'}</span>
                       {s.parent_name && <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold text-slate-600 bg-slate-100">{s.parent_name}</span>}
                       {s.parent_phone && <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold text-slate-600 bg-slate-100">{s.parent_phone}</span>}
                     </div>

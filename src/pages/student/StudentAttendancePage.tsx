@@ -231,7 +231,7 @@ export default function StudentAttendancePage() {
       {monthly.length > 0 && (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
           <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
               <Calendar size={18} strokeWidth={2.2} />
             </div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight">Monthly Breakdown</h3>
@@ -268,7 +268,7 @@ export default function StudentAttendancePage() {
 
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-slate-200 flex items-center justify-center text-slate-700">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center text-white shadow-md shadow-slate-500/30">
             <Calendar size={18} strokeWidth={2.2} />
           </div>
           <h3 className="text-base font-bold text-slate-900 tracking-tight">Daily Log</h3>

@@ -286,7 +286,7 @@ export default function StudentCbtExamPage() {
       </div>
 
       {/* Bottom bar - premium */}
-      <div className="bg-white/80 backdrop-blur-sm px-4 py-3 shadow-lg border-t border-slate-200/60">
+      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border-t-2 border-slate-200/80 px-4 py-4 shadow-2xl shadow-slate-300/40">
         {showNavGrid && (
           <div className="mb-3 p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60 flex flex-wrap gap-2 justify-center">
             {questions.map((qq, i) => {

@@ -56,7 +56,7 @@ export default function TeacherMyClass() {
       <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400"><BookOpen size={32} strokeWidth={2} /></div>
-          <h3 className="text-base font-bold text-slate-900 mb-1">Not a Form Master</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">Not a Form Master</h3>
           <p className="text-sm text-slate-500">Contact your admin to be assigned as a form teacher.</p>
         </div>
       </div>

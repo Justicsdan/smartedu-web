@@ -60,7 +60,7 @@ export default function TeacherClasses() {
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-blue-400 to-cyan-5000 animate-pulse"></span>
               Classes
             </span>
           </div>
@@ -72,7 +72,7 @@ export default function TeacherClasses() {
       {classGroups.length === 0 ? (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400"><BookOpen size={32} strokeWidth={2} /></div>
-          <h3 className="text-base font-bold text-slate-900 mb-1">No Class Assignments</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">No Class Assignments</h3>
           <p className="text-sm text-slate-500">Contact your admin to be assigned as a subject teacher.</p>
         </div>
       ) : (
@@ -81,7 +81,7 @@ export default function TeacherClasses() {
             <div key={c.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
               <div className="p-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-blue-500/30">
                     <BookOpen size={20} strokeWidth={2.2} />
                   </div>
                   <div className="min-w-0">
@@ -92,7 +92,7 @@ export default function TeacherClasses() {
                 <div className="flex flex-wrap gap-2">
                   {subs.map(s => (
                     <a key={s.id} href={`/dashboard/teacher/scores`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 transition">
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 transition">
                       <ClipboardList size={12} strokeWidth={2.2} />
                       {s.name}{s.code ? ` (${s.code})` : ''}
                     </a>

@@ -172,7 +172,7 @@ export default function StudentLiveClassPage() {
             </div>
           </div>
           <button onClick={handleLeave}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm">
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold text-sm shadow-lg shadow-red-500/30 hover:-translate-y-0.5 transition-all">
             <PhoneOff size={14} strokeWidth={2.4} />
             <span className="hidden sm:inline">Leave</span>
           </button>
@@ -206,7 +206,7 @@ export default function StudentLiveClassPage() {
           <p className="mt-0.5 text-sm text-slate-500">{liveNow.length} live now • {upcoming.length} upcoming</p>
         </div>
         <button onClick={loadClasses} disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition text-slate-700 font-semibold text-sm shadow-sm">
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all text-slate-700 font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5">
           <RefreshCw size={14} strokeWidth={2.2} className={loading ? 'animate-spin' : ''} />
           <span className="hidden sm:inline">Refresh</span>
         </button>
@@ -224,10 +224,10 @@ export default function StudentLiveClassPage() {
 
       {classes.length === 0 && !error && (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white mb-5 shadow-xl shadow-emerald-500/30">
             <Inbox size={32} strokeWidth={2} />
           </div>
-          <h3 className="text-base font-bold text-slate-900">No live classes scheduled</h3>
+          <h3 className="text-lg font-bold text-slate-900 tracking-tight">No live classes scheduled</h3>
           <p className="mt-1 text-sm text-slate-500 max-w-xs">When your teachers start or schedule a live class, it will appear here.</p>
         </div>
       )}
@@ -345,7 +345,7 @@ function LiveClassCard({ cls, onJoin, variant }: {
       <div className="px-4 sm:px-5 py-3 border-t border-slate-100 flex items-center justify-end">
         {variant === 'live' ? (
           <button onClick={() => onJoin(cls)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-sm transition">
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-sm font-bold shadow-lg shadow-red-500/30 hover:-translate-y-0.5 transition-all">
             <Play size={14} strokeWidth={2.4} />Join Now
           </button>
         ) : variant === 'upcoming' ? (

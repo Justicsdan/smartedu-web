@@ -501,22 +501,22 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
         )}
       </div>
 
-      <div className="bg-white/80 backdrop-blur-sm border-t border-slate-200/60 px-4 py-3 flex items-center justify-between gap-3 shadow-lg shadow-slate-200/40">
+      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border-t-2 border-slate-200/80 px-4 py-4 flex items-center justify-between gap-3 shadow-2xl shadow-slate-300/40">
         <button onClick={() => goToQuestion(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0}
-          className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:shadow-md transition disabled:opacity-40 disabled:cursor-not-allowed">
-          <ChevronLeft size={14} strokeWidth={2.4} />
-          <span className="hidden sm:inline">Prev</span>
+          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-base shadow-lg shadow-blue-500/40 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+          <ChevronLeft size={20} strokeWidth={2.4} />
+          <span>Prev</span>
         </button>
         <button onClick={() => setShowNavGrid(!showNavGrid)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 transition">
-          <Grid3x3 size={14} strokeWidth={2.2} />
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold text-sm hover:from-violet-600 hover:to-purple-700 transition shadow-md shadow-violet-500/30 hover:-translate-y-0.5">
+          <Grid3x3 size={20} strokeWidth={2.2} />
           <span className="hidden sm:inline">Navigator</span>
         </button>
         {currentIndex < questions.length - 1 ? (
           <button onClick={() => goToQuestion(currentIndex + 1)}
-            className="inline-flex items-center gap-1 px-5 py-2 rounded-xl bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
-            <span className="hidden sm:inline">Next</span>
-            <ChevronRight size={14} strokeWidth={2.4} />
+            className="inline-flex items-center gap-1.5 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold text-base shadow-lg shadow-emerald-500/40 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+            <span>Next</span>
+            <ChevronRight size={22} strokeWidth={2.4} />
           </button>
         ) : (
           <button onClick={() => handleSubmit(false)} disabled={submitting}
@@ -528,27 +528,27 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
 
       {showNavGrid && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowNavGrid(false)}>
-          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-violet-500/30">
                   <Grid3x3 size={18} strokeWidth={2.2} />
                 </div>
                 <h3 className="text-base font-bold text-slate-900">Question Navigator</h3>
               </div>
               <button onClick={() => setShowNavGrid(false)} className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200"><X size={18} /></button>
             </div>
-            <div className="p-5">
+            <div className="p-5 overflow-y-auto flex-1">
               <div className="grid grid-cols-5 gap-2">
                 {questions.map((q, i) => {
                   const isAnswered = !!answers[q.id]
                   const isCurrent = i === currentIndex
                   return (
                     <button key={q.id} onClick={() => goToQuestion(i)}
-                      className={`aspect-square rounded-lg font-bold text-sm transition ${
-                        isCurrent ? 'bg-emerald-600 text-white ring-2 ring-emerald-300'
-                          : isAnswered ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      className={`aspect-square rounded-lg font-bold text-sm transition-all hover:-translate-y-0.5 ${
+                        isCurrent ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white ring-2 ring-emerald-300 shadow-md shadow-emerald-500/30'
+                          : isAnswered ? 'bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                       }`}>{i + 1}</button>
                   )
                 })}
@@ -559,7 +559,7 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
                 <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-slate-100" />Unanswered</span>
               </div>
               <button onClick={() => handleSubmit(false)} disabled={submitting}
-                className="mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50">
+                className="mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50">
                 {submitting ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} strokeWidth={2.4} />}
                 Submit Exam ({answeredCount}/{questions.length} answered)
               </button>
