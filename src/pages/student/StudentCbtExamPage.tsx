@@ -100,50 +100,33 @@ export default function StudentCbtExamPage() {
     if (submitting || submitted) return
     setSubmitting(true)
     setShowSubmitConfirm(false)
-    try {
-      // Get correct answers to compute score
-      let score = 0
-      let totalMarks = 0
-      let correct = 0, wrong = 0, unanswered = 0
 
-      for (const q of questions) {
-        const total = Number(q.marks) || 1
-        totalMarks += total
-        const ans = answers[q.id]
-        if (!ans) {
-          unanswered++
-        } else if (ans.toLowerCase() === (q.correct_option || '').toLowerCase()) {
-          score += total
-          correct++
-        } else {
-          wrong++
-        }
-      }
+    let score = 0
+    let totalMarks = 0
+    let correct = 0, wrong = 0, unanswered = 0
 
-      // Save attempt
-      const { error: insertErr } = await dbProxy.from('cbt_attempts').insert({
-        school_id: schoolId,
-        exam_id: examId,
-        student_id: studentId,
-        answers: answers,
-        score: score,
-        total_marks: totalMarks,
-        time_started: startTimeRef.current.toISOString(),
-        time_submitted: new Date().toISOString(),
-        is_submitted: true,
-        attempt_number: 1,
-      })
-      if (insertErr) throw insertErr
-
-      if (timerRef.current) clearInterval(timerRef.current)
-
-      setResult({ score, total_marks: totalMarks, correct, wrong, unanswered })
-      setSubmitted(true)
-    } catch (e: any) {
-      setError('Submission failed: ' + e.message)
-    } finally {
-      setSubmitting(false)
+    for (const q of questions) {
+      const total = Number(q.marks) || 1
+      totalMarks += total
+      const ans = answers[q.id]
+      if (!ans) { unanswered++ }
+      else if (ans.toLowerCase() === (q.correct_option || '').toLowerCase()) { score += total; correct++ }
+      else { wrong++ }
     }
+
+    if (timerRef.current) clearInterval(timerRef.current)
+    setResult({ score, total_marks: totalMarks, correct, wrong, unanswered })
+    setSubmitted(true)
+    setSubmitting(false)
+
+    dbProxy.from('cbt_attempts').insert({
+      school_id: schoolId, exam_id: examId, student_id: studentId,
+      answers: answers, score: score, total_marks: totalMarks,
+      time_started: startTimeRef.current.toISOString(),
+      time_submitted: new Date().toISOString(),
+      is_submitted: true, attempt_number: 1,
+    }).then(({ error }) => { if (error) console.error('Save failed:', error) })
+      .catch((e) => console.error('Save error:', e))
   }
 
   const formatTime = (s: number) => {
