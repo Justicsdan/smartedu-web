@@ -169,7 +169,7 @@ export default function StudentCbtPage() {
           {exams.map((exam) => {
             const examId = exam.id
             const attempt = attempts[examId]
-            const alreadyTaken = !!attempt
+            const alreadyTaken = !!(attempt && attempt.is_submitted)
             const isActive = isExamActive(exam)
             const score = pickNumber(attempt, 'score')
             const totalMarks = pickNumber(attempt, 'total_marks')
