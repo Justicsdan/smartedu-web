@@ -162,19 +162,21 @@ export default function StudentCbtExamPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 border-[#0D47A1] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-500">Loading exam...</p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-5 shadow-lg shadow-emerald-500/20" />
+        <p className="text-slate-600 font-semibold">Loading exam...</p>
       </div>
     )
   }
 
   if (error && !submitted) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-white p-8">
-        <AlertCircle size={64} className="text-red-300 mb-4" />
-        <p className="text-red-500 text-center mb-6">{error}</p>
-        <button onClick={() => navigate('/dashboard/student/cbt')} className="px-6 py-3 bg-[#0D47A1] text-white rounded-lg font-semibold">Go Back</button>
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-red-50/30 p-8">
+        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center mb-5 shadow-xl shadow-red-500/30">
+          <AlertCircle size={36} className="text-white" />
+        </div>
+        <p className="text-slate-700 font-semibold text-center mb-6 max-w-sm">{error}</p>
+        <button onClick={() => navigate('/dashboard/student/cbt')} className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition-all">Go Back</button>
       </div>
     )
   }
@@ -184,11 +186,13 @@ export default function StudentCbtExamPage() {
     const showImmediate = exam?.show_result_immediately !== false
     if (!showImmediate) {
       return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-white p-8">
-          <CheckCircle size={72} className="text-[#2E7D32] mb-5" />
-          <h1 className="text-2xl font-bold text-[#1B2A4A]">Exam Submitted!</h1>
-          <p className="text-gray-500 text-center mt-3 max-w-sm">Your result will be available once published by your teacher.</p>
-          <button onClick={() => navigate('/dashboard/student/cbt')} className="mt-8 px-8 py-3 bg-[#0D47A1] text-white rounded-lg font-semibold">Back to Exams</button>
+        <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-8">
+          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center mb-6 shadow-2xl shadow-emerald-500/30">
+            <CheckCircle size={48} className="text-white" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Exam Submitted!</h1>
+          <p className="text-slate-500 text-center mt-3 max-w-sm">Your result will be available once published by your teacher.</p>
+          <button onClick={() => navigate('/dashboard/student/cbt')} className="mt-8 px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition-all">Back to Exams</button>
         </div>
       )
     }
@@ -198,19 +202,30 @@ export default function StudentCbtExamPage() {
     const passed = Number(pct) >= (Number(exam?.pass_mark) || 50)
 
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-white p-8">
-        {passed ? <CheckCircle size={72} className="text-[#2E7D32] mb-5" /> : <AlertCircle size={72} className="text-orange-300 mb-5" />}
-        <h1 className="text-2xl font-bold text-[#1B2A4A]">Exam Submitted!</h1>
-        <div className="mt-6 p-6 rounded-2xl bg-[#F8F9FA] text-center">
-          <div className="text-4xl font-bold text-[#0D47A1]">{score} / {total}</div>
-          <div className="text-lg text-gray-500 mt-1">{pct}%</div>
-          <div className="flex justify-around mt-4">
-            <div><div className="text-xl font-bold text-green-500">{result.correct}</div><div className="text-[12px] text-gray-400">Correct</div></div>
-            <div><div className="text-xl font-bold text-red-500">{result.wrong}</div><div className="text-[12px] text-gray-400">Wrong</div></div>
-            <div><div className="text-xl font-bold text-gray-400">{result.unanswered}</div><div className="text-[12px] text-gray-400">Skipped</div></div>
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-8">
+        <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-2xl ${passed ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-emerald-500/30' : 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/30'}`}>
+          {passed ? <CheckCircle size={48} className="text-white" /> : <AlertCircle size={48} className="text-white" />}
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Exam Submitted!</h1>
+        <div className="mt-6 p-8 rounded-3xl bg-white/80 backdrop-blur-sm border border-slate-200/60 text-center shadow-xl w-full max-w-md">
+          <div className="text-5xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{score} <span className="text-2xl text-slate-400">/ {total}</span></div>
+          <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${passed ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border border-emerald-200' : 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200'}`}>{pct}%</div>
+          <div className="grid grid-cols-3 gap-3 mt-5">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100">
+              <div className="text-xl font-bold text-emerald-600">{result.correct}</div>
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700">Correct</div>
+            </div>
+            <div className="p-2 rounded-xl bg-gradient-to-br from-red-50 to-rose-50 border border-red-100">
+              <div className="text-xl font-bold text-red-600">{result.wrong}</div>
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-red-700">Wrong</div>
+            </div>
+            <div className="p-2 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200">
+              <div className="text-xl font-bold text-slate-500">{result.unanswered}</div>
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-600">Skipped</div>
+            </div>
           </div>
         </div>
-        <button onClick={() => navigate('/dashboard/student/cbt')} className="mt-8 px-8 py-3 bg-[#0D47A1] text-white rounded-lg font-semibold">Back to Exams</button>
+        <button onClick={() => navigate('/dashboard/student/cbt')} className="mt-8 px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition-all">Back to Exams</button>
       </div>
     )
   }
@@ -222,26 +237,31 @@ export default function StudentCbtExamPage() {
   const selectedOpt = q ? answers[q.id] || '' : ''
 
   return (
-    <div className="flex-1 flex flex-col bg-[#F8F9FA]" style={{ minHeight: 'calc(100vh - 72px)' }}>
-      {/* Top bar */}
-      <div className="bg-white px-4 py-3 shadow-sm flex items-center justify-between">
-        <div className="px-3 py-1.5 rounded-lg flex items-center gap-2" style={{ backgroundColor: timerColor + '1A' }}>
-          <Clock size={18} style={{ color: timerColor }} />
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-50 via-white to-emerald-50/30" style={{ minHeight: 'calc(100vh - 72px)' }}>
+      {/* Top bar - premium */}
+      <div className="bg-white/80 backdrop-blur-sm px-4 py-3 shadow-md flex items-center justify-between sticky top-0 z-10 border-b border-slate-200/60">
+        <div className="px-3 py-1.5 rounded-full flex items-center gap-2 shadow-md" style={{ backgroundColor: timerColor + '1A', boxShadow: '0 4px 12px ' + timerColor + '30' }}>
+          <Clock size={18} style={{ color: timerColor }} strokeWidth={2.4} />
           <span className="text-base font-bold" style={{ color: timerColor, fontVariantNumeric: 'tabular-nums' }}>{formatTime(remainingSeconds)}</span>
         </div>
-        <span className="text-sm font-semibold text-[#1B2A4A]">Question {currentIndex + 1} of {questions.length}</span>
-        <span className="text-xs text-gray-400">{answeredCount} answered</span>
+        <span className="text-sm font-semibold text-slate-800">Question {currentIndex + 1} of {questions.length}</span>
+        <span className="text-xs text-slate-500">{answeredCount} answered</span>
       </div>
 
-      {/* Question area */}
+      {/* Question area - premium */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {questions.length === 0 ? (
-          <p className="text-gray-400 text-center">No questions found.</p>
+          <p className="text-slate-400 text-center">No questions found.</p>
         ) : (
           <div className="max-w-2xl mx-auto">
-            <p className="text-base font-semibold text-[#1B2A4A] leading-relaxed">{q.question_text}</p>
-            {q.marks && <p className="text-xs text-gray-400 mt-2">{q.marks} mark{Number(q.marks) > 1 ? 's' : ''}</p>}
-            <div className="mt-6 space-y-3">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-6">
+              <div className="flex items-start gap-3 mb-2">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white font-bold flex items-center justify-center text-sm shadow-md shadow-emerald-500/30">{currentIndex + 1}</div>
+                <p className="flex-1 text-base font-semibold text-slate-900 leading-relaxed tracking-tight">{q.question_text}</p>
+              </div>
+              {q.marks && <p className="text-xs text-slate-400 mt-2 ml-13">{q.marks} mark{Number(q.marks) > 1 ? 's' : ''}</p>}
+            </div>
+            <div className="mt-5 space-y-3">
               {['a', 'b', 'c', 'd'].map(opt => {
                 const val = (q as any)['option_' + opt]
                 if (!val) return null
@@ -250,15 +270,13 @@ export default function StudentCbtExamPage() {
                   <button
                     key={opt}
                     onClick={() => selectOption(q.id, opt)}
-                    className={'w-full text-left p-4 rounded-xl border transition ' + (isSelected ? 'border-[#0D47A1] border-2 bg-[#0D47A1]/8' : 'border-gray-200 bg-white hover:border-gray-300')}
+                    className={'w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ' + (isSelected ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-green-50 shadow-md shadow-emerald-500/20' : 'border-slate-200 bg-white hover:border-emerald-300 hover:shadow-sm')}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={'w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ' + (isSelected ? 'bg-[#0D47A1] text-white' : 'bg-gray-100 text-gray-500')}>
-                        {opt.toUpperCase()}
-                      </div>
-                      <span className="text-[15px] text-[#1B2A4A] flex-1">{val}</span>
-                      {isSelected && <CheckCircle size={20} className="text-[#0D47A1]" />}
+                    <div className={'w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all ' + (isSelected ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/30' : 'bg-slate-100 text-slate-600')}>
+                      {opt.toUpperCase()}
                     </div>
+                    <span className="text-[15px] text-slate-800 flex-1">{val}</span>
+                    {isSelected && <CheckCircle size={20} className="text-emerald-600" strokeWidth={2.4} />}
                   </button>
                 )
               })}
@@ -267,10 +285,10 @@ export default function StudentCbtExamPage() {
         )}
       </div>
 
-      {/* Bottom bar */}
-      <div className="bg-white px-4 py-3 shadow-lg">
+      {/* Bottom bar - premium */}
+      <div className="bg-white/80 backdrop-blur-sm px-4 py-3 shadow-lg border-t border-slate-200/60">
         {showNavGrid && (
-          <div className="mb-3 p-3 rounded-xl bg-gray-50 border border-gray-200 flex flex-wrap gap-2 justify-center">
+          <div className="mb-3 p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60 flex flex-wrap gap-2 justify-center">
             {questions.map((qq, i) => {
               const isAnswered = !!answers[qq.id]
               const isCurrent = i === currentIndex
@@ -278,7 +296,7 @@ export default function StudentCbtExamPage() {
                 <button
                   key={i}
                   onClick={() => { setCurrentIndex(i); setShowNavGrid(false) }}
-                  className={'w-10 h-10 rounded-lg text-[13px] font-semibold border transition ' + (isCurrent ? 'bg-[#0D47A1] text-white border-[#0D47A1]' : isAnswered ? 'bg-[#2E7D32] text-white border-[#2E7D32]' : 'bg-white text-gray-500 border-gray-300')}
+                  className={'w-10 h-10 rounded-lg text-[13px] font-semibold border transition-all hover:-translate-y-0.5 ' + (isCurrent ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white border-emerald-500 shadow-md shadow-emerald-500/30' : isAnswered ? 'bg-gradient-to-br from-emerald-100 to-green-100 text-emerald-700 border-emerald-200' : 'bg-white text-slate-500 border-slate-200')}
                 >
                   {i + 1}
                 </button>
@@ -287,32 +305,35 @@ export default function StudentCbtExamPage() {
           </div>
         )}
         <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <button onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)} disabled={currentIndex === 0} className="flex items-center gap-1 text-[#0D47A1] font-semibold text-sm disabled:opacity-30">
-            <ChevronLeft size={18} /> Prev
+          <button onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)} disabled={currentIndex === 0} className="flex items-center gap-1 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold text-sm disabled:opacity-30 transition">
+            <ChevronLeft size={18} strokeWidth={2.4} /> Prev
           </button>
-          <button onClick={() => setShowNavGrid(!showNavGrid)} className="flex items-center gap-1 text-gray-500 font-semibold text-sm">
-            <Grid3x3 size={18} /> {answeredCount}/{questions.length}
+          <button onClick={() => setShowNavGrid(!showNavGrid)} className="flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 transition">
+            <Grid3x3 size={18} strokeWidth={2.2} /> {answeredCount}/{questions.length}
           </button>
-          <button onClick={() => setShowSubmitConfirm(true)} disabled={submitting} className="px-4 py-2 bg-[#2E7D32] text-white rounded-lg font-semibold text-sm disabled:opacity-50">
+          <button onClick={() => setShowSubmitConfirm(true)} disabled={submitting} className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50">
             {submitting ? <Loader2 size={16} className="animate-spin" /> : 'Submit'}
           </button>
-          <button onClick={() => currentIndex < questions.length - 1 && setCurrentIndex(currentIndex + 1)} disabled={currentIndex === questions.length - 1} className="flex items-center gap-1 text-[#0D47A1] font-semibold text-sm disabled:opacity-30">
-            Next <ChevronRight size={18} />
+          <button onClick={() => currentIndex < questions.length - 1 && setCurrentIndex(currentIndex + 1)} disabled={currentIndex === questions.length - 1} className="flex items-center gap-1 px-4 py-2 rounded-xl bg-gradient-to-r from-slate-700 to-slate-800 text-white font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-30">
+            Next <ChevronRight size={18} strokeWidth={2.4} />
           </button>
         </div>
       </div>
 
       {/* Submit confirmation */}
       {showSubmitConfirm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowSubmitConfirm(false)}>
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Submit Exam?</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSubmitConfirm(false)}>
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4 mx-auto shadow-lg shadow-amber-500/30">
+              <AlertCircle size={28} className="text-white" strokeWidth={2.2} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2 text-center tracking-tight">Submit Exam?</h3>
             {questions.length - answeredCount > 0 && (
-              <p className="text-sm text-gray-500 mb-4">You have {questions.length - answeredCount} unanswered question(s).</p>
+              <p className="text-sm text-slate-500 mb-5 text-center">You have <b className="text-amber-700">{questions.length - answeredCount}</b> unanswered question(s).</p>
             )}
             <div className="flex gap-3">
-              <button onClick={() => setShowSubmitConfirm(false)} className="flex-1 h-12 rounded-lg border border-gray-300 text-gray-600 font-semibold text-sm">Cancel</button>
-              <button onClick={() => submitExam(false)} className="flex-1 h-12 rounded-lg bg-[#2E7D32] text-white font-semibold text-sm">Submit</button>
+              <button onClick={() => setShowSubmitConfirm(false)} className="flex-1 h-12 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 transition">Cancel</button>
+              <button onClick={() => submitExam(false)} className="flex-1 h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 transition">Submit</button>
             </div>
           </div>
         </div>

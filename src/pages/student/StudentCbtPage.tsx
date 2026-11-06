@@ -122,14 +122,20 @@ export default function StudentCbtPage() {
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 min-h-screen">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">CBT Exams</h1>
-          <p className="mt-0.5 text-sm text-slate-500">{exams.length} exam{exams.length !== 1 ? 's' : ''} available</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              CBT Center
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">CBT Exams</h1>
+          <p className="mt-1.5 text-sm text-slate-500">{exams.length} exam{exams.length !== 1 ? 's' : ''} available</p>
         </div>
         <button onClick={loadData} disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition text-slate-700 font-semibold text-sm shadow-sm">
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition text-slate-700 font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
           <RefreshCw size={14} strokeWidth={2.2} className={loading ? 'animate-spin' : ''} />
           <span className="hidden sm:inline">Refresh</span>
         </button>
@@ -146,12 +152,15 @@ export default function StudentCbtPage() {
       )}
 
       {exams.length === 0 && !error && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4">
-            <Inbox size={32} strokeWidth={2} />
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-12 flex flex-col items-center justify-center text-center shadow-lg shadow-slate-200/40 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/40 via-transparent to-cyan-50/40 pointer-events-none"></div>
+          <div className="relative">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-3xl flex items-center justify-center mb-5 shadow-xl shadow-emerald-500/30">
+              <Inbox size={36} strokeWidth={2} className="text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 tracking-tight">No CBT exams available</h3>
+            <p className="mt-2 text-sm text-slate-500 max-w-xs mx-auto">Your exams will appear here when teachers create them.</p>
           </div>
-          <h3 className="text-base font-bold text-slate-900">No CBT exams available</h3>
-          <p className="mt-1 text-sm text-slate-500 max-w-xs">Your exams will appear here when teachers create them.</p>
         </div>
       )}
 
@@ -181,12 +190,12 @@ export default function StudentCbtPage() {
                 : { label: 'Upcoming', color: '#64748b', bg: '#f1f5f9', icon: Lock }
             const Icon = statusMeta.icon
             return (
-              <article key={examId} className="bg-white rounded-2xl shadow-sm border-2 overflow-hidden"
+              <article key={examId} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 hover:shadow-xl hover:shadow-slate-300/40 border-2 overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
                 style={{ borderColor: alreadyTaken ? statusMeta.color + '40' : isActive ? '#10b98140' : '#e2e8f0' }}>
                 <div className="flex items-start gap-3 px-4 sm:px-5 py-4 border-b border-slate-100">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: statusMeta.bg, color: statusMeta.color }}>
-                    <Icon size={20} strokeWidth={2.2} />
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-md"
+                    style={{ background: alreadyTaken ? (passed ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f59e0b, #d97706)') : isActive ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #94a3b8, #64748b)', boxShadow: '0 4px 12px ' + (alreadyTaken ? (passed ? '#10b98140' : '#f59e0b40') : isActive ? '#10b98140' : '#94a3b840') }}>
+                    <Icon size={20} strokeWidth={2.2} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -250,7 +259,7 @@ export default function StudentCbtPage() {
                         )}
                       </div>
                       <button onClick={() => viewResult(exam, attempt)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition">
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-xs font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
                         <Eye size={13} strokeWidth={2.4} />View Results
                       </button>
                     </div>
@@ -261,7 +270,7 @@ export default function StudentCbtPage() {
                   <div className="px-4 sm:px-5 py-3 border-t border-slate-100 flex items-center justify-end">
                     {isActive ? (
                       <button onClick={() => startExam(exam)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition">
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm font-bold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all">
                         <Play size={14} strokeWidth={2.4} />Start Exam
                       </button>
                     ) : (
@@ -404,26 +413,29 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
     const passMark = pickNumber(exam, 'pass_mark') || 50
     const passed = pct >= passMark
     return (
-      <div className="flex items-center justify-center min-h-[80vh] px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 sm:p-8 max-w-md w-full text-center">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${passed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-            {passed ? <Trophy size={32} strokeWidth={2} /> : <RefreshCw size={32} strokeWidth={2} />}
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{passed ? 'PASSED' : 'NOT YET'}</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {submittedAttempt.auto_submitted ? 'Time expired — auto-submitted' : 'Exam submitted successfully'}
-          </p>
-          <div className="mt-5 py-4 bg-slate-50 rounded-xl">
-            <div className="text-4xl font-bold text-slate-900">{score} <span className="text-xl text-slate-400">/ {total}</span></div>
-            <div className={`mt-1 inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold ${passed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-              {pct.toFixed(1)}%
+      <div className="flex items-center justify-center min-h-[80vh] px-4 py-8 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-slate-200/60 p-8 max-w-md w-full text-center relative overflow-hidden">
+          <div className={`absolute inset-0 ${passed ? 'bg-gradient-to-br from-emerald-50/40 via-transparent to-green-50/40' : 'bg-gradient-to-br from-amber-50/40 via-transparent to-orange-50/40'} pointer-events-none`}></div>
+          <div className="relative">
+            <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-xl ${passed ? 'bg-gradient-to-br from-emerald-500 to-green-600 shadow-emerald-500/30' : 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/30'}`}>
+              {passed ? <Trophy size={36} strokeWidth={2} className="text-white" /> : <RefreshCw size={36} strokeWidth={2} className="text-white" />}
             </div>
-          </div>
-          <div className="mt-5 flex gap-3">
-            <button onClick={onExit}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Back to Exams</button>
-            <button onClick={() => onViewResult(submittedAttempt)}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm">View Details</button>
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">{passed ? 'PASSED' : 'NOT YET'}</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              {submittedAttempt.auto_submitted ? 'Time expired — auto-submitted' : 'Exam submitted successfully'}
+            </p>
+            <div className="mt-6 py-5 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-2xl border border-slate-200/60">
+              <div className="text-5xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">{score} <span className="text-2xl text-slate-400">/ {total}</span></div>
+              <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${passed ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border border-emerald-200' : 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200'}`}>
+                {pct.toFixed(1)}%
+              </div>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button onClick={onExit}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:shadow-md transition">Back to Exams</button>
+              <button onClick={() => onViewResult(submittedAttempt)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold text-sm shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition-all">View Details</button>
+            </div>
           </div>
         </div>
       </div>
@@ -437,14 +449,14 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
   const answeredCount = Object.keys(answers).length
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <div className="bg-white shadow-sm border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 flex flex-col">
+      <div className="bg-white/80 backdrop-blur-sm shadow-md border-b border-slate-200/60 px-4 py-3 flex items-center justify-between gap-3 sticky top-0 z-10">
         <button onClick={() => setShowExitConfirm(true)}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
           <ChevronLeft size={16} strokeWidth={2.4} />
           <span className="hidden sm:inline">Exit</span>
         </button>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ backgroundColor: timerColor + '15' }}>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-md" style={{ backgroundColor: timerColor + '15', boxShadow: '0 4px 12px ' + timerColor + '30' }}>
           <Timer size={16} style={{ color: timerColor }} strokeWidth={2.4} />
           <span className="font-bold text-sm tabular-nums" style={{ color: timerColor }}>{formatTime(remaining)}</span>
         </div>
@@ -459,26 +471,26 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
         {questions.length === 0 ? (
           <div className="text-center py-16 text-slate-400">No questions found for this exam.</div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5 sm:p-6">
             <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-sm">{currentIndex + 1}</div>
-              <h2 className="flex-1 text-base sm:text-lg font-semibold text-slate-900 leading-relaxed">{currentQ?.question_text || ''}</h2>
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white font-bold flex items-center justify-center text-sm shadow-md shadow-emerald-500/30">{currentIndex + 1}</div>
+              <h2 className="flex-1 text-base sm:text-lg font-semibold text-slate-900 leading-relaxed tracking-tight">{currentQ?.question_text || ''}</h2>
               {currentQ?.marks && (
                 <span className="flex-shrink-0 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold uppercase">{currentQ.marks} mark{currentQ.marks !== 1 ? 's' : ''}</span>
               )}
             </div>
-            <div className="space-y-2 mt-4">
+            <div className="space-y-2.5 mt-4">
               {['a', 'b', 'c', 'd'].map((opt) => {
                 const text = currentQ?.[`option_${opt}`]
                 if (!text) return null
                 const isSelected = answers[currentQ?.id] === opt
                 return (
                   <button key={opt} onClick={() => selectOption(currentQ.id, opt)}
-                    className={`w-full text-left px-4 py-3 rounded-xl border-2 transition flex items-center gap-3 ${
-                      isSelected ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
+                    className={`w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                      isSelected ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-green-50 shadow-md shadow-emerald-500/20' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50 hover:shadow-sm'
                     }`}>
-                    <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                      isSelected ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'
+                    <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all ${
+                      isSelected ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/30' : 'bg-slate-100 text-slate-600'
                     }`}>{opt.toUpperCase()}</span>
                     <span className="flex-1 text-sm sm:text-base text-slate-800">{text}</span>
                   </button>
@@ -489,26 +501,26 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
         )}
       </div>
 
-      <div className="bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
+      <div className="bg-white/80 backdrop-blur-sm border-t border-slate-200/60 px-4 py-3 flex items-center justify-between gap-3 shadow-lg shadow-slate-200/40">
         <button onClick={() => goToQuestion(Math.max(0, currentIndex - 1))} disabled={currentIndex === 0}
-          className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">
+          className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 hover:shadow-md transition disabled:opacity-40 disabled:cursor-not-allowed">
           <ChevronLeft size={14} strokeWidth={2.4} />
           <span className="hidden sm:inline">Prev</span>
         </button>
         <button onClick={() => setShowNavGrid(!showNavGrid)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200">
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 transition">
           <Grid3x3 size={14} strokeWidth={2.2} />
           <span className="hidden sm:inline">Navigator</span>
         </button>
         {currentIndex < questions.length - 1 ? (
           <button onClick={() => goToQuestion(currentIndex + 1)}
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white font-semibold text-sm">
+            className="inline-flex items-center gap-1 px-5 py-2 rounded-xl bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
             <span className="hidden sm:inline">Next</span>
             <ChevronRight size={14} strokeWidth={2.4} />
           </button>
         ) : (
           <button onClick={() => handleSubmit(false)} disabled={submitting}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50">
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50">
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={2.4} />}Submit
           </button>
         )}
@@ -635,16 +647,17 @@ function ResultDetailView({ exam, attempt, onBack }: { exam: any; attempt: any; 
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 min-h-screen">
       <div className="flex items-center justify-between gap-4">
-        <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900">
+        <button onClick={onBack} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
           <ChevronLeft size={16} strokeWidth={2.4} />Back to Exams
         </button>
       </div>
 
-      <div className="rounded-2xl shadow-md overflow-hidden"
-        style={{ background: passed ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)' }}>
-        <div className="px-5 sm:px-6 py-6 text-center text-white">
+      <div className="rounded-3xl shadow-2xl overflow-hidden relative"
+        style={{ background: passed ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)', boxShadow: passed ? '0 20px 50px -10px rgba(16, 185, 129, 0.4)' : '0 20px 50px -10px rgba(245, 158, 11, 0.4)' }}>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 pointer-events-none"></div>
+        <div className="relative px-5 sm:px-6 py-8 text-center text-white">
           <div className="inline-flex items-center gap-2 text-sm font-bold tracking-widest uppercase opacity-90">
             {passed ? <Trophy size={16} strokeWidth={2.4} /> : <RefreshCw size={16} strokeWidth={2.4} />}
             {passed ? 'Passed' : 'Not Yet'}
@@ -691,10 +704,10 @@ function ResultDetailView({ exam, attempt, onBack }: { exam: any; attempt: any; 
             const bg = isSkipped ? '#f1f5f9' : isCorrect ? '#ecfdf5' : '#fef2f2'
             const Icon = isSkipped ? Clock : isCorrect ? CheckCircle2 : XCircle
             return (
-              <div key={q.id} className="bg-white rounded-2xl shadow-sm border-2 p-4 sm:p-5" style={{ borderColor: color + '40' }}>
+              <div key={q.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border-2 p-4 sm:p-5 hover:shadow-xl transition-all" style={{ borderColor: color + '40' }}>
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: bg, color: color }}>{i + 1}</div>
-                  <h4 className="flex-1 text-sm font-semibold text-slate-900 leading-relaxed">{q.question_text}</h4>
+                  <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-md" style={{ background: isSkipped ? 'linear-gradient(135deg, #94a3b8, #64748b)' : isCorrect ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white', boxShadow: '0 4px 12px ' + color + '40' }}>{i + 1}</div>
+                  <h4 className="flex-1 text-sm font-semibold text-slate-900 leading-relaxed tracking-tight">{q.question_text}</h4>
                   <Icon size={18} style={{ color }} strokeWidth={2.4} className="flex-shrink-0 mt-0.5" />
                 </div>
                 <div className="space-y-1.5 ml-12">
