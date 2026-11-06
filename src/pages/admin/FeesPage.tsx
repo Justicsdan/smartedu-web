@@ -377,10 +377,18 @@ export default function FeesPage() {
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Fees Management</h1>
+          <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Fees
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Fees Management</h1>
+        </div>
           <p className="text-sm text-slate-500 mt-1">Record payments, post fees to classes, view history</p>
         </div>
-        <button onClick={() => setShowFeeTypeModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition shadow-sm">
+        <button onClick={() => setShowFeeTypeModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition shadow-sm">
           <Plus className="w-4 h-4" /> New Fee Type
         </button>
       </div>
@@ -399,10 +407,10 @@ export default function FeesPage() {
       )}
 
       <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-1 overflow-x-auto">
-        <button onClick={() => setTab('overview')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'overview' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Overview</button>
-        <button onClick={() => setTab('record')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'record' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Record Payment</button>
-        <button onClick={() => setTab('post')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'post' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Post Fees</button>
-        <button onClick={() => setTab('history')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'history' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>History</button>
+        <button onClick={() => setTab('overview')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'overview' ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Overview</button>
+        <button onClick={() => setTab('record')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'record' ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Record Payment</button>
+        <button onClick={() => setTab('post')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'post' ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Post Fees</button>
+        <button onClick={() => setTab('history')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'history' ? 'bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>History</button>
       </div>
 
       {/* Overview */}
@@ -528,7 +536,7 @@ export default function FeesPage() {
             <input value={rpRemark} onChange={e => setRpRemark(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
           </div>
           <div className="flex justify-end pt-2">
-            <button onClick={savePayment} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
+            <button onClick={savePayment} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Saving...' : 'Record Payment'}
             </button>
@@ -593,7 +601,7 @@ export default function FeesPage() {
           )}
 
           <div className="flex justify-end pt-2">
-            <button onClick={postFees} disabled={saving || selectedPostIds.size === 0} className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
+            <button onClick={postFees} disabled={saving || selectedPostIds.size === 0} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Posting...' : `Post to ${selectedPostIds.size} Student(s)`}
             </button>
@@ -718,7 +726,7 @@ export default function FeesPage() {
 
       {/* Fee Type Modal */}
       {showFeeTypeModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowFeeTypeModal(false)}>
+        <div className="fixed inset-0 bg-gradient-to-r from-slate-900 to-slate-700/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowFeeTypeModal(false)}>
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-800">New Fee Type</h2>
@@ -767,7 +775,7 @@ export default function FeesPage() {
             </div>
             <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100">
               <button onClick={() => setShowFeeTypeModal(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
-              <button onClick={saveFeeType} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
+              <button onClick={saveFeeType} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm transition disabled:opacity-50">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Saving...' : 'Save'}
               </button>

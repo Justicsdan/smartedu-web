@@ -57,7 +57,15 @@ export default function TeacherClasses() {
   return (
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">My Classes</h1>
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              Classes
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">My Classes</h1>
+        </div>
         <p className="text-sm text-slate-500 mt-1">{classGroups.length} class{classGroups.length !== 1 ? 'es' : ''} · {subjects.length} subject{subjects.length !== 1 ? 's' : ''}</p>
       </div>
 

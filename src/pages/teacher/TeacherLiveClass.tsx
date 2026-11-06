@@ -157,7 +157,7 @@ export default function TeacherLiveClass() {
     const jitsiUrl = buildJitsiUrl(activeRoom.roomName, displayName)
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col">
-        <div className="bg-slate-900 px-4 py-3 flex items-center justify-between shrink-0">
+        <div className="bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <Radio className="w-5 h-5 text-red-400 animate-pulse" />
             <div><p className="text-white text-sm font-semibold">{activeRoom.title}</p><p className="text-white/50 text-xs">Live</p></div>
@@ -180,10 +180,18 @@ export default function TeacherLiveClass() {
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Live Classes</h1>
+          <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              Live Classes
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Live Classes</h1>
+        </div>
           <p className="text-sm text-slate-500 mt-1">Start, schedule, and monitor live video classes</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition shadow-sm">
+        <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition shadow-sm">
           <Plus size={14} strokeWidth={2.4} />Start / Schedule
         </button>
       </div>
@@ -219,7 +227,7 @@ export default function TeacherLiveClass() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {(isLive || isReady) && <button onClick={() => joinClass(lc)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition"><Video size={13} />{isLive ? 'Join' : 'Start'}</button>}
+                    {(isLive || isReady) && <button onClick={() => joinClass(lc)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition"><Video size={13} />{isLive ? 'Join' : 'Start'}</button>}
                     {isLive && <button onClick={() => forceEnd(lc.id)} disabled={endingId === lc.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-semibold hover:bg-red-100 transition disabled:opacity-50">{endingId === lc.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Square className="w-3.5 h-3.5" />}End</button>}
                     <button onClick={() => setDeleteConfirm(lc.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
@@ -231,7 +239,7 @@ export default function TeacherLiveClass() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 bg-gradient-to-r from-slate-900 to-slate-700/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
               <h3 className="text-base font-bold text-slate-900">Start / Schedule</h3>
@@ -273,7 +281,7 @@ export default function TeacherLiveClass() {
             </div>
             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
               <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Cancel</button>
-              <button onClick={startClass} disabled={starting || (audience === 'class' && (!selectedClassId || !selectedSubjectId))} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50">
+              <button onClick={startClass} disabled={starting || (audience === 'class' && (!selectedClassId || !selectedSubjectId))} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50">
                 {starting ? <Loader2 size={15} className="animate-spin" /> : <Video size={15} />}
                 {starting ? 'Starting…' : scheduledDate && scheduledTime ? 'Schedule' : 'Start Live'}
               </button>
@@ -283,7 +291,7 @@ export default function TeacherLiveClass() {
       )}
 
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
+        <div className="fixed inset-0 bg-gradient-to-r from-slate-900 to-slate-700/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4"><div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600"><Trash2 size={24} strokeWidth={2} /></div><h3 className="text-lg font-bold text-slate-900">Delete?</h3></div>
             <p className="text-sm text-slate-600 mb-5">This cannot be undone.</p>

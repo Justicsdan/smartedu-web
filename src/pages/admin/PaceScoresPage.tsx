@@ -118,7 +118,15 @@ export default function PaceScoresPage() {
   return (
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">PACE Scores</h1>
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
+              PACE Scores
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">PACE Scores</h1>
+        </div>
         <p className="text-sm text-slate-500 mt-1">Enter ACE PACE test scores per student per subject</p>
       </div>
 
@@ -281,7 +289,7 @@ function PaceEntryModal({ student, subjects, existingScores, schoolId, onClose, 
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-gradient-to-r from-slate-900 to-slate-700/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-bold text-slate-800">PACE Scores — {studentName(student)}</h2>

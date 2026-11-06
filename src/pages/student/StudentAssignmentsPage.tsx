@@ -183,7 +183,15 @@ export default function StudentAssignmentsPage() {
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Assignments</h1>
+          <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Assignments
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Assignments</h1>
+        </div>
           <p className="mt-0.5 text-sm text-slate-500">{assignments.length} assignment{assignments.length !== 1 ? 's' : ''} posted</p>
         </div>
         <button onClick={loadData} disabled={loading}
@@ -314,7 +322,7 @@ export default function StudentAssignmentsPage() {
                     </span>
                   ) : (
                     <button onClick={() => openSubmitModal(a)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition">
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition">
                       <Send size={12} strokeWidth={2.4} />Submit
                     </button>
                   )}
@@ -326,7 +334,7 @@ export default function StudentAssignmentsPage() {
       )}
 
       {showModal && activeAssignment && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4" onClick={closeModal}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-gradient-to-r from-slate-900 to-slate-700/60 backdrop-blur-sm p-0 sm:p-4" onClick={closeModal}>
           <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -378,7 +386,7 @@ export default function StudentAssignmentsPage() {
               <button onClick={closeModal} disabled={submitting}
                 className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 disabled:opacity-50">Cancel</button>
               <button onClick={handleSubmit} disabled={submitting || submitText.trim().length < 3}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                 {submitting ? (<><Loader2 size={15} className="animate-spin" />Submitting…</>) : (<><Send size={15} />Submit</>)}
               </button>
             </div>

@@ -560,7 +560,7 @@ export default function StudentProfilePage() {
       {/* ── PIN modal ───────────────────────────────────────────── */}
       {showPinModal && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-gradient-to-r from-slate-900 to-slate-700/60 backdrop-blur-sm p-0 sm:p-4"
           onClick={closePinModal}
         >
           <div
@@ -661,7 +661,7 @@ export default function StudentProfilePage() {
               <button
                 onClick={handleChangePin}
                 disabled={changingPin || !oldPin || !newPin || !confirmPin}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {changingPin ? (
                   <>

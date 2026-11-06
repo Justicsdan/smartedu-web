@@ -131,7 +131,15 @@ export default function StudentComplaintsPage() {
     <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Complaints</h1>
+          <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Complaints
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Complaints</h1>
+        </div>
           <p className="mt-0.5 text-sm text-slate-500">{complaints.length} complaint{complaints.length !== 1 ? 's' : ''} submitted</p>
         </div>
         <div className="flex items-center gap-2">
@@ -141,7 +149,7 @@ export default function StudentComplaintsPage() {
             <span className="hidden sm:inline">Refresh</span>
           </button>
           <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 transition text-white font-semibold text-sm shadow-sm">
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 hover:bg-emerald-700 transition text-white font-semibold text-sm shadow-sm">
             <Plus size={14} strokeWidth={2.4} /><span>New</span>
           </button>
         </div>
@@ -165,7 +173,7 @@ export default function StudentComplaintsPage() {
           <h3 className="text-base font-bold text-slate-900">No complaints yet</h3>
           <p className="mt-1 text-sm text-slate-500 max-w-xs">Have a concern? Submit a complaint and the school administration will respond.</p>
           <button onClick={() => setShowModal(true)}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm">
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm">
             <Plus size={14} strokeWidth={2.4} /> Submit a Complaint
           </button>
         </div>
@@ -226,7 +234,7 @@ export default function StudentComplaintsPage() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4" onClick={closeModal}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-gradient-to-r from-slate-900 to-slate-700/60 backdrop-blur-sm p-0 sm:p-4" onClick={closeModal}>
           <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
               <div className="flex items-center gap-2.5">
@@ -273,7 +281,7 @@ export default function StudentComplaintsPage() {
               <button onClick={closeModal} disabled={submitting}
                 className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 disabled:opacity-50">Cancel</button>
               <button onClick={handleSubmit} disabled={submitting || !form.subject.trim() || form.description.trim().length < 10}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                 {submitting ? (<><Loader2 size={15} className="animate-spin" />Submitting…</>) : (<><Send size={15} />Submit</>)}
               </button>
             </div>

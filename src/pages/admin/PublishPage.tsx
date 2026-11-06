@@ -517,7 +517,15 @@ export default function PublishPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Publish Results</h1>
+          <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
+              Publish
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Publish Results</h1>
+        </div>
           <p className="text-sm text-slate-500 mt-1">
             {sessionId && termId ? 'Compute positions, enter comments & behavioral ratings, then publish.' : 'No active session/term set.'}
           </p>
@@ -537,7 +545,7 @@ export default function PublishPage() {
           <button
             onClick={handleCompute}
             disabled={!classId || computing}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-700 transition disabled:opacity-50 shadow-sm"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-700 transition disabled:opacity-50 shadow-sm"
           >
             {computing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
             {computing ? 'Computing...' : 'Compute Positions'}
@@ -547,7 +555,7 @@ export default function PublishPage() {
             disabled={!classId || publishing || totalSummaries === 0}
             className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50 shadow-sm ${
               publishedCount > 0 ? 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'
-                                 : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                 : 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:bg-emerald-700'
             }`}
           >
             {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -799,7 +807,7 @@ export default function PublishPage() {
                         <button
                           onClick={() => handleSaveStudent(s.id)}
                           disabled={isSaving}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-600 text-white rounded-lg text-xs font-semibold hover:bg-violet-700 transition disabled:opacity-50 ml-auto shadow-sm"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-violet-700 transition disabled:opacity-50 ml-auto shadow-sm"
                         >
                           {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                           {isSaving ? 'Saving...' : 'Save'}
