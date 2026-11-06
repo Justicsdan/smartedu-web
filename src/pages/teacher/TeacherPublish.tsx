@@ -89,12 +89,12 @@ export default function TeacherPublish() {
     } catch (e: any) { setError(e.message) } finally { setPublishing(false) }
   }
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+  if (loading) return <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30"><div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" /></div>
 
   if (!classInfo) {
     return (
-      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400"><Users size={32} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">Not a Form Master</h3>
           <p className="text-sm text-slate-500">Only form masters can publish results.</p>
@@ -121,7 +121,7 @@ export default function TeacherPublish() {
       {successMsg && <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800"><CheckCircle size={18} className="flex-shrink-0 mt-0.5" /><p className="text-sm flex-1">{successMsg}</p></div>}
 
       {summaries.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400"><Calculator size={32} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">No Summaries Computed</h3>
           <p className="text-sm text-slate-500">Ask admin to compute positions first from the admin Publish page.</p>
@@ -133,7 +133,7 @@ export default function TeacherPublish() {
             if (!student) return null
             const isExpanded = expandedStudent === s.student_id
             return (
-              <div key={s.student_id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div key={s.student_id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition" onClick={() => setExpandedStudent(isExpanded ? null : s.student_id)}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">

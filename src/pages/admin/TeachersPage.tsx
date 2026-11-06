@@ -158,30 +158,36 @@ export default function TeachersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading teachers…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading teachers...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
-      {/* Header */}
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 min-h-screen">
+      {/* Header - premium */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
             <GraduationCap size={22} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Teachers</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Teachers
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Teachers</h1>
             <p className="text-sm text-slate-500">{searchQuery ? filteredTeachers.length + ' of ' + teachers.length + ' found' : teachers.length + ' registered'}</p>
           </div>
         </div>
         <button onClick={() => setShowAddTeacher(true)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold shadow-sm transition">
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm font-bold shadow-lg shadow-emerald-500/30 hover:-translate-y-0.5 transition-all">
           <UserPlus size={14} strokeWidth={2.4} />Add New
         </button>
       </div>
@@ -195,7 +201,7 @@ export default function TeachersPage() {
         ].map((s) => {
           const Icon = s.icon
           return (
-            <div key={s.label} className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div key={s.label} className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: s.bg, color: s.color }}>
                 <Icon size={16} strokeWidth={2.2} />
               </div>
@@ -207,11 +213,11 @@ export default function TeachersPage() {
       </div>
 
       {/* Action bar + search */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-2 flex-wrap">
           <button onClick={exportCsv} disabled={isExporting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold transition disabled:opacity-50">
-            <Download size={13} strokeWidth={2.2} />{isExporting ? '…' : 'Export'}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-xs font-semibold shadow-md shadow-blue-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0">
+            <Download size={13} strokeWidth={2.2} />{isExporting ? '...' : 'Export'}
           </button>
           <div className="flex-1" />
           <div className="relative">
@@ -240,24 +246,24 @@ export default function TeachersPage() {
       )}
 
       {/* Teacher list */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         {teachers.length === 0 ? (
           <div className="py-16 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
-              <Users size={32} strokeWidth={2} />
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white mb-4 shadow-xl shadow-emerald-500/30">
+              <Users size={36} strokeWidth={2} />
             </div>
-            <h3 className="text-base font-bold text-slate-900">No teachers registered</h3>
-            <p className="mt-1 text-sm text-slate-500">Tap "Add New" to register a teacher</p>
+            <h3 className="text-lg font-bold text-slate-900 tracking-tight">No teachers registered</h3>
+            <p className="mt-2 text-sm text-slate-500 max-w-xs">Tap "Add New" to register a teacher</p>
           </div>
         ) : searchQuery && filteredTeachers.length === 0 ? (
           <div className="py-16 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
-              <Search size={32} strokeWidth={2} />
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white mb-4 shadow-xl shadow-slate-400/30">
+              <Search size={36} strokeWidth={2} />
             </div>
-            <h3 className="text-base font-bold text-slate-900">No match found</h3>
-            <p className="mt-1 text-sm text-slate-500">Try a different search term</p>
+            <h3 className="text-lg font-bold text-slate-900 tracking-tight">No match found</h3>
+            <p className="mt-2 text-sm text-slate-500">Try a different search term</p>
             <button onClick={() => { setSearchQuery(''); setDisplayCount(PAGE_SIZE) }}
-              className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-700">Clear search</button>
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm font-semibold shadow-md shadow-blue-500/30 hover:-translate-y-0.5 transition-all">Clear search</button>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -271,7 +277,7 @@ export default function TeachersPage() {
                 <div key={t.id} className="px-4 py-3 hover:bg-slate-50/50 transition group cursor-pointer" onClick={() => setDetailTeacher(t)}>
                   <div className="flex items-start gap-3">
                     {/* Avatar */}
-                    <div className={'flex-shrink-0 w-11 h-11 rounded-full p-0.5 ' + (isFormTeacher ? 'bg-emerald-50' : 'bg-blue-50')}>
+                    <div className={'flex-shrink-0 w-11 h-11 rounded-full p-0.5 ' + (isFormTeacher ? 'bg-gradient-to-br from-emerald-400 to-green-500' : 'bg-gradient-to-br from-blue-400 to-cyan-500')}>
                       {t.passport_url ? (
                         <img src={t.passport_url + '?width=80&height=80'} alt="" className="w-full h-full rounded-full object-cover bg-gray-100"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />

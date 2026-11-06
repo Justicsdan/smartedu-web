@@ -58,8 +58,8 @@ export default function TeacherMyStudents() {
 
   if (!classInfo) {
     return (
-      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400"><Users size={32} strokeWidth={2} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">Not a Form Master</h3>
           <p className="text-sm text-slate-500">Only form masters can view their class students.</p>
@@ -77,7 +77,7 @@ export default function TeacherMyStudents() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" strokeWidth={2.2} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or admission no…"
@@ -85,7 +85,7 @@ export default function TeacherMyStudents() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="py-16 text-center">
             <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400"><Users size={32} strokeWidth={2} /></div>

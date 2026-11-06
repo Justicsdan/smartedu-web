@@ -181,10 +181,10 @@ export default function TeacherDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="text-sm font-medium">Loading dashboard…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading dashboard...</span>
         </div>
       </div>
     )

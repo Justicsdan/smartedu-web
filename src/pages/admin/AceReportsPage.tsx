@@ -123,11 +123,11 @@ export default function AceReportsPage() {
   }
 
   if (loading && classes.length === 0) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><div className="flex flex-col items-center gap-3 text-slate-600"><Loader2 className="w-8 h-8 animate-spin text-violet-600"  /><span className="text-sm font-medium">Loading…</span></div></div>
+    return <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-violet-50/30"><div className="flex flex-col items-center gap-4"><div className="w-14 h-14 border-4 border-violet-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-violet-500/20" /><span className="text-sm font-semibold text-slate-700">Loading...</span></div></div>
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">ACE Reports</h1>
         <p className="text-sm text-slate-500 mt-1">Generate and publish ACE term reports with PACE summaries</p>
@@ -146,7 +146,7 @@ export default function AceReportsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4">
         <label className="block text-xs font-medium text-slate-600 mb-1.5">Select Class</label>
         <select value={classId} onChange={e => { setClassId(e.target.value); if (e.target.value) loadData(e.target.value) }} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-[#7C3AED] focus:ring-2 focus:ring-violet-100 outline-none transition">
           <option value="">Select class</option>
@@ -155,14 +155,14 @@ export default function AceReportsPage() {
       </div>
 
       {!classId ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-12 text-center">
           <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"><BookOpen className="w-8 h-8 text-blue-400" /></div>
           <p className="text-slate-400 text-sm">Select a class to begin</p>
         </div>
       ) : loading ? (
         <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 text-[#7C3AED] animate-spin" /></div>
       ) : students.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-12 text-center">
           <p className="text-slate-400 text-sm">No students in this class.</p>
         </div>
       ) : (
@@ -171,7 +171,7 @@ export default function AceReportsPage() {
             const rep = reports[s.id]
             const pc = paceCounts[s.id] || 0
             return (
-              <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center justify-between hover:shadow-sm transition cursor-pointer" onClick={() => setEditingStudent(s)}>
+              <div key={s.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4 flex items-center justify-between hover:shadow-sm transition cursor-pointer" onClick={() => setEditingStudent(s)}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                     {studentName(s).charAt(0) || '?'}

@@ -188,8 +188,8 @@ export default function TeacherAttendance() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="text-sm font-medium">Loading…</span>
+          <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading...</span>
         </div>
       </div>
     )
@@ -197,8 +197,8 @@ export default function TeacherAttendance() {
 
   if (!formMasterClass) {
     return (
-      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400">
             <Users size={32} strokeWidth={2} />
           </div>
@@ -244,7 +244,7 @@ export default function TeacherAttendance() {
       )}
 
       {/* Date picker */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center gap-3">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4 flex items-center gap-3">
         <Calendar size={18} className="text-slate-400" strokeWidth={2.2} />
         <input type="date" value={selectedDate} onChange={e => { setSelectedDate(e.target.value); setSuccessMsg('') }}
           className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" />
@@ -257,7 +257,7 @@ export default function TeacherAttendance() {
           const count = stats[opt.value as keyof typeof stats] || 0
           const Icon = opt.icon
           return (
-            <div key={opt.value} className="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+            <div key={opt.value} className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ backgroundColor: opt.bg, color: opt.color }}>
                 <Icon size={14} strokeWidth={2.2} />
               </div>
@@ -269,7 +269,7 @@ export default function TeacherAttendance() {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" strokeWidth={2.2} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search student…"
@@ -278,7 +278,7 @@ export default function TeacherAttendance() {
       </div>
 
       {/* Student list */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         {filteredStudents.length === 0 ? (
           <div className="py-16 text-center">
             <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400">

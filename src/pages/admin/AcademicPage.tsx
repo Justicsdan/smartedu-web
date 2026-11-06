@@ -136,11 +136,11 @@ export default function AcademicPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><div className="flex flex-col items-center gap-3 text-slate-600"><Loader2 className="w-8 h-8 animate-spin text-emerald-600"  /><span className="text-sm font-medium">Loading…</span></div></div>
+    return <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-emerald-50/30"><div className="flex flex-col items-center gap-4"><div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" /><span className="text-sm font-semibold text-slate-700">Loading...</span></div></div>
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Academic Sessions & Terms</h1>
         <p className="text-sm text-slate-500 mt-1">Manage academic years and terms. Set the active session/term used by scores, publish, and other pages.</p>
@@ -159,7 +159,7 @@ export default function AcademicPage() {
         </div>
       )}
 
-      <div className="flex gap-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-1">
+      <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-1">
         <button onClick={() => setTab('sessions')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${tab === 'sessions' ? 'bg-[#059669] text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
           Sessions ({sessions.length})
         </button>
@@ -176,14 +176,14 @@ export default function AcademicPage() {
             </button>
           </div>
           {sessions.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-12 text-center">
               <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"><Calendar className="w-8 h-8 text-blue-400" /></div>
               <p className="text-slate-400 text-sm">No sessions created yet.</p>
             </div>
           ) : (
             <div className="space-y-2">
               {sessions.map(s => (
-                <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center justify-between hover:shadow-sm transition">
+                <div key={s.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4 flex items-center justify-between hover:shadow-sm transition">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.is_current ? 'bg-green-50' : 'bg-slate-100'}`}>
                       <Calendar className={`w-5 h-5 ${s.is_current ? 'text-green-600' : 'text-slate-400'}`} />
@@ -220,7 +220,7 @@ export default function AcademicPage() {
             </button>
           </div>
           {terms.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-12 text-center">
               <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"><CalendarDays className="w-8 h-8 text-blue-400" /></div>
               <p className="text-slate-400 text-sm">No terms created yet.</p>
             </div>
@@ -229,7 +229,7 @@ export default function AcademicPage() {
               {terms.map(t => {
                 const session = sessions.find(s => s.id === t.session_id)
                 return (
-                  <div key={t.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center justify-between hover:shadow-sm transition">
+                  <div key={t.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4 flex items-center justify-between hover:shadow-sm transition">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${t.is_current ? 'bg-green-50' : 'bg-slate-100'}`}>
                         <CalendarDays className={`w-5 h-5 ${t.is_current ? 'text-green-600' : 'text-slate-400'}`} />

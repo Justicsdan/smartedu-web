@@ -281,20 +281,26 @@ export default function CredentialsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-600" />
-          <span className="text-sm font-medium">Loading credentials…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-indigo-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading credentials...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 min-h-screen">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Credentials</h1>
-        <p className="text-sm text-slate-500 mt-1">Generate and manage login credentials for teachers and students</p>
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+            Credentials
+          </span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Credentials</h1>
+        <p className="text-sm text-slate-500 mt-1.5">Generate and manage login credentials for teachers and students</p>
       </div>
 
       {error && (
@@ -311,7 +317,7 @@ export default function CredentialsPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+      <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-1">
         <button onClick={() => setTab('teachers')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${tab === 'teachers' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           Teachers ({teachers.length})
         </button>
@@ -322,19 +328,19 @@ export default function CredentialsPage() {
 
       {/* Stats + actions */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
             {tab === 'teachers' ? <GraduationCap size={16} strokeWidth={2.2} /> : <Users size={16} strokeWidth={2.2} />}
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{tab === 'teachers' ? teachers.length : students.length}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><KeyRound size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{tab === 'teachers' ? teachersMissing : studentsMissing}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Missing</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><ClipboardCheck size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{(tab === 'teachers' ? teachers.length : students.length) - (tab === 'teachers' ? teachersMissing : studentsMissing)}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Have Creds</div>
@@ -342,7 +348,7 @@ export default function CredentialsPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 flex flex-wrap items-center gap-2">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -361,21 +367,21 @@ export default function CredentialsPage() {
         <button
           onClick={() => generateMissing(tab === 'teachers')}
           disabled={bulkGenerating || (tab === 'teachers' ? teachersMissing : studentsMissing) === 0}
-          className="flex items-center gap-1.5 px-3 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold hover:bg-cyan-700 shadow-sm transition disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
         >
-          {bulkGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {bulkGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" strokeWidth={2.4} />}
           {bulkGenerating ? 'Generating...' : `Generate Missing (${tab === 'teachers' ? teachersMissing : studentsMissing})`}
         </button>
         <button
           onClick={() => printSlips(tab === 'teachers')}
-          className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-slate-900 text-white text-sm font-bold shadow-md shadow-slate-500/30 hover:-translate-y-0.5 transition-all"
         >
-          <Printer className="w-4 h-4" /> Print Slips
+          <Printer className="w-4 h-4" strokeWidth={2.4} /> Print Slips
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

@@ -337,21 +337,27 @@ export default function ScoresPage() {
 
   if (loading && students.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="text-sm font-medium">Loading scores…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading scores...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Score Entry</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              Scorebook
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Score Entry</h1>
+          <p className="text-sm text-slate-500 mt-1.5">
             {settings.current_session && settings.current_term
               ? 'Active session & term loaded automatically.'
               : 'No active session/term set in Settings.'}
@@ -360,10 +366,10 @@ export default function ScoresPage() {
         <button
           onClick={handleSave}
           disabled={saving || totalEntered === 0 || isLocked}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? 'Saving…' : `Save${totalEntered > 0 ? ` (${totalEntered})` : ''}`}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" strokeWidth={2.4} />}
+          {saving ? 'Saving...' : `Save${totalEntered > 0 ? ` (${totalEntered})` : ''}`}
         </button>
       </div>
 
@@ -428,25 +434,25 @@ export default function ScoresPage() {
 
       {classId && subjectId && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}><Users size={16} strokeWidth={2.2} /></div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{students.length}</div>
-            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Students</div>
+          <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, #6366F1, #4f46e5)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)' }}><Users size={18} strokeWidth={2.2} className="text-white" /></div>
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{students.length}</div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">Students</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><CheckCircle size={16} strokeWidth={2.2} /></div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalEntered}/{students.length}</div>
-            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Entered</div>
+          <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, #10B981, #059669)', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)' }}><CheckCircle size={18} strokeWidth={2.2} className="text-white" /></div>
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{totalEntered}<span className="text-base text-slate-400">/{students.length}</span></div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">Entered</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><BookOpen size={16} strokeWidth={2.2} /></div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{classAvg}<span className="text-sm text-slate-400">/{totalMax}</span></div>
-            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Class Avg</div>
+          <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, #F59E0B, #d97706)', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)' }}><BookOpen size={18} strokeWidth={2.2} className="text-white" /></div>
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{classAvg}<span className="text-sm text-slate-400">/{totalMax}</span></div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">Class Avg</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}><Info size={16} strokeWidth={2.2} /></div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{assessmentTypes.length}</div>
-            <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Columns</div>
+          <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, #8B5CF6, #7c3aed)', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)' }}><Info size={18} strokeWidth={2.2} className="text-white" /></div>
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{assessmentTypes.length}</div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">Columns</div>
           </div>
         </div>
       )}

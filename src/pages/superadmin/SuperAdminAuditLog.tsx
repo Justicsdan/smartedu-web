@@ -140,7 +140,7 @@ export default function SuperAdminAuditLog() {
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 min-h-screen">
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl shadow-md bg-gradient-to-br from-slate-900 via-violet-900 to-indigo-900">
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/5 rounded-full pointer-events-none" />
@@ -160,28 +160,28 @@ export default function SuperAdminAuditLog() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
             <Activity size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{counts.total}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Events</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}>
             <Plus size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{counts.insert}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Creates</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EFF6FF', color: '#3B82F6' }}>
             <Edit size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{counts.update}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Updates</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}>
             <Trash2 size={16} strokeWidth={2.2} />
           </div>
@@ -191,7 +191,7 @@ export default function SuperAdminAuditLog() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <Filter size={14} className="text-slate-400" strokeWidth={2.2} />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Filters</span>
@@ -235,7 +235,7 @@ export default function SuperAdminAuditLog() {
       </div>
 
       {/* Log entries */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
           <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
             <ScrollText size={18} strokeWidth={2.2} />

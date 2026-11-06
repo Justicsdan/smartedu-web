@@ -331,24 +331,30 @@ export default function ClassesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
-          <span className="text-sm font-medium">Loading classes…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-amber-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-amber-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-amber-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading classes...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 min-h-screen">
       <div>
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/30">
             <School size={22} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Classes & Subjects</h1>
+            <div class_="flex items-center gap-2 mb-1" style={{display:'flex'}}>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                Classes
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Classes & Subjects</h1>
             <p className="text-sm text-slate-500">Manage classes, subjects, and assignments</p>
           </div>
         </div>
@@ -368,14 +374,14 @@ export default function ClassesPage() {
           </div>
         )}
 
-        <div className="flex gap-1 bg-white rounded-xl border border-slate-200 p-1">
-          <button onClick={() => setTab('classes')} className={'flex-1 py-2.5 rounded-lg text-sm font-medium transition ' + (tab === 'classes' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50')}>
+        <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-1.5">
+          <button onClick={() => setTab('classes')} className={'flex-1 py-2.5 rounded-xl text-sm font-semibold transition ' + (tab === 'classes' ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md shadow-amber-500/30' : 'text-slate-600 hover:bg-slate-50')}>
             Classes ({classes.length})
           </button>
-          <button onClick={() => setTab('subjects')} className={'flex-1 py-2.5 rounded-lg text-sm font-medium transition ' + (tab === 'subjects' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50')}>
+          <button onClick={() => setTab('subjects')} className={'flex-1 py-2.5 rounded-xl text-sm font-semibold transition ' + (tab === 'subjects' ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md shadow-violet-500/30' : 'text-slate-600 hover:bg-slate-50')}>
             Subjects ({subjects.length})
           </button>
-          <button onClick={() => setTab('assignments')} className={'flex-1 py-2.5 rounded-lg text-sm font-medium transition ' + (tab === 'assignments' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50')}>
+          <button onClick={() => setTab('assignments')} className={'flex-1 py-2.5 rounded-xl text-sm font-semibold transition ' + (tab === 'assignments' ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-500/30' : 'text-slate-600 hover:bg-slate-50')}>
             Assignments ({assignments.length})
           </button>
         </div>
@@ -392,19 +398,19 @@ export default function ClassesPage() {
                   setClassForm({ name: '', section: '', tier: 'SSS', class_level: '', next_class_id: '' })
                   setShowClassModal(true)
                 }}
-                className="h-9 px-4 rounded-lg bg-[#1A237E] text-white border border-[#1A237E] flex items-center gap-1.5 text-xs font-semibold hover:bg-[#283593] transition"
+                className="h-10 px-5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white border-0 flex items-center gap-1.5 text-xs font-bold shadow-md shadow-amber-500/30 hover:-translate-y-0.5 transition-all"
               >
-                <Plus size={16} /> New Class
+                <Plus size={16} strokeWidth={2.4} /> New Class
               </button>
             </div>
 
             {classes.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
-                  <BookOpen size={32} className="text-blue-400" />
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-12 text-center shadow-lg shadow-slate-200/40">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl flex items-center justify-center mb-4 shadow-xl shadow-amber-500/30">
+                  <BookOpen size={36} className="text-white" strokeWidth={2} />
                 </div>
-                <p className="text-gray-500 text-sm">No classes created yet</p>
-                <p className="text-gray-400 text-xs mt-1">Tap "New Class" to create your first one</p>
+                <p className="text-slate-700 font-semibold text-sm">No classes created yet</p>
+                <p className="text-slate-400 text-xs mt-1">Tap "New Class" to create your first one</p>
               </div>
             ) : (
               <div className="space-y-2">

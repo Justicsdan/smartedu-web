@@ -119,11 +119,11 @@ export default function TeacherAnnouncements() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+    return <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30"><div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" /></div>
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Announcements</h1>
@@ -138,7 +138,7 @@ export default function TeacherAnnouncements() {
       {successMsg && <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800"><CheckCircle size={18} className="flex-shrink-0 mt-0.5" /><p className="text-sm flex-1">{successMsg}</p></div>}
 
       {announcements.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-400"><Megaphone size={32} strokeWidth={2} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">No Announcements</h3>
           <p className="text-sm text-slate-500">Click "New" to create one.</p>
@@ -148,7 +148,7 @@ export default function TeacherAnnouncements() {
           {announcements.map(a => {
             const cls = a.class_id ? classes.find(c => c.id === a.class_id) : null
             return (
-              <div key={a.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition hover:shadow-md ${a.is_pinned ? 'border-blue-300 ring-1 ring-blue-100' : 'border-slate-200'}`}>
+              <div key={a.id} className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden transition hover:shadow-md ${a.is_pinned ? 'border-blue-300 ring-1 ring-blue-100' : 'border-slate-200'}`}>
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1 min-w-0">

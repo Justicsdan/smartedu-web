@@ -280,19 +280,19 @@ function StatCard({
   accent: string
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+    <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex items-center justify-between">
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white"
-          style={{ backgroundColor: accent }}
+          className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"
+          style={{ background: 'linear-gradient(135deg, ' + accent + ', ' + accent + 'cc)', boxShadow: '0 4px 12px ' + accent + '40' }}
         >
-          <Icon size={16} strokeWidth={2.2} />
+          <Icon size={18} strokeWidth={2.2} />
         </div>
       </div>
-      <div className="mt-2.5 text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+      <div className="mt-3 text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
         {value}
       </div>
-      <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">
+      <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">
         {label}
       </div>
       {sub && <div className="text-[11px] text-slate-400 mt-0.5">{sub}</div>}
@@ -513,10 +513,10 @@ export default function StudentDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading your dashboard…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading your dashboard...</span>
         </div>
       </div>
     )
@@ -525,24 +525,28 @@ export default function StudentDashboard() {
   const currentTermName = sessionTerms.find((t) => t.id === currentTermId)?.name || 'Current Term'
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <div
-        className="relative overflow-hidden rounded-2xl shadow-md"
-        style={{ background: `linear-gradient(135deg, ${schoolPrimary} 0%, ${schoolPrimary}dd 60%, ${schoolPrimary}aa 100%)` }}
+        className="relative overflow-hidden rounded-3xl shadow-2xl"
+        style={{ background: `linear-gradient(135deg, ${schoolPrimary} 0%, ${schoolPrimary}dd 60%, ${schoolPrimary}aa 100%)`, boxShadow: '0 20px 50px -10px ' + schoolPrimary + '40' }}
       >
-        <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full pointer-events-none" />
-        <div className="absolute -right-4 top-8 w-24 h-24 bg-white/5 rounded-full pointer-events-none" />
-        <div className="relative px-4 sm:px-6 py-5 sm:py-6">
-          <div className="text-[11px] uppercase tracking-widest text-white/80 font-semibold">Welcome back</div>
-          <h1 className="mt-0.5 text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight break-words">{displayName}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-white/90 text-sm">
+        <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full pointer-events-none" />
+        <div className="absolute -right-4 top-12 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
+        <div className="absolute -left-8 -bottom-8 w-40 h-40 bg-white/5 rounded-full pointer-events-none" />
+        <div className="relative px-5 sm:px-7 py-6 sm:py-7">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-[10px] uppercase tracking-widest text-white font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+            Welcome back
+          </div>
+          <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight break-words drop-shadow-sm">{displayName}</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-white/90 text-sm">
             {classInfo && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/15 backdrop-blur-sm font-medium">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm font-semibold border border-white/20">
                 <BookOpen size={13} strokeWidth={2.4} />
                 {classInfo.name}{classInfo.section ? ` ${classInfo.section}` : ''}
               </span>
             )}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/15 backdrop-blur-sm font-medium">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm font-semibold border border-white/20">
               <Calendar size={13} strokeWidth={2.4} />
               {currentTermName}
             </span>

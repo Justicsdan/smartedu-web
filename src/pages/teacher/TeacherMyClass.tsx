@@ -53,8 +53,8 @@ export default function TeacherMyClass() {
 
   if (!classInfo) {
     return (
-      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+      <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400"><BookOpen size={32} strokeWidth={2} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">Not a Form Master</h3>
           <p className="text-sm text-slate-500">Contact your admin to be assigned as a form teacher.</p>
@@ -81,29 +81,29 @@ export default function TeacherMyClass() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}><Users size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900">{studentCount}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Students</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><BookOpen size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900">{subjectCount}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Subjects</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><Calendar size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900">{classInfo.class_level || '—'}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Level</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}><Award size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900">{classInfo.tier || '—'}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Tier</div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5">
         <h3 className="text-sm font-bold text-slate-900 mb-3">Quick Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <a href="/dashboard/teacher/my-students" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition">

@@ -141,8 +141,8 @@ export default function StudentLiveClassPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading live classes…</span>
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading live classes...</span>
         </div>
       </div>
     )
@@ -191,7 +191,7 @@ export default function StudentLiveClassPage() {
   const past = classes.filter((c) => !isLiveNow(c) && !isUpcoming(c)).slice(0, 2)
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Live Class</h1>
@@ -215,7 +215,7 @@ export default function StudentLiveClassPage() {
       )}
 
       {classes.length === 0 && !error && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 flex flex-col items-center justify-center text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-10 flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4">
             <Inbox size={32} strokeWidth={2} />
           </div>
@@ -284,7 +284,7 @@ function LiveClassCard({ cls, onJoin, variant }: {
       : { label: 'Ended', color: '#64748b', bg: '#f1f5f9', icon: VideoOff }
   const Icon = meta.icon
   return (
-    <article className="bg-white rounded-2xl shadow-sm border-2 overflow-hidden"
+    <article className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60-2 overflow-hidden"
       style={{ borderColor: variant === 'live' ? '#ef444440' : '#e2e8f0' }}>
       <div className="flex items-start gap-3 px-4 sm:px-5 py-4 border-b border-slate-100">
         <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"

@@ -47,7 +47,7 @@ function StatCard({ icon: Icon, label, value, sub, accent }: {
   icon: any; label: string; value: string; sub?: string; accent: string
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+    <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
       <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white mb-2.5"
         style={{ backgroundColor: accent }}>
         <Icon size={16} strokeWidth={2.2} />
@@ -132,10 +132,10 @@ export default function StudentFeesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading fees…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading fees...</span>
         </div>
       </div>
     )
@@ -144,7 +144,7 @@ export default function StudentFeesPage() {
   const overallPct = totals.totalOwed > 0 ? Math.round((totals.totalPaid / totals.totalOwed) * 100) : 0
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Fees</h1>
@@ -175,7 +175,7 @@ export default function StudentFeesPage() {
         <StatCard icon={AlertCircle} label="Outstanding" value={formatMoney(totals.totalBalance, currencySymbol)} sub={totals.totalBalance > 0 ? 'Balance due' : 'All settled'} accent={totals.totalBalance > 0 ? '#ef4444' : '#10b981'} />
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <TrendingUp size={16} className="text-emerald-600" strokeWidth={2.2} />
@@ -193,7 +193,7 @@ export default function StudentFeesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
           <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
             <Receipt size={18} strokeWidth={2.2} />
@@ -250,7 +250,7 @@ export default function StudentFeesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
           <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
             <CreditCard size={18} strokeWidth={2.2} />

@@ -104,10 +104,10 @@ export default function TeacherCbt() {
     } catch (e: any) { setError(e.message) }
   }
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+  if (loading) return <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30"><div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" /></div>
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">CBT Exams</h1>
@@ -122,7 +122,7 @@ export default function TeacherCbt() {
       {successMsg && <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800"><CheckCircle size={18} className="flex-shrink-0 mt-0.5" /><p className="text-sm flex-1">{successMsg}</p></div>}
 
       {exams.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-400"><Award size={32} strokeWidth={2} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">No CBT Exams</h3>
           <p className="text-sm text-slate-500">Click "New Exam" to create one.</p>
@@ -133,7 +133,7 @@ export default function TeacherCbt() {
             const cls = classMap[exam.class_id]
             const subj = subjectMap[exam.subject_id]
             return (
-              <div key={exam.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div key={exam.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${exam.is_active ? 'bg-emerald-50' : 'bg-slate-100'}`}>

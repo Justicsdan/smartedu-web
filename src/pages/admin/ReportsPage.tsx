@@ -553,15 +553,24 @@ export default function ReportsPage() {
   const hasResults = classSummary || listData.length > 0
 
   return (
-    <div className="p-6 bg-slate-50 min-h-full">
-      <div className="bg-gradient-to-r from-teal-700 to-teal-500 rounded-2xl p-5 flex items-center gap-3.5 mb-6">
-        <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center"><BarChart3 size={22} className="text-white" /></div>
-        <div className="flex-1"><h1 className="text-xl font-bold text-white">Reports</h1><p className="text-[12px] text-white/60">Generate and download summary reports</p></div>
-        <div className="px-3 py-1.5 rounded-lg bg-white/15"><span className="text-[11px] font-semibold text-white">{isAce ? 'ACE Mode' : 'Traditional'}</span></div>
+    <div className="p-6 bg-gradient-to-br from-slate-50 via-white to-teal-50/30 min-h-full">
+      <div className="bg-gradient-to-r from-teal-700 to-cyan-600 rounded-3xl p-6 flex items-center gap-4 mb-6 shadow-2xl shadow-teal-500/30 relative overflow-hidden">
+        <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full pointer-events-none"></div>
+        <div className="absolute -right-4 top-8 w-24 h-24 bg-white/5 rounded-full pointer-events-none"></div>
+        <div className="relative w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20"><BarChart3 size={26} className="text-white" strokeWidth={2.2} /></div>
+        <div class_="relative flex-1">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-[10px] font-bold uppercase tracking-widest text-white mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+            Reports
+          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Reports</h1>
+          <p className="text-[12px] text-white/70">Generate and download summary reports</p>
+        </div>
+        <div className="relative px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20"><span className="text-[11px] font-bold text-white">{isAce ? 'ACE Mode' : 'Traditional'}</span></div>
       </div>
 
       {hasResults && !loading && (
-        <div className="bg-white rounded-xl border border-slate-200 p-3 mb-4 flex items-center gap-2">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 p-3 mb-4 flex items-center gap-2">
           <Download size={18} className="text-teal-700" />
           <span className="text-[13px] font-semibold text-slate-700 mr-2">Download:</span>
           <button onClick={downloadPdfReport} className="px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-[13px] font-semibold flex items-center gap-1.5 hover:bg-orange-100"><Printer size={16} /> PDF</button>
@@ -569,8 +578,8 @@ export default function ReportsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
-        <div className="flex items-center gap-2 mb-4"><BarChart3 size={16} className="text-teal-700" /><h2 className="text-[15px] font-bold text-slate-900">Configure Report</h2></div>
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5 mb-4">
+        <div className="flex items-center gap-2 mb-4"><div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-md shadow-teal-500/30"><BarChart3 size={16} className="text-white" strokeWidth={2.2} /></div><h2 className="text-[15px] font-bold text-slate-900 tracking-tight">Configure Report</h2></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="text-[12px] font-semibold text-slate-600 block mb-1.5">Report Type</label>
@@ -588,8 +597,8 @@ export default function ReportsPage() {
         </div>
         {['Cumulative Class Summary', 'Cumulative Subject Summary', 'Class Comparison', 'Top Students', 'Promotion Readiness', 'Student Individual Summary', 'Teacher Performance', 'Subject Trend', 'NCE Distribution', 'PACE Completion Rate'].includes(selectedReport) && (
           <div className="mt-4 flex gap-2">
-            <button onClick={() => setIsCumulative(false)} className={'flex-1 h-10 rounded-lg border text-[13px] font-semibold ' + (!isCumulative ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-600 border-slate-200')}>Single Term</button>
-            <button onClick={() => setIsCumulative(true)} className={'flex-1 h-10 rounded-lg border text-[13px] font-semibold ' + (isCumulative ? 'bg-teal-700 text-white border-teal-700' : 'bg-white text-slate-600 border-slate-200')}>Cumulative</button>
+            <button onClick={() => setIsCumulative(false)} className={'flex-1 h-10 rounded-xl text-[13px] font-bold transition-all ' + (!isCumulative ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md shadow-teal-500/30' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50')}>Single Term</button>
+            <button onClick={() => setIsCumulative(true)} className={'flex-1 h-10 rounded-xl text-[13px] font-bold transition-all ' + (isCumulative ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md shadow-teal-500/30' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50')}>Cumulative</button>
           </div>
         )}
         {isCumulative ? (
@@ -599,14 +608,14 @@ export default function ReportsPage() {
         )}
       </div>
 
-      <button onClick={generate} disabled={!canGenerate || loading} className="w-full h-12 rounded-xl font-bold text-sm mb-6 transition flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 bg-teal-700 text-white hover:bg-teal-800">{loading ? <><Loader2 size={20} className="animate-spin" /> Generating...</> : <><TrendingUp size={20} /> Generate Report</>}</button>
+      <button onClick={generate} disabled={!canGenerate || loading} className="w-full h-13 py-3.5 rounded-xl font-bold text-sm mb-6 transition-all flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg shadow-teal-500/30 hover:from-teal-700 hover:to-cyan-700 hover:-translate-y-0.5 disabled:hover:translate-y-0">{loading ? <><Loader2 size={20} className="animate-spin" /> Generating...</> : <><TrendingUp size={20} strokeWidth={2.4} /> Generate Report</>}</button>
 
       {error && <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2"><AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" /><p className="text-sm text-red-700">{error}</p></div>}
 
-      {loading ? <div className="flex items-center justify-center py-12"><div className="w-10 h-10 border-4 border-teal-700 border-t-transparent rounded-full animate-spin" /></div> : (
+      {loading ? <div className="flex items-center justify-center py-12"><div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-teal-500/20" /></div> : (
         classSummary ? <SummaryView reportType={selectedReport} data={classSummary} /> :
         listData.length > 0 ? <ListView reportType={selectedReport} data={listData} /> :
-        !error ? <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center"><BarChart3 size={48} className="text-gray-300 mx-auto mb-3" /><p className="text-[15px] font-semibold text-slate-700">No report generated yet</p><p className="text-[13px] text-slate-400 mt-1">Configure the filters above and tap Generate</p></div> : null
+        !error ? <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-12 text-center shadow-lg shadow-slate-200/40 relative overflow-hidden"><div className="absolute inset-0 bg-gradient-to-br from-teal-50/40 via-transparent to-cyan-50/40 pointer-events-none"></div><div className="relative"><div className="w-20 h-20 mx-auto bg-gradient-to-br from-teal-500 to-cyan-600 rounded-3xl flex items-center justify-center mb-4 shadow-xl shadow-teal-500/30"><BarChart3 size={36} className="text-white" strokeWidth={2} /></div><p className="text-[15px] font-bold text-slate-700 tracking-tight">No report generated yet</p><p className="text-[13px] text-slate-400 mt-1">Configure the filters above and tap Generate</p></div></div> : null
       )}
     </div>
   )
@@ -615,7 +624,7 @@ export default function ReportsPage() {
 function SummaryView({ reportType, data }: { reportType: string; data: any }) {
   if (reportType === 'Attendance Summary') {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 overflow-hidden">
         <div className="p-4 flex flex-wrap gap-3 border-b border-slate-100">
           <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-teal-700 text-[12px] font-semibold">Students: {data.total_students}</span>
           <span className="px-2.5 py-1 rounded-lg bg-green-50 text-[#2E7D32] text-[12px] font-semibold">Avg Rate: {data.avg_attendance_rate}%</span>
@@ -634,19 +643,19 @@ function SummaryView({ reportType, data }: { reportType: string; data: any }) {
   if (reportType === 'Student Individual Summary') {
     return (
       <div className="space-y-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 p-4">
           <h3 className="text-lg font-bold text-slate-900">{data.student_name}</h3>
           {data.admission_no && <p className="text-[12px] text-slate-500">Adm: {data.admission_no}</p>}
         </div>
         {data.subjects && data.subjects.length > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 overflow-hidden">
             <div className="p-4 border-b border-slate-100 font-semibold text-slate-700">Per-Subject Performance</div>
             <div className="bg-teal-700 text-white grid grid-cols-12 px-4 py-3 text-xs font-bold uppercase"><div className="col-span-5">Subject</div><div className="col-span-2 text-center">Terms</div><div className="col-span-2 text-center">Avg</div><div className="col-span-2 text-center">High</div><div className="col-span-1 text-center">Low</div></div>
             {data.subjects.map((s: any, i: number) => <div key={i} className={'grid grid-cols-12 px-4 py-3 text-sm border-t border-slate-100 ' + (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}><div className="col-span-5 font-medium text-slate-900">{s.subject_name}</div><div className="col-span-2 text-center text-slate-700">{s.terms_scored}</div><div className="col-span-2 text-center font-semibold text-slate-900">{fmt(s.avg_score)}</div><div className="col-span-2 text-center text-slate-700">{fmt(s.highest)}</div><div className="col-span-1 text-center text-slate-700">{fmt(s.lowest)}</div></div>)}
           </div>
         )}
         {data.terms && data.terms.length > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 overflow-hidden">
             <div className="p-4 border-b border-slate-100 font-semibold text-slate-700">Term-by-Term</div>
             <div className="bg-teal-700 text-white grid grid-cols-12 px-4 py-3 text-xs font-bold uppercase"><div className="col-span-4">Term</div><div className="col-span-3 text-center">Total</div><div className="col-span-3 text-center">Average</div><div className="col-span-2 text-center">Position</div></div>
             {data.terms.map((t: any, i: number) => <div key={i} className={'grid grid-cols-12 px-4 py-3 text-sm border-t border-slate-100 ' + (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}><div className="col-span-4 font-medium text-slate-900">{t.term_name}</div><div className="col-span-3 text-center font-semibold text-slate-900">{fmt(t.total_score)}</div><div className="col-span-3 text-center text-slate-700">{fmt(t.average_score)}</div><div className="col-span-2 text-center text-teal-700 font-semibold">{t.position}</div></div>)}
@@ -662,9 +671,9 @@ function SummaryView({ reportType, data }: { reportType: string; data: any }) {
   if (data.terms_count) cards.push({ l: 'Terms', v: data.terms_count, c: '#6B7280' })
   return (
     <div>
-      <div className="flex flex-wrap gap-3 mb-5">{cards.map((c, i) => <div key={i} className="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-2.5" style={{ minWidth: 105 }}><div className="w-1 h-7 rounded" style={{ backgroundColor: c.c }} /><div><div className="text-[18px] font-bold" style={{ color: c.c }}>{c.v}</div><div className="text-[10px] text-slate-500">{c.l}</div></div></div>)}</div>
+      <div className="flex flex-wrap gap-3 mb-5">{cards.map((c, i) => <div key={i} className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 p-3 flex items-center gap-2.5" style={{ minWidth: 105 }}><div className="w-1 h-7 rounded" style={{ backgroundColor: c.c }} /><div><div className="text-[18px] font-bold" style={{ color: c.c }}>{c.v}</div><div className="text-[10px] text-slate-500">{c.l}</div></div></div>)}</div>
       {data.student_list && data.student_list.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 overflow-hidden">
           <div className="bg-teal-700 text-white grid grid-cols-12 px-4 py-3 text-xs font-bold uppercase"><div className="col-span-1">#</div><div className="col-span-5">Student Name</div><div className="col-span-2 text-center">Total</div><div className="col-span-2 text-center">Average</div><div className="col-span-2 text-center">Position</div></div>
           {data.student_list.map((s: any, i: number) => <div key={i} className={'grid grid-cols-12 px-4 py-3 text-sm border-t border-slate-100 ' + (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}><div className="col-span-1"><span className={'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold ' + (i < 3 ? 'bg-teal-700 text-white' : 'bg-slate-200 text-slate-600')}>{i + 1}</span></div><div className="col-span-5 font-medium text-slate-900">{s.student_name}</div><div className="col-span-2 text-center font-semibold text-slate-900">{s.total_score}</div><div className="col-span-2 text-center text-slate-700">{fmt(s.average_score)}</div><div className="col-span-2 text-center font-semibold text-teal-700">{ordinal(s.position)}</div></div>)}
         </div>
@@ -706,7 +715,7 @@ function ListView({ reportType, data }: { reportType: string; data: any[] }) {
     }
   }
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+    <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 overflow-x-auto">
       <table className="w-full text-sm">
         <thead><tr className="bg-teal-700 text-white">{cols.map((c, i) => <th key={i} className="px-4 py-3 text-xs font-bold uppercase text-left whitespace-nowrap">{c}</th>)}</tr></thead>
         <tbody>{data.map((r, i) => <tr key={i} className={'border-t border-slate-100 ' + (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}>{getRow(r, i).map((cell, j) => <td key={j} className="px-4 py-3 text-slate-900 whitespace-nowrap">{cell}</td>)}</tr>)}</tbody>

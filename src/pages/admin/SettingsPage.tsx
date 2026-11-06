@@ -108,18 +108,24 @@ export default function SettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-rose-600" />
-          <span className="text-sm font-medium">Loading settings…</span>
+          <div className="w-14 h-14 border-4 border-rose-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-rose-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading settings...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-rose-50/30 min-h-screen">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">Configure school profile, grading systems, and result layout</p>
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+            Settings
+          </span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Settings</h1>
+        <p className="text-sm text-slate-500 mt-1.5">Configure school profile, grading systems, and result layout</p>
       </div>
 
       {error && (
@@ -135,7 +141,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="flex gap-1 bg-white rounded-xl shadow-sm border border-slate-200 p-1 overflow-x-auto">
+      <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-1 overflow-x-auto">
         <button onClick={() => setTab('profile')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'profile' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>
           <School className="w-4 h-4" /> Profile
         </button>
@@ -164,7 +170,7 @@ export default function SettingsPage() {
 
 function ProfileTab({ settings, updateField, onSave, saving }: any) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 max-w-2xl">
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-6 space-y-4 max-w-2xl">
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1.5">School Name *</label>
         <input value={settings.name || ''} onChange={e => updateField('name', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none transition" />
@@ -227,7 +233,7 @@ function ProfileTab({ settings, updateField, onSave, saving }: any) {
       </div>
 
       <div className="flex justify-end pt-2">
-        <button onClick={() => onSave({ name: settings.name, motto: settings.motto, address: settings.address, official_phone: settings.official_phone, official_email: settings.official_email, website: settings.website, principal_name: settings.principal_name, curriculum_mode: settings.curriculum_mode || 'traditional' })} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-semibold hover:bg-rose-700 shadow-sm transition disabled:opacity-50">
+        <button onClick={() => onSave({ name: settings.name, motto: settings.motto, address: settings.address, official_phone: settings.official_phone, official_email: settings.official_email, website: settings.website, principal_name: settings.principal_name, curriculum_mode: settings.curriculum_mode || 'traditional' })} disabled={saving} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white text-sm font-bold shadow-lg shadow-rose-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Saving...' : 'Save Profile'}
         </button>
@@ -272,15 +278,15 @@ function GradingTab({ settings, onSave, saving }: any) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-gray-700">Grading Standard</h3>
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5 space-y-4">
+        <h3 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2"><span className="w-1 h-4 rounded-full bg-gradient-to-b from-rose-500 to-pink-600"></span>Grading Standard</h3>
         <div className="grid grid-cols-2 gap-3">
-          <button onClick={() => onSave({ grading_standard: 'Nigerian' })} className={`p-4 rounded-lg border-2 text-left transition ${!isAmerican ? 'border-rose-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
+          <button onClick={() => onSave({ grading_standard: 'Nigerian' })} className={`p-4 rounded-xl border-2 text-left transition-all ${!isAmerican ? 'border-rose-600 bg-gradient-to-br from-rose-50 to-pink-50 shadow-md shadow-rose-500/20' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
             <GraduationCap className={`w-5 h-5 mb-2 ${!isAmerican ? 'text-rose-700' : 'text-gray-400'}`} />
             <p className="text-sm font-medium text-gray-800">Nigerian</p>
             <p className="text-xs text-gray-500">Tier-based (WAEC/BECE/PRIMARY)</p>
           </button>
-          <button onClick={() => onSave({ grading_standard: 'American' })} className={`p-4 rounded-lg border-2 text-left transition ${isAmerican ? 'border-rose-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
+          <button onClick={() => onSave({ grading_standard: 'American' })} className={`p-4 rounded-xl border-2 text-left transition-all ${isAmerican ? 'border-rose-600 bg-gradient-to-br from-rose-50 to-pink-50 shadow-md shadow-rose-500/20' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
             <GraduationCap className={`w-5 h-5 mb-2 ${isAmerican ? 'text-rose-700' : 'text-gray-400'}`} />
             <p className="text-sm font-medium text-gray-800">American</p>
             <p className="text-xs text-gray-500">GPA (A-F, 4.0 scale)</p>
@@ -296,7 +302,7 @@ function GradingTab({ settings, onSave, saving }: any) {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5">
         <div className="flex gap-2 mb-4">
           {TIERS.map(t => (
             <button key={t.id} onClick={() => setTier(t.id)} className="px-4 py-2 rounded-lg text-sm font-medium transition" style={tier === t.id ? { backgroundColor: t.color, color: 'white' } : { backgroundColor: '#F3F4F6', color: '#4B5563' }}>
@@ -319,7 +325,7 @@ function GradingTab({ settings, onSave, saving }: any) {
         </div>
 
         <div className="flex gap-2 mb-4">
-          <button onClick={addRow} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition">
+          <button onClick={addRow} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white text-xs font-semibold shadow-md shadow-rose-500/30 hover:-translate-y-0.5 transition-all">
             <Plus className="w-3.5 h-3.5" /> Add Grade
           </button>
           {!hasOverride && (
@@ -406,7 +412,7 @@ function AssessmentTab({ settings, onSave, saving }: any) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5 space-y-4">
       <div className="flex gap-2">
         {TIERS.map(t => (
           <button key={t.id} onClick={() => setTier(t.id)} className="px-4 py-2 rounded-lg text-sm font-medium transition" style={tier === t.id ? { backgroundColor: t.color, color: 'white' } : { backgroundColor: '#F3F4F6', color: '#4B5563' }}>
@@ -477,8 +483,8 @@ function AssessmentTab({ settings, onSave, saving }: any) {
 
 function LayoutTab({ settings, updateField, onSave, saving }: any) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4 max-w-2xl">
-      <h3 className="text-sm font-semibold text-gray-700">Result Sheet Layout</h3>
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-6 space-y-4 max-w-2xl">
+      <h3 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2"><span className="w-1 h-4 rounded-full bg-gradient-to-b from-rose-500 to-pink-600"></span>Result Sheet Layout</h3>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">Orientation</label>
@@ -584,8 +590,8 @@ function DisplayTab({ settings, updateField, onSave, saving }: any) {
   ]
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-3 max-w-2xl">
-      <h3 className="text-sm font-semibold text-gray-700 mb-2">Display Options</h3>
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-6 space-y-3 max-w-2xl">
+      <h3 className="text-sm font-bold text-slate-800 tracking-tight mb-2 flex items-center gap-2"><span className="w-1 h-4 rounded-full bg-gradient-to-b from-rose-500 to-pink-600"></span>Display Options</h3>
       {toggles.map(t => (
         <div key={t.key} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
           <div>
@@ -601,7 +607,7 @@ function DisplayTab({ settings, updateField, onSave, saving }: any) {
         </div>
       ))}
       <div className="flex justify-end pt-2">
-        <button onClick={() => onSave(Object.fromEntries(toggles.map(t => [t.key, settings[t.key]])))} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-semibold hover:bg-rose-700 shadow-sm transition disabled:opacity-50">
+        <button onClick={() => onSave(Object.fromEntries(toggles.map(t => [t.key, settings[t.key]])))} disabled={saving} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white text-sm font-bold shadow-lg shadow-rose-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Saving...' : 'Save Display'}
         </button>

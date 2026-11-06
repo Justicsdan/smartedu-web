@@ -55,14 +55,14 @@ export default function TeacherClasses() {
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">My Classes</h1>
         <p className="text-sm text-slate-500 mt-1">{classGroups.length} class{classGroups.length !== 1 ? 'es' : ''} · {subjects.length} subject{subjects.length !== 1 ? 's' : ''}</p>
       </div>
 
       {classGroups.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-400"><BookOpen size={32} strokeWidth={2} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">No Class Assignments</h3>
           <p className="text-sm text-slate-500">Contact your admin to be assigned as a subject teacher.</p>
@@ -70,7 +70,7 @@ export default function TeacherClasses() {
       ) : (
         <div className="space-y-3">
           {classGroups.map(({ class: c, subjects: subs }) => (
-            <div key={c.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div key={c.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
               <div className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 flex-shrink-0">

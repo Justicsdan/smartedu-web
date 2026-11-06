@@ -239,15 +239,15 @@ export default function TeacherScores() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="text-sm font-medium">Loading…</span>
+          <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Enter Scores</h1>
@@ -282,7 +282,7 @@ export default function TeacherScores() {
       )}
 
       {/* Class + Subject selectors */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5">Class</label>
           <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedSubjectId('') }}
@@ -314,21 +314,21 @@ export default function TeacherScores() {
       {/* Stats */}
       {selectedClassId && selectedSubjectId && (
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
               <Users size={16} strokeWidth={2.2} />
             </div>
             <div className="text-xl sm:text-2xl font-bold text-slate-900">{students.length}</div>
             <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Students</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}>
               <CheckCircle size={16} strokeWidth={2.2} />
             </div>
             <div className="text-xl sm:text-2xl font-bold text-slate-900">{totalEntered}/{students.length}</div>
             <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Entered</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}>
               <BookOpen size={16} strokeWidth={2.2} />
             </div>
@@ -340,7 +340,7 @@ export default function TeacherScores() {
 
       {/* Score table */}
       {selectedClassId && selectedSubjectId ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-900">Student Scores</h2>
             <div className="relative">
@@ -416,7 +416,7 @@ export default function TeacherScores() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-400">
             <ClipboardList size={32} strokeWidth={2} />
           </div>

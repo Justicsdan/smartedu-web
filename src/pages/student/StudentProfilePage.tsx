@@ -128,7 +128,7 @@ function SectionCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
         <div
           className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-sm"
@@ -318,7 +318,7 @@ export default function StudentProfilePage() {
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       {/* ── Header card ─────────────────────────────────────────── */}
       <div
         className="relative overflow-hidden rounded-2xl shadow-md mb-5"

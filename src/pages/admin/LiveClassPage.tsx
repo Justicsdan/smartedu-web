@@ -304,22 +304,28 @@ export default function LiveClassPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-red-600" />
-          <span className="text-sm font-medium">Loading live classes…</span>
+          <div className="w-14 h-14 border-4 border-red-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-red-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading live classes...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-red-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Live Classes</h1>
-          <p className="text-sm text-slate-500 mt-1">Start, schedule, and monitor live video classes</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              Live Classes
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Live Classes</h1>
+          <p className="text-sm text-slate-500 mt-1.5">Start, schedule, and monitor live video classes</p>
         </div>
-        <button onClick={() => { resetForm(); setShowStartModal(true) }} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition shadow-sm">
-          <Plus className="w-4 h-4" /> Start / Schedule
+        <button onClick={() => { resetForm(); setShowStartModal(true) }} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-sm font-bold shadow-lg shadow-red-500/30 hover:-translate-y-0.5 transition-all">
+          <Plus className="w-4 h-4" strokeWidth={2.4} /> Start / Schedule
         </button>
       </div>
 
@@ -338,17 +344,17 @@ export default function LiveClassPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}><Radio size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{liveCount}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Live Now</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EFF6FF', color: '#3B82F6' }}><Calendar size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{scheduledCount}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Scheduled</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><Video size={16} strokeWidth={2.2} /></div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{liveClasses.length}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Active</div>
@@ -367,10 +373,10 @@ export default function LiveClassPage() {
 
       {/* Live Classes List */}
       {liveClasses.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
-          <div className="w-16 h-16 mx-auto bg-red-50 rounded-2xl flex items-center justify-center mb-4 text-red-400"><Video size={32} strokeWidth={2} /></div>
-          <h3 className="text-base font-bold text-slate-900 mb-1">No Live Classes</h3>
-          <p className="text-sm text-slate-500">Click "Start / Schedule" to begin a live class or schedule one for later.</p>
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl flex items-center justify-center mb-5 shadow-xl shadow-red-500/30"><Video size={36} strokeWidth={2} className="text-white" /></div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">No Live Classes</h3>
+          <p className="text-sm text-slate-500 max-w-sm mx-auto">Click "Start / Schedule" to begin a live class or schedule one for later.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -381,7 +387,7 @@ export default function LiveClassPage() {
             const isScheduledReady = lc.status === 'scheduled' && lc.scheduled_at && new Date(lc.scheduled_at).getTime() <= Date.now()
             const AudIcon = AUDIENCE_OPTIONS.find(a => a.value === lc.audience)?.icon || Video
             return (
-              <div key={lc.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition hover:shadow-md ${isLive ? 'border-red-300 ring-1 ring-red-100' : 'border-slate-200'}`}>
+              <div key={lc.id} className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden transition hover:shadow-md ${isLive ? 'border-red-300 ring-1 ring-red-100' : 'border-slate-200'}`}>
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isLive ? 'bg-red-50' : 'bg-blue-50'}`}>
@@ -480,7 +486,7 @@ export default function LiveClassPage() {
             </div>
             <div className="flex items-center justify-end gap-2 p-5 border-t border-slate-100 sticky bottom-0 bg-white">
               <button onClick={() => setShowStartModal(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg">Cancel</button>
-              <button onClick={startClass} disabled={starting || (audience === 'class' && (!selectedClassId || !selectedSubjectId))} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 shadow-sm transition disabled:opacity-50">
+              <button onClick={startClass} disabled={starting || (audience === 'class' && (!selectedClassId || !selectedSubjectId))} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-sm font-bold shadow-lg shadow-red-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0">
                 {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
                 {starting ? 'Starting...' : scheduledDate && scheduledTime ? 'Schedule' : 'Start Live Now'}
               </button>
@@ -502,7 +508,7 @@ export default function LiveClassPage() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition">Cancel</button>
-              <button onClick={() => deleteClass(deleteConfirm)} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">Delete</button>
+              <button onClick={() => deleteClass(deleteConfirm)} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-sm font-bold shadow-lg shadow-red-500/30 transition">Delete</button>
             </div>
           </div>
         </div>

@@ -505,15 +505,15 @@ export default function PublishPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
-          <span className="text-sm font-medium">Loading publish data…</span>
+          <div className="w-14 h-14 border-4 border-violet-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-violet-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading publish data...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -571,7 +571,7 @@ export default function PublishPage() {
       )}
 
       {/* Class selector */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4">
         <label className="block text-xs font-semibold text-slate-600 mb-1.5">Class</label>
         <select
           value={classId}
@@ -588,22 +588,22 @@ export default function PublishPage() {
       {/* Stats */}
       {classId && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}><Users size={16} strokeWidth={2.2} /></div>
             <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{students.length}</div>
             <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Students</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><CheckCircle size={16} strokeWidth={2.2} /></div>
             <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalSummaries}</div>
             <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Summaries</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}><Send size={16} strokeWidth={2.2} /></div>
             <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{publishedCount}/{totalSummaries}</div>
             <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Published</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: isLocked ? '#FFFBEB' : '#F1F5F9', color: isLocked ? '#F59E0B' : '#94A3B8' }}><Lock size={16} strokeWidth={2.2} /></div>
             <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{isLocked ? 'Locked' : 'Open'}</div>
             <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Lock Status</div>
@@ -615,7 +615,7 @@ export default function PublishPage() {
       {classId ? (
         <div className="space-y-3">
           {students.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
               <div className="w-16 h-16 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-400"><Users size={32} strokeWidth={2} /></div>
               <p className="text-sm text-slate-500">No students in this class.</p>
             </div>
@@ -627,7 +627,7 @@ export default function PublishPage() {
               const isSaving = saving === s.id
               if (!data) return null
               return (
-                <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div key={s.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
                   {/* Card header */}
                   <div
                     className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition"
@@ -813,7 +813,7 @@ export default function PublishPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 py-16 text-center">
           <div className="w-16 h-16 mx-auto bg-violet-50 rounded-2xl flex items-center justify-center mb-4 text-violet-400"><Send size={32} strokeWidth={2} /></div>
           <h3 className="text-base font-bold text-slate-900 mb-1">Select a Class</h3>
           <p className="text-sm text-slate-500">Choose a class above to compute positions, enter comments, and publish results.</p>

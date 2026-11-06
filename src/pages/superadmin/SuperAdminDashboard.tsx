@@ -60,7 +60,7 @@ export default function SuperAdminDashboard() {
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 min-h-screen">
       {/* Welcome banner */}
       <div className="relative overflow-hidden rounded-2xl shadow-md bg-gradient-to-br from-slate-900 via-violet-900 to-indigo-900">
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/5 rounded-full pointer-events-none" />
@@ -81,28 +81,28 @@ export default function SuperAdminDashboard() {
 
       {/* Platform stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
             <Building2 size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{stats.totalSchools}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Schools</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}>
             <Users size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{stats.totalStudents}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Students</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}>
             <GraduationCap size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{stats.totalTeachers}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Teachers</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}>
             <School size={16} strokeWidth={2.2} />
           </div>
@@ -113,7 +113,7 @@ export default function SuperAdminDashboard() {
 
       {/* Subscription stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 size={16} className="text-emerald-600" strokeWidth={2.2} />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active</span>
@@ -121,7 +121,7 @@ export default function SuperAdminDashboard() {
           <div className="text-2xl font-bold text-slate-900">{stats.activeSchools}</div>
           <div className="text-xs text-slate-400">Schools</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={16} className="text-amber-600" strokeWidth={2.2} />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Trial</span>
@@ -129,7 +129,7 @@ export default function SuperAdminDashboard() {
           <div className="text-2xl font-bold text-slate-900">{stats.trialSchools}</div>
           <div className="text-xs text-slate-400">Schools</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4">
           <div className="flex items-center gap-2 mb-2">
             <XCircle size={16} className="text-red-600" strokeWidth={2.2} />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Inactive</span>
@@ -140,7 +140,7 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* Schools list */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
           <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700">
             <Building2 size={18} strokeWidth={2.2} />
@@ -180,7 +180,7 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* Platform info */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5">
         <div className="flex items-center gap-2 mb-3">
           <Database size={16} className="text-slate-400" strokeWidth={2.2} />
           <h3 className="text-sm font-bold text-slate-900">Platform Information</h3>

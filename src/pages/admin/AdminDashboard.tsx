@@ -141,26 +141,30 @@ export default function AdminDashboard() {
 
   if (loading && !stats.students) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading dashboard…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading dashboard...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto space-y-5">
-      {/* Welcome banner */}
-      <div className="relative overflow-hidden rounded-2xl shadow-md"
-        style={{ background: `linear-gradient(135deg, ${schoolPrimary} 0%, ${schoolPrimary}dd 60%, ${schoolPrimary}aa 100%)` }}>
-        <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full pointer-events-none" />
-        <div className="absolute -right-4 top-8 w-24 h-24 bg-white/5 rounded-full pointer-events-none" />
-        <div className="relative px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
+      {/* Welcome banner - premium */}
+      <div className="relative overflow-hidden rounded-3xl shadow-2xl"
+        style={{ background: `linear-gradient(135deg, ${schoolPrimary} 0%, ${schoolPrimary}dd 60%, ${schoolPrimary}aa 100%)`, boxShadow: '0 20px 50px -10px ' + schoolPrimary + '40' }}>
+        <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full pointer-events-none" />
+        <div className="absolute -right-4 top-12 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
+        <div className="absolute -left-8 -bottom-8 w-40 h-40 bg-white/5 rounded-full pointer-events-none" />
+        <div className="relative px-5 sm:px-7 py-6 flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex-1">
-            <div className="text-[11px] uppercase tracking-widest text-white/80 font-semibold">Admin Dashboard</div>
-            <h1 className="mt-0.5 text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{schoolName}</h1>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-[10px] uppercase tracking-widest text-white font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+              Admin Dashboard
+            </div>
+            <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight drop-shadow-sm">{schoolName}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-white/90 text-sm">
               {currentSession && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/15 backdrop-blur-sm font-medium">
@@ -197,33 +201,36 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Stat cards */}
+      {/* Stat cards - premium glass cards with gradient icon tiles */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {statCards.map((card, idx) => {
           const Icon = card.icon
           return (
             <button key={idx} onClick={() => navigate(card.path)}
-              className="group bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4 hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all text-left">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110"
-                style={{ backgroundColor: card.bg, color: card.color }}>
-                <Icon size={16} strokeWidth={2.2} />
+              className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all text-left">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110 shadow-md"
+                style={{ background: 'linear-gradient(135deg, ' + card.color + ', ' + card.color + 'cc)', boxShadow: '0 4px 12px ' + card.color + '40' }}>
+                <Icon size={18} strokeWidth={2.2} className="text-white" />
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                {loading ? '…' : (stats as any)[card.countKey] || 0}
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                {loading ? '...' : (stats as any)[card.countKey] || 0}
               </div>
-              <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">{card.label}</div>
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">{card.label}</div>
             </button>
           )
         })}
       </div>
 
-      {/* Quick access */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+      {/* Quick access - premium */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50/50 to-transparent">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30">
             <LayoutDashboard size={18} strokeWidth={2.2} />
           </div>
-          <h3 className="text-base font-bold text-slate-900 tracking-tight">Quick Access</h3>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Quick Access</h3>
+            <p className="text-[10px] text-slate-500">Jump to a task</p>
+          </div>
         </div>
         <div className="px-5 py-4 grid grid-cols-3 md:grid-cols-6 gap-3">
           {quickAccess.map((item, idx) => {
@@ -231,9 +238,9 @@ export default function AdminDashboard() {
             return (
               <button key={idx} onClick={() => navigate(item.path)}
                 className="group flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-slate-50 transition">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                  style={{ backgroundColor: item.color + '15', color: item.color }}>
-                  <Icon size={20} strokeWidth={2.2} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-md"
+                  style={{ background: 'linear-gradient(135deg, ' + item.color + ', ' + item.color + 'cc)', boxShadow: '0 4px 12px ' + item.color + '40' }}>
+                  <Icon size={20} strokeWidth={2.2} className="text-white" />
                 </div>
                 <span className="text-xs font-semibold text-slate-700">{item.label}</span>
               </button>
@@ -242,14 +249,17 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recording progress */}
+      {/* Recording progress - premium */}
       {sessionInfo && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-transparent">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-violet-500/30">
               <ClipboardList size={18} strokeWidth={2.2} />
             </div>
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">Recording Progress</h3>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">Recording Progress</h3>
+              <p className="text-[10px] text-slate-500">Score entry status by class</p>
+            </div>
             <span className="ml-auto text-xs text-slate-500">
               {recordingProgress.length} class{recordingProgress.length !== 1 ? 'es' : ''} with students
             </span>
@@ -293,13 +303,16 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Visual analytics */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+      {/* Visual analytics - premium */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-transparent">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/30">
             <BarChart3 size={18} strokeWidth={2.2} />
           </div>
-          <h3 className="text-base font-bold text-slate-900 tracking-tight">Visual Analytics</h3>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Visual Analytics</h3>
+            <p className="text-[10px] text-slate-500">Subject averages and attendance trends</p>
+          </div>
         </div>
         <div className="px-5 py-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
           {isAceMode ? (

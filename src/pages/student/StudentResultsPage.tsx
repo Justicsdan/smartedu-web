@@ -53,13 +53,13 @@ function StatCard({ icon: Icon, label, value, sub, accent }: {
   icon: any; label: string; value: string; sub?: string; accent: string
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
-      <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white mb-2.5"
-        style={{ backgroundColor: accent }}>
-        <Icon size={16} strokeWidth={2.2} />
+    <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+      <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white mb-3 shadow-md"
+        style={{ background: 'linear-gradient(135deg, ' + accent + ', ' + accent + 'cc)', boxShadow: '0 4px 12px ' + accent + '40' }}>
+        <Icon size={18} strokeWidth={2.2} />
       </div>
-      <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{value}</div>
-      <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">{label}</div>
+      <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">{label}</div>
       {sub && <div className="text-[11px] text-slate-400 mt-0.5">{sub}</div>}
     </div>
   )
@@ -239,10 +239,10 @@ export default function StudentResultsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading results…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading results...</span>
         </div>
       </div>
     )

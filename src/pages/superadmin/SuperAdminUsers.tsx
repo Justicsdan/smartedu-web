@@ -111,7 +111,7 @@ export default function SuperAdminUsers() {
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-7xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 min-h-screen">
       <div className="relative overflow-hidden rounded-2xl shadow-md bg-gradient-to-br from-slate-900 via-violet-900 to-indigo-900">
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/5 rounded-full pointer-events-none" />
         <div className="relative px-4 sm:px-6 py-5">
@@ -129,28 +129,28 @@ export default function SuperAdminUsers() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EEF2FF', color: '#6366F1' }}>
             <Users size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{counts.total}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Total Users</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}>
             <GraduationCap size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{counts.students}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Students</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}>
             <UserCog size={16} strokeWidth={2.2} />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{counts.teachers}</div>
           <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Teachers</div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#F5F3FF', color: '#8B5CF6' }}>
             <Shield size={16} strokeWidth={2.2} />
           </div>
@@ -159,7 +159,7 @@ export default function SuperAdminUsers() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <Filter size={14} className="text-slate-400" strokeWidth={2.2} />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Filters</span>
@@ -219,7 +219,7 @@ export default function SuperAdminUsers() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
           <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700">
             <Users size={18} strokeWidth={2.2} />

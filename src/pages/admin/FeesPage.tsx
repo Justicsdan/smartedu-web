@@ -364,17 +364,17 @@ export default function FeesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
-          <span className="text-sm font-medium">Loading fees…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-amber-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-amber-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-amber-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading fees...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 min-h-screen">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Fees Management</h1>
@@ -398,7 +398,7 @@ export default function FeesPage() {
         </div>
       )}
 
-      <div className="flex gap-1 bg-white rounded-xl shadow-sm border border-slate-200 p-1 overflow-x-auto">
+      <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-1 overflow-x-auto">
         <button onClick={() => setTab('overview')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'overview' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Overview</button>
         <button onClick={() => setTab('record')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'record' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Record Payment</button>
         <button onClick={() => setTab('post')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === 'post' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}>Post Fees</button>
@@ -409,29 +409,29 @@ export default function FeesPage() {
       {tab === 'overview' && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#ECFDF5', color: '#10B981' }}><DollarSign size={16} strokeWidth={2.2} /></div>
               <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalCollected.toLocaleString()}</div>
               <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Collected</div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FEF2F2', color: '#EF4444' }}><TrendingUp size={16} strokeWidth={2.2} /></div>
               <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{totalOutstanding.toLocaleString()}</div>
               <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Outstanding</div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#EFF6FF', color: '#3B82F6' }}><CheckCircle size={16} strokeWidth={2.2} /></div>
               <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{paidCount}</div>
               <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Fully Paid</div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 sm:p-4">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: '#FFFBEB', color: '#F59E0B' }}><Wallet size={16} strokeWidth={2.2} /></div>
               <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{pendingCount}</div>
               <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Pending</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Fee Types ({feeTypes.length})</h3>
             {feeTypes.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-6">No fee types created yet. Click "New Fee Type" to create one.</p>
@@ -456,7 +456,7 @@ export default function FeesPage() {
 
       {/* Record Payment */}
       {tab === 'record' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4 max-w-2xl">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5 space-y-4 max-w-2xl">
           <h3 className="text-sm font-semibold text-gray-700">Record New Payment</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -538,7 +538,7 @@ export default function FeesPage() {
 
       {/* Post Fees */}
       {tab === 'post' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-5 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700">Post Fees to Class</h3>
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -604,7 +604,7 @@ export default function FeesPage() {
       {/* History */}
       {tab === 'history' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 flex flex-wrap items-center gap-2">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 p-3 flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input value={histStudentSearch} onChange={e => setHistStudentSearch(e.target.value)} placeholder="Search student..." className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none transition" />
@@ -625,7 +625,7 @@ export default function FeesPage() {
             </select>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
             <div className="p-3 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700">Payment History ({filteredPayments.length})</h3>
             </div>
@@ -665,7 +665,7 @@ export default function FeesPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
             <div className="p-3 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700">Fee Assignments ({filteredAssignments.length})</h3>
             </div>

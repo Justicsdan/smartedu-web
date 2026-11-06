@@ -190,15 +190,15 @@ export default function StudentAnnouncementsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading announcements…</span>
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-emerald-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading announcements...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto">
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-4xl mx-auto bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen space-y-5">
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
@@ -261,7 +261,7 @@ export default function StudentAnnouncementsPage() {
           return (
             <article
               key={a.id}
-              className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition ${
+              className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border overflow-hidden transition ${
                 a.is_pinned
                   ? 'border-emerald-300 ring-1 ring-emerald-100'
                   : 'border-slate-200'

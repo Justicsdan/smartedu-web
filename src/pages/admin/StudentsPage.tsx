@@ -236,10 +236,10 @@ export default function StudentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-slate-600">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="text-sm font-medium">Loading students…</span>
+      <div className="flex items-center justify-center min-h-[60vh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20" />
+          <span className="text-sm font-semibold text-slate-700">Loading students...</span>
         </div>
       </div>
     )
@@ -259,46 +259,52 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
-      {/* Header */}
+    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
+      {/* Header - premium */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
             <School size={22} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Students</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                Students
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Students</h1>
             <p className="text-sm text-slate-500">{searchQuery ? filtered.length + ' of ' + total + ' found' : total + ' registered'}</p>
           </div>
         </div>
         <button onClick={() => setShowAddStudent(true)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold shadow-sm transition">
+          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm font-bold shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 transition-all">
           <UserPlus size={14} strokeWidth={2.4} />Add New
         </button>
       </div>
 
-      {/* Stat cards */}
+      {/* Stat cards - premium glass cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icon: Users, label: 'Total', value: total, color: '#6366F1', bg: '#EEF2FF' },
-          { icon: CheckCircle2, label: 'Assigned', value: assigned, color: '#10B981', bg: '#ECFDF5' },
-          { icon: UserX, label: 'Unassigned', value: unassigned, color: '#F59E0B', bg: '#FFFBEB' },
+          { icon: Users, label: 'Total', value: total, color: '#6366F1' },
+          { icon: CheckCircle2, label: 'Assigned', value: assigned, color: '#10B981' },
+          { icon: UserX, label: 'Unassigned', value: unassigned, color: '#F59E0B' },
         ].map((s) => {
           const Icon = s.icon
           return (
-            <div key={s.label} className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 sm:p-4">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2.5" style={{ backgroundColor: s.bg, color: s.color }}>
-                <Icon size={16} strokeWidth={2.2} />
+            <div key={s.label} className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, ' + s.color + ', ' + s.color + 'cc)', boxShadow: '0 4px 12px ' + s.color + '40' }}>
+                <Icon size={18} strokeWidth={2.2} className="text-white" />
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{s.value}</div>
-              <div className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">{s.label}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{s.value}</div>
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">{s.label}</div>
             </div>
           )
         })}
       </div>
 
-      {/* Action bar + search */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Action bar + search - premium */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-2 flex-wrap">
           <button onClick={() => setShowPromote(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold transition">
@@ -322,8 +328,8 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* Student list */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Student list - premium */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
         {studentsWithClass.length === 0 ? (
           <div className="py-16 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
