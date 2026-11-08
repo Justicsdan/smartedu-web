@@ -206,8 +206,8 @@ export function printAceReportCard(data: AceReportData) {
     '<title>' + D(fileName) + '</title>',
     '<style>',
     '* { box-sizing: border-box; }',
-    '@page { size: A4; margin: 10mm; }',
-    'body { font-family: "Helvetica Neue", Arial, sans-serif; color: #111827; margin: 0; padding: 0; background: #e5e7eb; }',
+    '@page { size: A4; margin: 0; }',
+    'body { padding: 10mm; font-family: "Helvetica Neue", Arial, sans-serif; color: #111827; margin: 0; padding: 0; background: #e5e7eb; }',
     '.page { max-width: 800px; margin: 20px auto; background: white; padding: 24px 28px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); position: relative; overflow: hidden; }',
     '@media print { body { background: white; } .page { box-shadow: none; margin: 0; padding: 0; max-width: none; } .no-print { display: none !important; } }',
     '.toolbar { max-width: 800px; margin: 20px auto 0; padding: 12px 16px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; gap: 10px; align-items: center; }',
@@ -284,13 +284,13 @@ export function printAceReportCard(data: AceReportData) {
   const frame = document.createElement('iframe')
   frame.id = 'print-overlay-frame'
   frame.style.position = 'fixed'
-  frame.style.top = '0'
-  frame.style.left = '0'
-  frame.style.width = '100%'
-  frame.style.height = '100%'
-  frame.style.border = 'none'
-  frame.style.zIndex = '9999'
-  frame.style.backgroundColor = '#e5e7eb'
+  frame.style.position = 'fixed'
+  frame.style.right = '0'
+  frame.style.bottom = '0'
+  frame.style.width = '0'
+  frame.style.height = '0'
+  frame.style.border = '0'
+  frame.style.zIndex = '-1'
 
   document.body.appendChild(frame)
 
@@ -299,8 +299,14 @@ export function printAceReportCard(data: AceReportData) {
   frameDoc.write(html)
   frameDoc.close()
 
-  // Expose a global function to close the frame
-  (window as any).closePrintFrame = () => {
-    frame.remove()
-  }
+  setTimeout(() => {
+    const originalTitle = document.title
+    document.title = fileName
+    frame.contentWindow.focus()
+    frame.contentWindow.print()
+    setTimeout(() => {
+      document.title = originalTitle
+      frame.remove()
+    }, 1000)
+  }, 500)
 }
