@@ -91,6 +91,7 @@ interface ExamForm {
   duration_minutes: number
   total_questions: number
   pass_mark: number
+  marks_per_question: number
   is_active: boolean
   start_time: string
   end_time: string
@@ -104,7 +105,7 @@ interface ExamForm {
 
 const EMPTY_FORM: ExamForm = {
   title: '', subject_id: '', class_id: '', duration_minutes: 60,
-  total_questions: 50, pass_mark: 40, is_active: false,
+  total_questions: 50, pass_mark: 40, marks_per_question: 2, is_active: false,
   start_time: '', end_time: '', instructions: '',
   shuffle_questions: false, show_result_immediately: true,
   allow_retake: false, max_attempts: 1, is_proctored: false,
@@ -427,6 +428,7 @@ export default function CbtPage() {
       duration_minutes: exam.duration_minutes,
       total_questions: exam.total_questions,
       pass_mark: exam.pass_mark,
+      marks_per_question: (exam as any).marks_per_question || 2,
       is_active: exam.is_active,
       start_time: exam.start_time ? new Date(exam.start_time).toISOString().slice(0, 16) : '',
       end_time: exam.end_time ? new Date(exam.end_time).toISOString().slice(0, 16) : '',
@@ -466,7 +468,7 @@ export default function CbtPage() {
         allow_retake: form.allow_retake,
         max_attempts: Number(form.max_attempts) || 1,
         is_proctored: form.is_proctored,
-        created_by: user?.id || null,
+        created_by: user?.role === 'teacher' ? user?.id : null,
       }
       if (editingExamId) {
         delete payload.school_id
@@ -1177,6 +1179,7 @@ export default function CbtPage() {
       {showBulkImport && expandedExamId && (
         <BulkImportModal
           examId={expandedExamId}
+          schoolId={schoolId}
           onClose={() => setShowBulkImport(false)}
           onImported={() => {
             setShowBulkImport(false)
@@ -1304,12 +1307,21 @@ function ExamModal({ form, setForm, classes, subjects, editingId, saving, error,
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Pass Mark</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Pass Mark <span className="text-gray-400 normal-case font-normal">(min to pass)</span></label>
               <input
                 type="number"
                 step="0.1"
                 value={form.pass_mark}
                 onChange={e => setForm({ ...form, pass_mark: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Marks per Question <span className="text-gray-400 normal-case font-normal">(points each)</span></label>
+              <input
+                type="number"
+                value={form.marks_per_question}
+                onChange={e => setForm({ ...form, marks_per_question: Number(e.target.value) })}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100 outline-none transition"
               />
             </div>
@@ -1546,8 +1558,9 @@ function AddQuestionModal({ examId, onClose, onSaved }: { examId: string; onClos
 // =========================================================
 // Bulk Import Modal (port of Flutter _showBulkImportDialog)
 // =========================================================
-function BulkImportModal({ examId, onClose, onImported }: {
+function BulkImportModal({ examId, schoolId, onClose, onImported }: {
   examId: string
+  schoolId: string
   onClose: () => void
   onImported: () => void
 }) {
@@ -1580,6 +1593,7 @@ function BulkImportModal({ examId, onClose, onImported }: {
     try {
       const payload = parsed.map((q, i) => ({
         exam_id: examId,
+        school_id: schoolId,
         question_text: q.question_text,
         option_a: q.option_a,
         option_b: q.option_b,
@@ -1587,7 +1601,7 @@ function BulkImportModal({ examId, onClose, onImported }: {
         option_d: q.option_d,
         correct_option: q.correct_option,
         explanation: '',
-        marks: q.marks,
+        marks: q.marks || marks,
         time_allocation: q.time_allocation,
         question_order: i,
       }))
