@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { dbProxy } from '../lib/dbProxy'
 import { useAuth } from '../contexts/AuthContext'
+import ChatBotWidget from '../components/ChatBotWidget'
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar, ClipboardList,
   Award, Send, Settings, FileText, Wallet, Megaphone, Video, BarChart3,
-  LogOut, Menu, X, ChevronLeft, School, User,
+  LogOut, Menu, X, ChevronLeft, School, User, Bot,
 } from 'lucide-react'
 
 function pickString(record: any, ...keys: string[]): string {
@@ -74,6 +75,7 @@ export default function AdminLayout() {
   const [settings, setSettings] = useState<any>(null)
   const [scrolled, setScrolled] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
 
   const schoolName = pickString(user, 'name') || 'School Admin'
   const logoUrl = pickString(user, 'logo_url')
@@ -123,7 +125,7 @@ export default function AdminLayout() {
     .find(i => isActive(i))
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex relative">
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 bg-slate-900/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -212,13 +214,24 @@ export default function AdminLayout() {
               <span className="text-slate-300">/</span>
               <span className="font-semibold text-slate-900">{currentNavItem?.label || 'Dashboard'}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {currentSession && (
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 text-xs">
                   <span className="font-semibold text-slate-700">{currentSession}</span>
                   {currentTerm && (<><span className="text-slate-300">•</span><span className="text-slate-500">{currentTerm}</span></>)}
                 </div>
               )}
+
+              {/* Clean Professional AI Assistant Button */}
+              <button
+                onClick={() => setChatOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition"
+                title="AI Assistant"
+              >
+                <Bot size={15} className="text-slate-600" />
+                <span className="hidden sm:inline font-semibold">AI Assistant</span>
+              </button>
+
               <div className="relative">
                 <button onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center gap-2 pl-1.5 pr-2 py-1.5 rounded-lg hover:bg-slate-100 transition">
@@ -259,6 +272,13 @@ export default function AdminLayout() {
           © {new Date().getFullYear()} {schoolName} • Admin Portal
         </footer>
       </div>
+
+      <ChatBotWidget
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        role="School Admin"
+        schoolContext={schoolName}
+      />
     </div>
   )
 }

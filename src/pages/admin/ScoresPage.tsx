@@ -316,9 +316,12 @@ export default function ScoresPage() {
             .from('scores')
             .insert(payload)
             .select('id')
-            .single()
           if (inErr) throw inErr
-          if (data) existingRows[s.id] = data
+          if (Array.isArray(data) && data.length > 0) {
+            existingRows[s.id] = data[0]
+          } else if (data && !Array.isArray(data)) {
+            existingRows[s.id] = data
+          }
         }
         saved++
       }
