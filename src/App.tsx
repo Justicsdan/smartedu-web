@@ -1,3 +1,8 @@
+import TertiaryLayout from './layouts/TertiaryLayout'
+import TertiaryProtectedRoute from './components/TertiaryProtectedRoute'
+import TertiaryAdminDashboard from './pages/tertiary/TertiaryAdminDashboard'
+import TertiaryResultsEntry from './pages/tertiary/TertiaryResultsEntry'
+import TertiaryStudentDashboard from './pages/tertiary/TertiaryStudentDashboard'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -121,6 +126,12 @@ function App() {
           <Route path="announcements" element={<TeacherAnnouncements />} />
           <Route path="live-class" element={<TeacherLiveClass />} />
           <Route path="publish" element={<TeacherPublish />} />
+        </Route>
+      
+        <Route path="/dashboard/tertiary" element={<TertiaryProtectedRoute allowedRoles={['school_admin', 'student']}><TertiaryLayout /></TertiaryProtectedRoute>}>
+          <Route path="admin" element={<TertiaryAdminDashboard />} />
+          <Route path="admin/results" element={<TertiaryResultsEntry />} />
+          <Route path="student" element={<TertiaryStudentDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

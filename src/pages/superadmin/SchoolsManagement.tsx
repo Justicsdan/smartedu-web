@@ -1,24 +1,44 @@
 import { useState, useEffect, useMemo } from 'react'
 import { dbProxy } from '../../lib/dbProxy'
 import {
-  Loader2, AlertCircle, CheckCircle, X, Search, Building2, School,
-  CheckCircle2, XCircle, Pencil, Plus, Save,
+  Loader2, AlertCircle, CheckCircle, X, Search, Building2,
+  CheckCircle2, XCircle, Pencil, Plus, User, Copy, Check, Key, Trash2,
 } from 'lucide-react'
 
 interface School {
   id: string
   name: string
   school_code: string
+  school_type?: string
   logo_url: string | null
   is_active: boolean
   subscription_plan: string
   subscription_status: string
-  trial_ends_at: string | null
-  subscription_expires_at: string | null
   max_students: number
   max_teachers: number
-  admin_username: string
   created_at: string
+  admin_username?: string
+  admin_password?: string
+}
+
+const SCHOOL_TYPES = [
+  { value: 'primary_secondary', label: 'Primary / Secondary School (K-12)' },
+  { value: 'university', label: 'University' },
+  { value: 'polytechnic', label: 'Polytechnic' },
+  { value: 'college_of_education', label: 'College of Education' },
+  { value: 'monotechnic', label: 'Monotechnic' },
+  { value: 'nursing_school', label: 'College of Nursing & Health' },
+  { value: 'college_of_agriculture', label: 'College of Agriculture' },
+  { value: 'ieic', label: 'Innovation Enterprise Inst. (IEI)' },
+]
+
+const generateUniquePassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+  let pass = 'Smart#'
+  for (let i = 0; i < 7; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return pass + '!'
 }
 
 export default function SchoolsManagement() {
@@ -30,22 +50,48 @@ export default function SchoolsManagement() {
   const [editingSchool, setEditingSchool] = useState<School | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  
   const [addForm, setAddForm] = useState({
-    name: '', school_code: '', subscription_plan: 'free',
-    subscription_status: 'trialing', is_active: true,
-    max_students: 200, max_teachers: 20,
+    name: '', school_code: '', school_type: 'university',
+    subscription_plan: 'standard', subscription_status: 'active',
+    is_active: true, max_students: 2000, max_teachers: 100,
+    admin_username: '', admin_password: generateUniquePassword(),
   })
 
   useEffect(() => {
     loadSchools()
   }, [])
 
+  const [freshCreds, setFreshCreds] = useState<Record<string, string>>({})
+
   const loadSchools = async () => {
     setLoading(true)
     try {
-      const { data, error } = await dbProxy.from('schools').select('*').order('created_at', { ascending: false })
-      if (error) throw error
-      setSchools((data || []) as School[])
+      const [schoolsRes, adminsRes] = await Promise.all([
+        dbProxy.from('schools').select('*').order('created_at', { ascending: false }),
+        dbProxy.from('school_admins').select('*')
+      ])
+
+      if (schoolsRes.error) throw schoolsRes.error
+
+      const adminMap = new Map<string, string[]>()
+            if (adminsRes.data) {
+        adminsRes.data.forEach((a: any) => {
+          if (a.school_id) {
+            adminMap.set(a.school_id, [...(adminMap.get(a.school_id) || []), a.username])
+            
+          }
+        })
+      }
+
+      const merged = (schoolsRes.data || []).map((s: any) => ({
+        ...s,
+        admin_username: (adminMap.get(s.id) || []).join(', ') || '—',
+        admin_password: '',
+      }))
+
+      setSchools(merged)
     } catch (e: any) {
       setError(e.message || 'Failed to load schools')
     } finally {
@@ -53,336 +99,466 @@ export default function SchoolsManagement() {
     }
   }
 
+  const copyLoginDetails = (s: School) => {
+    const text = `School Code: ${s.school_code}\nUsername: ${s.admin_username}\nPassword: ${freshCreds[s.id] || '(hidden, not recoverable)'}`
+    navigator.clipboard.writeText(text)
+    setCopiedId(s.id)
+    setTimeout(() => setCopiedId(null), 2500)
+  }
+
+  const handleDeleteSchool = async (schoolId: string, schoolName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${schoolName}"? This will also remove its admin user account and data.`)) {
+      return
+    }
+    setError('')
+    try {
+      await dbProxy.from('school_admins').delete().eq('school_id', schoolId)
+      const { error: delErr } = await dbProxy.from('schools').delete().eq('id', schoolId)
+      if (delErr) throw delErr
+      setSuccessMsg(`School "${schoolName}" deleted successfully.`)
+      loadSchools()
+    } catch (e: any) {
+      setError(e.message || 'Failed to delete school')
+    }
+  }
+
   const filtered = useMemo(() => {
     if (!search.trim()) return schools
     const q = search.toLowerCase()
-    return schools.filter(s => (s.name || '').toLowerCase().includes(q) || (s.school_code || '').toLowerCase().includes(q))
+    return schools.filter(s => 
+      (s.name || '').toLowerCase().includes(q) || 
+      (s.school_code || '').toLowerCase().includes(q) ||
+      (s.admin_username || '').toLowerCase().includes(q)
+    )
   }, [schools, search])
 
-  const toggleActive = async (school: School) => {
-    try {
-      const { error } = await dbProxy.from('schools').update({ is_active: !school.is_active }).eq('id', school.id)
-      if (error) throw error
-      setSchools(prev => prev.map(s => s.id === school.id ? { ...s, is_active: !school.is_active } : s))
-      setSuccessMsg(`${school.name} ${school.is_active ? 'deactivated' : 'activated'}`)
-    } catch (e: any) { setError(e.message) }
-  }
-
-  const handleSaveEdit = async () => {
-    if (!editingSchool) return
-    try {
-      const { error } = await dbProxy.from('schools').update({
-        name: editingSchool.name,
-        subscription_plan: editingSchool.subscription_plan,
-        subscription_status: editingSchool.subscription_status,
-        max_students: editingSchool.max_students,
-        max_teachers: editingSchool.max_teachers,
-      }).eq('id', editingSchool.id)
-      if (error) throw error
-      setSchools(prev => prev.map(s => s.id === editingSchool.id ? editingSchool : s))
-      setEditingSchool(null)
-      setSuccessMsg('School updated')
-    } catch (e: any) { setError(e.message) }
-  }
-
-  const handleAddSubmit = async () => {
-    if (!addForm.name.trim() || !addForm.school_code.trim()) {
-      setError('School name and code are required')
-      return
-    }
+  const handleAddSchool = async (e: React.FormEvent) => {
+    e.preventDefault()
     setSaving(true)
     setError('')
     try {
-      const code = addForm.school_code.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
-      const { data, error } = await dbProxy.from('schools').insert({
-        name: addForm.name.trim(),
+      const code = addForm.school_code.toUpperCase()
+      const { data: schoolData, error: insertErr } = await dbProxy.from('schools').insert([{
+        name: addForm.name,
         school_code: code,
-        is_active: addForm.is_active,
+        school_type: addForm.school_type,
         subscription_plan: addForm.subscription_plan,
         subscription_status: addForm.subscription_status,
-        max_students: Number(addForm.max_students) || 0,
-        max_teachers: Number(addForm.max_teachers) || 0,
-      }).select('*')
-      if (error) throw error
-      if (data && data[0]) setSchools(prev => [data[0] as School, ...prev])
+        is_active: addForm.is_active,
+        max_students: Number(addForm.max_students),
+        max_teachers: Number(addForm.max_teachers),
+      }]).select()
+
+      if (insertErr) throw insertErr
+
+      const newSchoolId = schoolData && schoolData[0] ? schoolData[0].id : null
+
+      if (newSchoolId) {
+        const adminUsername = addForm.admin_username.trim() || `admin_${code.toLowerCase()}`
+        await dbProxy.from('school_admins').insert([{
+          username: adminUsername,
+          password: addForm.admin_password,
+          school_id: newSchoolId,
+          full_name: addForm.name + ' Admin',
+          is_active: true,
+        }])
+      }
+
+      if (newSchoolId) setFreshCreds(prev => ({ ...prev, [newSchoolId]: addForm.admin_password }))
+      setSuccessMsg(`School "${addForm.name}" registered successfully with admin credentials!`)
       setShowAddModal(false)
       setAddForm({
-        name: '', school_code: '', subscription_plan: 'free',
-        subscription_status: 'trialing', is_active: true,
-        max_students: 200, max_teachers: 20,
+        name: '', school_code: '', school_type: 'university',
+        subscription_plan: 'standard', subscription_status: 'active',
+        is_active: true, max_students: 2000, max_teachers: 100,
+        admin_username: '', admin_password: generateUniquePassword(),
       })
-      setSuccessMsg(`School "${addForm.name}" created with code: ${code}`)
+      loadSchools()
     } catch (e: any) {
-      setError(e.message || 'Failed to create school')
+      setError(e.message || 'Failed to create school and admin account')
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-violet-600" /></div>
+  const handleUpdateSchool = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingSchool) return
+    setSaving(true)
+    setError('')
+    try {
+      const { error: updateErr } = await dbProxy.from('schools').update({
+        name: editingSchool.name,
+        school_code: editingSchool.school_code,
+        school_type: editingSchool.school_type,
+        is_active: editingSchool.is_active,
+        subscription_plan: editingSchool.subscription_plan,
+        subscription_status: editingSchool.subscription_status,
+        max_students: Number(editingSchool.max_students),
+        max_teachers: Number(editingSchool.max_teachers),
+      }).eq('id', editingSchool.id)
+      if (updateErr) throw updateErr
+      setSuccessMsg('School updated successfully!')
+      setEditingSchool(null)
+      loadSchools()
+    } catch (e: any) {
+      setError(e.message || 'Failed to update school')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Schools Management</h1>
-          <p className="text-sm text-slate-500 mt-1">{schools.length} school{schools.length !== 1 ? 's' : ''} on the platform</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Schools & Institutions Management</h1>
+          <p className="text-sm text-slate-500">Manage institutions, copy secure credentials, edit, or remove entries.</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-semibold hover:bg-violet-700 transition shadow-sm">
-          <Plus size={14} strokeWidth={2.4} />Add School
+        <button
+          onClick={() => {
+            setAddForm(prev => ({ ...prev, admin_password: generateUniquePassword() }))
+            setShowAddModal(true)
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white font-semibold text-sm hover:bg-violet-700 shadow-lg shadow-violet-500/25 transition"
+        >
+          <Plus size={18} /> Register New School
         </button>
       </div>
 
-      {error && <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800"><AlertCircle size={18} className="flex-shrink-0 mt-0.5" /><p className="text-sm flex-1">{error}</p></div>}
-      {successMsg && <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800"><CheckCircle size={18} className="flex-shrink-0 mt-0.5" /><p className="text-sm flex-1">{successMsg}</p></div>}
-
-      {/* Search */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" strokeWidth={2.2} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or code…"
-            className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-violet-400 focus:bg-white transition" />
+      {error && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+          <AlertCircle size={18} className="shrink-0" /> {error}
         </div>
-      </div>
+      )}
+      {successMsg && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2">
+          <CheckCircle size={18} className="shrink-0" /> {successMsg}
+        </div>
+      )}
 
-      {/* Schools table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">School</th>
-                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Code</th>
-                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Plan</th>
-                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
-                <th className="text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Limits</th>
-                <th className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400 text-sm">No schools found.</td></tr>
-              ) : (
-                filtered.map(s => (
-                  <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        {s.logo_url ? (
-                          <img src={s.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                        ) : (
-                          <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center flex-shrink-0"><School size={14} /></div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{s.name}</p>
-                          <p className="text-xs text-slate-400">{s.admin_username || '—'}</p>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200 flex items-center gap-3">
+          <Search size={18} className="text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by school name, code, or username..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full text-sm outline-none placeholder:text-slate-400 text-slate-800"
+          />
+        </div>
+
+        {loading ? (
+          <div className="py-20 flex justify-center items-center">
+            <Loader2 size={32} className="animate-spin text-violet-600" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-slate-500 text-sm">No schools found matching your search.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
+                  <th className="py-3.5 px-4 font-semibold">Institution Name</th>
+                  <th className="py-3.5 px-4 font-semibold">School Code</th>
+                  <th className="py-3.5 px-4 font-semibold">Username</th>
+                  <th className="py-3.5 px-4 font-semibold">Password</th>
+                  <th className="py-3.5 px-4 font-semibold">Status</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map(s => {
+                  const isCopied = copiedId === s.id
+                  return (
+                    <tr key={s.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3.5 px-4 font-semibold text-slate-900 flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-xs shrink-0">
+                          {s.name.charAt(0)}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-mono text-slate-600">{s.school_code || '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold capitalize bg-slate-100 text-slate-600">{s.subscription_plan || 'free'}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase w-fit ${s.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                          {s.is_active ? <CheckCircle2 size={10} /> : <XCircle size={10} />} {s.is_active ? 'Active' : 'Inactive'}
+                        {s.name}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 font-mono text-xs font-bold border border-slate-200">
+                          {s.school_code}
                         </span>
-                        <span className="text-[10px] text-slate-400 capitalize">{s.subscription_status || '—'}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      <div>{s.max_students || '∞'} students</div>
-                      <div>{s.max_teachers || '∞'} teachers</div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => setEditingSchool(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition"><Pencil size={14} /></button>
-                        <button onClick={() => toggleActive(s)} className={`p-1.5 rounded-lg transition ${s.is_active ? 'text-red-400 hover:bg-red-50' : 'text-emerald-400 hover:bg-emerald-50'}`}>
-                          {s.is_active ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono text-xs font-semibold border border-indigo-100">
+                          <User size={12} /> {s.admin_username}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 font-mono text-xs font-semibold border border-slate-200">
+                          <Key size={12} /> {freshCreds[s.id] || 'Hidden (stored securely)'}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {s.is_active ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+                            <CheckCircle2 size={12} /> Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700">
+                            <XCircle size={12} /> Inactive
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right space-x-1.5">
+                        <button
+                          onClick={() => copyLoginDetails(s)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition ${
+                            isCopied ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-violet-200 text-violet-700 hover:bg-violet-50'
+                          }`}
+                          title="Copy Logins"
+                        >
+                          {isCopied ? <Check size={13} /> : <Copy size={13} />}
+                          {isCopied ? 'Copied' : 'Copy'}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                        <button
+                          onClick={() => setEditingSchool(s)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold transition"
+                          title="Edit School"
+                        >
+                          <Pencil size={13} /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSchool(s.id, s.name)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition"
+                          title="Delete School"
+                        >
+                          <Trash2 size={13} /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Edit Modal */}
-      {editingSchool && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => setEditingSchool(null)}>
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
-              <h3 className="text-base font-bold text-slate-900">Edit School</h3>
-              <button onClick={() => setEditingSchool(null)} className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200"><X size={18} /></button>
+      {/* Add School Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <Building2 size={18} className="text-violet-600" /> Register Institution & Admin Account
+              </h3>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
             </div>
-            <div className="p-5 space-y-4">
+            <form onSubmit={handleAddSchool} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">School Name</label>
-                <input value={editingSchool.name} onChange={e => setEditingSchool({ ...editingSchool, name: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Institution Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Lagos State University"
+                  value={addForm.name}
+                  onChange={e => setAddForm({ ...addForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Plan</label>
-                  <select value={editingSchool.subscription_plan || 'free'} onChange={e => setEditingSchool({ ...editingSchool, subscription_plan: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">School Code (Unique)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. LASU"
+                    value={addForm.school_code}
+                    onChange={e => setAddForm({ ...addForm, school_code: e.target.value.toUpperCase() })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm uppercase font-mono focus:border-violet-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Institution Type</label>
+                  <select
+                    value={addForm.school_type}
+                    onChange={e => setAddForm({ ...addForm, school_type: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:border-violet-500 outline-none"
+                  >
+                    {SCHOOL_TYPES.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-violet-50/60 border border-violet-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-violet-900 font-semibold text-xs uppercase tracking-wider">
+                    Admin Credentials
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAddForm(prev => ({ ...prev, admin_password: generateUniquePassword() }))}
+                    className="text-xs text-violet-700 hover:underline font-semibold"
+                  >
+                    Generate New Password
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. admin_lasu"
+                      value={addForm.admin_username}
+                      onChange={e => setAddForm({ ...addForm, admin_username: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:border-violet-500 outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Password</label>
+                    <input
+                      type="text"
+                      value={addForm.admin_password}
+                      onChange={e => setAddForm({ ...addForm, admin_password: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:border-violet-500 outline-none font-mono text-violet-800 font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Subscription Plan</label>
+                  <select
+                    value={addForm.subscription_plan}
+                    onChange={e => setAddForm({ ...addForm, subscription_plan: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:border-violet-500 outline-none"
+                  >
                     <option value="free">Free</option>
-                    <option value="basic">Basic</option>
-                    <option value="premium">Premium</option>
+                    <option value="standard">Standard</option>
                     <option value="enterprise">Enterprise</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
-                  <select value={editingSchool.subscription_status || ''} onChange={e => setEditingSchool({ ...editingSchool, subscription_status: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition">
-                    <option value="">None</option>
-                    <option value="trialing">Trial</option>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Status</label>
+                  <select
+                    value={addForm.subscription_status}
+                    onChange={e => setAddForm({ ...addForm, subscription_status: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:border-violet-500 outline-none"
+                  >
                     <option value="active">Active</option>
-                    <option value="past_due">Past Due</option>
-                    <option value="canceled">Canceled</option>
+                    <option value="trialing">Trialing</option>
+                    <option value="expired">Expired</option>
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Max Students</label>
-                  <input type="number" value={editingSchool.max_students || ''} onChange={e => setEditingSchool({ ...editingSchool, max_students: Number(e.target.value) || 0 })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Max Teachers</label>
-                  <input type="number" value={editingSchool.max_teachers || ''} onChange={e => setEditingSchool({ ...editingSchool, max_teachers: Number(e.target.value) || 0 })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white font-semibold text-sm hover:bg-violet-700 shadow-lg shadow-violet-500/25 transition disabled:opacity-50"
+                >
+                  {saving && <Loader2 size={16} className="animate-spin" />} Save & Create Admin
+                </button>
               </div>
-            </div>
-            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-              <button onClick={() => setEditingSchool(null)} className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Cancel</button>
-              <button onClick={handleSaveEdit} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm shadow-sm">
-                <Save size={15} />Save
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Add School Modal — real form */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => !saving && setShowAddModal(false)}>
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600"><Building2 size={20} /></div>
-                <h3 className="text-base font-bold text-slate-900">Add New School</h3>
-              </div>
-              <button onClick={() => !saving && setShowAddModal(false)} disabled={saving} className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-40"><X size={18} /></button>
+      {/* Edit School Modal */}
+      {editingSchool && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-slate-900">Edit Institution</h3>
+              <button onClick={() => setEditingSchool(null)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
             </div>
-            <div className="p-5 space-y-4">
+            <form onSubmit={handleUpdateSchool} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">School Name <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Institution Name</label>
                 <input
-                  value={addForm.name}
-                  onChange={e => {
-                    const name = e.target.value
-                    const suggested = name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-                    setAddForm({ ...addForm, name, school_code: suggested })
-                  }}
-                  placeholder="e.g., Graceville Academy"
-                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  type="text"
+                  required
+                  value={editingSchool.name}
+                  onChange={e => setEditingSchool({ ...editingSchool, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-violet-500 outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">School Code <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">School Code</label>
                 <input
-                  value={addForm.school_code}
-                  onChange={e => setAddForm({ ...addForm, school_code: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
-                  placeholder="e.g., graceville"
-                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-mono text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                  type="text"
+                  required
+                  value={editingSchool.school_code}
+                  onChange={e => setEditingSchool({ ...editingSchool, school_code: e.target.value.toUpperCase() })}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm uppercase font-mono focus:border-violet-500 outline-none"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">Lowercase letters, numbers, hyphens only. Used in the login URL: /s/&lt;code&gt;</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Institution / School Type</label>
+                <select
+                  value={editingSchool.school_type || 'university'}
+                  onChange={e => setEditingSchool({ ...editingSchool, school_type: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:border-violet-500 outline-none"
+                >
+                  {SCHOOL_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Plan</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Subscription Plan</label>
                   <select
-                    value={addForm.subscription_plan}
-                    onChange={e => setAddForm({ ...addForm, subscription_plan: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                    value={editingSchool.subscription_plan}
+                    onChange={e => setEditingSchool({ ...editingSchool, subscription_plan: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white outline-none"
                   >
                     <option value="free">Free</option>
-                    <option value="basic">Basic</option>
-                    <option value="premium">Premium</option>
+                    <option value="standard">Standard</option>
                     <option value="enterprise">Enterprise</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Active Status</label>
                   <select
-                    value={addForm.subscription_status}
-                    onChange={e => setAddForm({ ...addForm, subscription_status: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
+                    value={editingSchool.is_active ? 'true' : 'false'}
+                    onChange={e => setEditingSchool({ ...editingSchool, is_active: e.target.value === 'true' })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white outline-none"
                   >
-                    <option value="trialing">Trial</option>
-                    <option value="active">Active</option>
-                    <option value="past_due">Past Due</option>
-                    <option value="canceled">Canceled</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Max Students</label>
-                  <input
-                    type="number"
-                    value={addForm.max_students}
-                    onChange={e => setAddForm({ ...addForm, max_students: Number(e.target.value) || 0 })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Max Teachers</label>
-                  <input
-                    type="number"
-                    value={addForm.max_teachers}
-                    onChange={e => setAddForm({ ...addForm, max_teachers: Number(e.target.value) || 0 })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition"
-                  />
-                </div>
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingSchool(null)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white font-semibold text-sm hover:bg-violet-700 shadow-lg shadow-violet-500/25 transition disabled:opacity-50"
+                >
+                  {saving && <Loader2 size={16} className="animate-spin" />} Save Changes
+                </button>
               </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={addForm.is_active}
-                  onChange={e => setAddForm({ ...addForm, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
-                />
-                <span className="text-sm text-slate-700">Activate school immediately</span>
-              </label>
-            </div>
-            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-              <button
-                onClick={() => setShowAddModal(false)}
-                disabled={saving}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddSubmit}
-                disabled={saving || !addForm.name.trim() || !addForm.school_code.trim()}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-                {saving ? 'Creating…' : 'Create School'}
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}

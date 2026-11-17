@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
-import { computeGrade } from '../../utils/higherEdGrading'
+import { computeGrade } from '../../utils/tertiaryGrading'
 import {
   FileText, Plus, AlertCircle, Award, Loader2,
   Search, Save, ClipboardList, BookOpen,

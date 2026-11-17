@@ -1,39 +1,63 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { dbProxy } from '../lib/dbProxy'
 import {
   LayoutDashboard, BookOpen, Users, ClipboardList,
   FileText, Settings, LogOut, GraduationCap, Menu,
 } from 'lucide-react'
 
-interface NavItem { label: string; icon: any; path: string; }
+interface NavItem { label: string; icon: any; path: string }
 
 const ADMIN_NAV: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard/uni/admin' },
-  { label: 'Courses', icon: BookOpen, path: '/dashboard/uni/admin/courses' },
-  { label: 'Students', icon: Users, path: '/dashboard/uni/admin/students' },
-  { label: 'Enrollments', icon: ClipboardList, path: '/dashboard/uni/admin/enrollments' },
-  { label: 'Results', icon: FileText, path: '/dashboard/uni/admin/results' },
-  { label: 'Settings', icon: Settings, path: '/dashboard/uni/admin/settings' },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard/tertiary/admin' },
+  { label: 'Courses', icon: BookOpen, path: '/dashboard/tertiary/admin/courses' },
+  { label: 'Students', icon: Users, path: '/dashboard/tertiary/admin/students' },
+  { label: 'Enrollments', icon: ClipboardList, path: '/dashboard/tertiary/admin/enrollments' },
+  { label: 'Results', icon: FileText, path: '/dashboard/tertiary/admin/results' },
+  { label: 'Settings', icon: Settings, path: '/dashboard/tertiary/admin/settings' },
 ]
 
 const STUDENT_NAV: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard/uni/student' },
-  { label: 'My Results', icon: FileText, path: '/dashboard/uni/student/results' },
-  { label: 'Course Registration', icon: ClipboardList, path: '/dashboard/uni/student/registration' },
-  { label: 'Profile', icon: Users, path: '/dashboard/uni/student/profile' },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard/tertiary/student' },
+  { label: 'My Results', icon: FileText, path: '/dashboard/tertiary/student/results' },
+  { label: 'Course Registration', icon: ClipboardList, path: '/dashboard/tertiary/student/registration' },
+  { label: 'Profile', icon: Users, path: '/dashboard/tertiary/student/profile' },
 ]
 
-export default function UniversityLayout() {
+const INSTITUTION_LABELS: Record<string, string> = {
+  university: 'University',
+  polytechnic: 'Polytechnic',
+  college_of_education: 'College of Education',
+  monotechnic: 'Monotechnic',
+  nursing_school: 'College of Nursing',
+  college_of_agriculture: 'College of Agriculture',
+  ieic: 'Innovation Enterprise Inst.',
+}
+
+export default function TertiaryLayout() {
   const { user, logout } = useAuth() as { user: any; logout: () => void }
   const location = useLocation()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [schoolInfo, setSchoolInfo] = useState<{ name?: string; school_type?: string }>({})
 
   const isAdmin = user?.role === 'school_admin'
   const nav = isAdmin ? ADMIN_NAV : STUDENT_NAV
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim()
     || user?.name || (isAdmin ? 'Admin' : 'Student')
+
+  useEffect(() => {
+    const schoolId = user?.school_id || user?.schoolId || (isAdmin ? user?.id : '')
+    if (!schoolId) return
+    dbProxy.from('schools').select('name, school_type').eq('id', schoolId).maybeSingle()
+      .then(({ data }: any) => {
+        if (data) setSchoolInfo(data)
+      })
+      .catch(() => {})
+  }, [user, isAdmin])
+
+  const institutionLabel = INSTITUTION_LABELS[schoolInfo.school_type || ''] || 'Higher Institution'
 
   const handleLogout = () => {
     logout()
@@ -44,12 +68,16 @@ export default function UniversityLayout() {
     <div className="flex flex-col h-full">
       <div className="px-5 py-5 border-b border-violet-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30 shrink-0">
             <GraduationCap size={18} className="text-white" strokeWidth={2.2} />
           </div>
-          <div>
-            <p className="text-sm font-bold text-slate-900 leading-tight">SmartEdu</p>
-            <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-wider">University</p>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-900 leading-tight truncate">
+              {schoolInfo.name || 'SmartEdu'}
+            </p>
+            <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-wider truncate">
+              {institutionLabel}
+            </p>
           </div>
         </div>
       </div>
@@ -102,7 +130,9 @@ export default function UniversityLayout() {
             <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100">
               <Menu size={20} className="text-slate-700" />
             </button>
-            <p className="text-sm font-bold text-slate-900">{isAdmin ? 'University Admin' : 'University Student'}</p>
+            <p className="text-sm font-bold text-slate-900">
+              {institutionLabel} {isAdmin ? 'Admin' : 'Student Portal'}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden sm:block text-right">

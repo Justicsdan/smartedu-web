@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, EyeOff, Shield, Lock, Loader2, AlertCircle, Sparkles } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function SuperAdminLoginPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -40,10 +42,13 @@ export default function SuperAdminLoginPage() {
         throw new Error(data.error || 'Login failed')
       }
 
-      localStorage.setItem('smartedu_token', data.token)
-      localStorage.setItem('smartedu_user', JSON.stringify(data.user))
+      const superUser = {
+        ...(data.user || {}),
+        role: 'super_admin',
+      }
 
-      window.location.href = '/dashboard/superadmin'
+      login(data.token, superUser)
+      navigate('/dashboard/superadmin', { replace: true })
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.')
     } finally {
@@ -53,19 +58,13 @@ export default function SuperAdminLoginPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-slate-950 flex items-center justify-center px-4 py-12">
-      {/* Background glows — violet for super admin */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-violet-500/20 blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-[120px]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.5)_100%)]" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
-          backgroundSize: '40px 40px'
-        }} />
       </div>
 
       <div className="w-full max-w-md relative">
-        {/* Back button */}
         <button
           onClick={() => navigate('/')}
           className="group inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/80 transition mb-8"
@@ -74,7 +73,6 @@ export default function SuperAdminLoginPage() {
           Back to home
         </button>
 
-        {/* Shield icon + heading */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-5">
             <Sparkles size={12} className="text-violet-400" strokeWidth={2.4} />
@@ -82,7 +80,7 @@ export default function SuperAdminLoginPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform hover:scale-105"
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{
                 background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.05))',
                 border: '1px solid rgba(139,92,246,0.3)',
@@ -97,9 +95,7 @@ export default function SuperAdminLoginPage() {
           </div>
         </div>
 
-        {/* Form card — glass morphism */}
         <form onSubmit={handleLogin} className="bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/10 p-6 space-y-4">
-          {/* Username */}
           <div>
             <label className="block text-xs font-semibold text-white/60 mb-1.5">Username</label>
             <div className="relative">
@@ -125,7 +121,6 @@ export default function SuperAdminLoginPage() {
             </div>
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-xs font-semibold text-white/60 mb-1.5">Password</label>
             <div className="relative">
@@ -158,7 +153,6 @@ export default function SuperAdminLoginPage() {
             </div>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
               <AlertCircle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
@@ -166,7 +160,6 @@ export default function SuperAdminLoginPage() {
             </div>
           )}
 
-          {/* Submit — violet gradient border */}
           <button
             type="submit"
             disabled={loading}
@@ -179,13 +172,6 @@ export default function SuperAdminLoginPage() {
             </div>
           </button>
         </form>
-
-        {/* Footer */}
-        <div className="mt-6 pt-6 border-t border-white/5 text-center">
-          <p className="text-xs text-white/40">
-            Authorized personnel only · All actions are logged
-          </p>
-        </div>
       </div>
     </div>
   )

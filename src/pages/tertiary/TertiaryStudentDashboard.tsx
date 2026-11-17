@@ -5,7 +5,7 @@ import {
   BookOpen, Award, TrendingUp, AlertCircle,
   RefreshCw, FileText, ClipboardList,
 } from 'lucide-react'
-import { getClassOfDegree } from '../../utils/higherEdGrading'
+import { getClassOfDegree } from '../../utils/tertiaryGrading'
 
 function pickString(record: any, ...keys: string[]): string {
   for (const k of keys) {

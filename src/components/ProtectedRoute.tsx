@@ -1,33 +1,35 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { type ReactNode } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-interface ProtectedRouteProps {
-  children: React.ReactNode
-  allowedRoles: string[]
+interface Props {
+  allowedRoles?: string[]
+  children: ReactNode
 }
 
-export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+export default function ProtectedRoute({ allowedRoles, children }: Props) {
   const { user } = useAuth() as { user: any }
-  const location = useLocation()
 
-  // Not logged in → send to login
   if (!user) {
-    return <Navigate to="/login-method" state={{ from: location }} replace />
+    return <Navigate to="/login" replace />
   }
 
-  const userRole = String(user.role || '').toLowerCase()
-  const isAllowed = allowedRoles.some(r => r.toLowerCase() === userRole)
+  const role = (user.role || '').toLowerCase()
 
-  // Logged in but wrong role → redirect to their correct dashboard
-  if (!isAllowed) {
-    const dashboardMap: Record<string, string> = {
-      'student': '/dashboard/student',
-      'teacher': '/dashboard/teacher',
-      'school_admin': '/dashboard/schooladmin',
-      'super_admin': '/dashboard/superadmin',
+  // Super admin bypasses all restrictions
+  if (role === 'super_admin' || role === 'superadmin') {
+    return <>{children}</>
+  }
+
+  if (allowedRoles && allowedRoles.length > 0) {
+    const normalizedAllowed = allowedRoles.map(r => r.toLowerCase())
+    if (!normalizedAllowed.includes(role)) {
+      const target = role === 'student' ? '/dashboard/student'
+        : role === 'teacher' ? '/dashboard/teacher'
+        : role === 'school_admin' || role === 'schooladmin' ? '/dashboard/schooladmin'
+        : '/login-method'
+      return <Navigate to={target} replace />
     }
-    const correctDashboard = dashboardMap[userRole] || '/'
-    return <Navigate to={correctDashboard} replace />
   }
 
   return <>{children}</>

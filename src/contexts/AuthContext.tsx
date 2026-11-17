@@ -1,9 +1,9 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 
 interface AuthUser {
   id: string
   role: string
-  [key: string]: any  // Permissive — allows first_name, last_name, admission_no, school_id, class_id, etc.
+  [key: string]: any
 }
 
 interface AuthCtx {
@@ -16,17 +16,11 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx>({} as AuthCtx)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [token, setToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    const t = localStorage.getItem('smartedu_token')
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('smartedu_token'))
+  const [user, setUser] = useState<AuthUser | null>(() => {
     const u = localStorage.getItem('smartedu_user')
-    if (t && u) {
-      setToken(t)
-      setUser(JSON.parse(u))
-    }
-  }, [])
+    return u ? JSON.parse(u) : null
+  })
 
   const login = (t: string, u: AuthUser) => {
     setToken(t)

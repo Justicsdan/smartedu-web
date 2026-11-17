@@ -85,3 +85,14 @@ export function getClassOfDegree(schoolType: string, cgpa: number): string {
       return 'Pass'
   }
 }
+
+export function computeGrade(score: number, schoolType: string, customGrades?: GradeScale[]): { grade: string; gp: number; remark: string } {
+  const scale = getGradeScale(schoolType, customGrades)
+  for (const s of scale) {
+    if (score >= s.minScore) {
+      return { grade: s.grade, gp: s.gp, remark: s.remark }
+    }
+  }
+  const lowest = scale[scale.length - 1] || { grade: 'F', gp: 0.0, remark: 'Fail' }
+  return { grade: lowest.grade, gp: lowest.gp, remark: lowest.remark }
+}
