@@ -6,6 +6,7 @@ import {
   BookOpen, Timer, ChevronLeft, ChevronRight, Grid3x3, X, Award, Trophy,
   HelpCircle, Eye, Send, Lock, Inbox,
 } from 'lucide-react'
+import { isBlankQuestion, isFillBlankCorrect } from '../../utils/cbtQuestionDetect'
 
 function pickString(record: any, ...keys: string[]): string {
   for (const k of keys) {
@@ -346,7 +347,7 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
       let score = 0
       questions.forEach((q) => {
         const ans = answers[q.id]
-        if (ans && ans.toLowerCase() === (q.correct_option || '').toLowerCase()) {
+        if (ans && ans.trim() && (isBlankQuestion(q) ? isFillBlankCorrect(ans, q) : ans.toLowerCase() === (q.correct_option || '').toLowerCase())) {
           score += pickNumber(q, 'marks')
         }
       })
@@ -480,8 +481,35 @@ function ExamTakingView({ exam, studentId, schoolId, onExit, onViewResult }: {
               )}
             </div>
             <div className="space-y-2.5 mt-4">
+              {isBlankQuestion(currentQ) && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider">Your Answer</label>
+                  <input
+                    key={currentQ.id}
+                    type="text"
+                    value={answers[currentQ.id] || ''}
+                    onChange={(e) => {
+                      if (submittedAttempt) return
+                      const v = e.target.value
+                      setAnswers((prev) => {
+                        const n = { ...prev }
+                        if (v.trim()) n[currentQ.id] = v
+                        else delete n[currentQ.id]
+                        return n
+                      })
+                    }}
+                    placeholder="Type your answer..."
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    className={'w-full px-4 py-3.5 rounded-2xl border-2 text-base transition-all outline-none ' + (answers[currentQ.id]
+                      ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-green-50 shadow-md shadow-emerald-500/20'
+                      : 'border-slate-200 bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100')}
+                  />
+                </div>
+              )}
               {['a', 'b', 'c', 'd'].map((opt) => {
-                const text = currentQ?.[`option_${opt}`]
+                const text = isBlankQuestion(currentQ) ? null : currentQ?.[`option_${opt}`]
                 if (!text) return null
                 const isSelected = answers[currentQ?.id] === opt
                 return (
@@ -631,7 +659,7 @@ function ResultDetailView({ exam, attempt, onBack }: { exam: any; attempt: any; 
   questions.forEach((q) => {
     const a = getAns(q.id)
     if (!a) sc++
-    else if (a.toLowerCase() === (q.correct_option || '').toLowerCase()) cc++
+    else if (isBlankQuestion(q) ? isFillBlankCorrect(a, q) : a.toLowerCase() === (q.correct_option || '').toLowerCase()) cc++
     else wc++
   })
 
@@ -697,7 +725,8 @@ function ResultDetailView({ exam, attempt, onBack }: { exam: any; attempt: any; 
           {questions.map((q, i) => {
             const ans = getAns(q.id)
             const correct = (q.correct_option || '').toLowerCase()
-            const isCorrect = ans && ans.toLowerCase() === correct
+            const blank = isBlankQuestion(q)
+            const isCorrect = !!ans && (blank ? isFillBlankCorrect(ans, q) : ans.toLowerCase() === correct)
             const isSkipped = !ans
             const marks = pickNumber(q, 'marks') || 1
             const color = isSkipped ? '#64748b' : isCorrect ? '#10b981' : '#ef4444'
@@ -733,8 +762,8 @@ function ResultDetailView({ exam, attempt, onBack }: { exam: any; attempt: any; 
                 <div className="mt-3 ml-12 flex items-center justify-between text-xs">
                   <div>
                     {isSkipped ? <span className="italic text-slate-500">Not answered</span>
-                      : <span className="font-semibold" style={{ color }}>Your answer: {ans?.toUpperCase()}</span>}
-                    {!isCorrect && !isSkipped && <span className="ml-3 font-semibold text-emerald-700">Correct: {correct.toUpperCase()}</span>}
+                      : <span className="font-semibold" style={{ color }}>Your answer: {blank ? ans : ans?.toUpperCase()}</span>}
+                    {!isCorrect && !isSkipped && <span className="ml-3 font-semibold text-emerald-700">Correct: {blank ? (q.correct_answer || '—') : correct.toUpperCase()}</span>}
                   </div>
                   <span className="text-slate-400">{marks} mark{marks !== 1 ? 's' : ''}</span>
                 </div>

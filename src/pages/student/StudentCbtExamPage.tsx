@@ -5,6 +5,7 @@ import {
   Clock, ChevronLeft, ChevronRight, CheckCircle, XCircle,
   AlertCircle, Loader2, Grid3x3, PlayCircle,
 } from 'lucide-react'
+import { isFillBlankCorrect, isBlankQuestion } from '../../utils/cbtQuestionDetect'
 
 export default function StudentCbtExamPage() {
   const navigate = useNavigate()
@@ -57,7 +58,7 @@ export default function StudentCbtExamPage() {
       setExam(examData)
 
       // Load questions
-      const qRes = await dbProxy.from('cbt_questions').select('id, question_text, option_a, option_b, option_c, option_d, correct_option, marks, question_order').eq('exam_id', examId).eq('school_id', schoolId).order('question_order', { ascending: true })
+      const qRes = await dbProxy.from('cbt_questions').select('id, question_text, option_a, option_b, option_c, option_d, correct_option, marks, question_order, question_type, correct_answer, accepted_answers, case_sensitive').eq('exam_id', examId).eq('school_id', schoolId).order('question_order', { ascending: true })
       const qData = qRes.data
       const qErr = qRes.error
       if (qErr) throw qErr
@@ -109,7 +110,11 @@ export default function StudentCbtExamPage() {
       const total = Number(q.marks) || 1
       totalMarks += total
       const ans = answers[q.id]
-      if (!ans) { unanswered++ }
+      if (!ans || !ans.trim()) { unanswered++ }
+      else if (isBlankQuestion(q)) {
+        if (isFillBlankCorrect(ans, q)) { score += total; correct++ }
+        else { wrong++ }
+      }
       else if (ans.toLowerCase() === (q.correct_option || '').toLowerCase()) { score += total; correct++ }
       else { wrong++ }
     }
@@ -245,24 +250,51 @@ export default function StudentCbtExamPage() {
               {q.marks && <p className="text-xs text-slate-400 mt-2 ml-13">{q.marks} mark{Number(q.marks) > 1 ? 's' : ''}</p>}
             </div>
             <div className="mt-5 space-y-3">
-              {['a', 'b', 'c', 'd'].map(opt => {
-                const val = (q as any)['option_' + opt]
-                if (!val) return null
-                const isSelected = selectedOpt.toLowerCase() === opt
-                return (
-                  <button
-                    key={opt}
-                    onClick={() => selectOption(q.id, opt)}
-                    className={'w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ' + (isSelected ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-green-50 shadow-md shadow-emerald-500/20' : 'border-slate-200 bg-white hover:border-emerald-300 hover:shadow-sm')}
-                  >
-                    <div className={'w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all ' + (isSelected ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/30' : 'bg-slate-100 text-slate-600')}>
-                      {opt.toUpperCase()}
-                    </div>
-                    <span className="text-[15px] text-slate-800 flex-1">{val}</span>
-                    {isSelected && <CheckCircle size={20} className="text-emerald-600" strokeWidth={2.4} />}
-                  </button>
-                )
-              })}
+              {isBlankQuestion(q) ? (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider">Your Answer</label>
+                  <input
+                    type="text"
+                    value={selectedOpt}
+                    onChange={e => {
+                      if (submitted) return
+                      setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))
+                    }}
+                    placeholder="Type your answer..."
+                    disabled={submitted}
+                    className={'w-full px-4 py-3.5 rounded-2xl border-2 text-base transition-all outline-none ' + (selectedOpt
+                      ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-green-50 shadow-md shadow-emerald-500/20 focus:ring-2 focus:ring-emerald-100'
+                      : 'border-slate-200 bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100')}
+                  />
+                  {selectedOpt && (
+                    <button
+                      onClick={() => setAnswers(prev => { const n = { ...prev }; delete n[q.id]; return n })}
+                      className="mt-2 text-xs text-slate-500 hover:text-red-600 font-medium"
+                    >
+                      Clear answer
+                    </button>
+                  )}
+                </div>
+              ) : (
+                ['a', 'b', 'c', 'd'].map(opt => {
+                  const val = (q as any)['option_' + opt]
+                  if (!val) return null
+                  const isSelected = selectedOpt.toLowerCase() === opt
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => selectOption(q.id, opt)}
+                      className={'w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ' + (isSelected ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-green-50 shadow-md shadow-emerald-500/20' : 'border-slate-200 bg-white hover:border-emerald-300 hover:shadow-sm')}
+                    >
+                      <div className={'w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all ' + (isSelected ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/30' : 'bg-slate-100 text-slate-600')}>
+                        {opt.toUpperCase()}
+                      </div>
+                      <span className="text-[15px] text-slate-800 flex-1">{val}</span>
+                      {isSelected && <CheckCircle size={20} className="text-emerald-600" strokeWidth={2.4} />}
+                    </button>
+                  )
+                })
+              )}
             </div>
           </div>
         )}

@@ -6,6 +6,7 @@ import {
   ChevronUp, Loader2, AlertCircle, CheckCircle, FileText, Clock,
   Users, Award, RotateCcw, Play, Settings2, ListChecks,
 } from 'lucide-react'
+import { detectQuestionType, parseAcceptedVariants } from '../../utils/cbtQuestionDetect'
 
 interface Exam {
   id: string
@@ -43,6 +44,10 @@ interface Question {
   question_order: number
   image_url: string | null
   time_allocation: number
+  question_type?: string
+  correct_answer?: string | null
+  accepted_answers?: string[] | null
+  case_sensitive?: boolean
 }
 
 interface AttemptRow {
@@ -127,23 +132,51 @@ function parsePastedQuestions(text: string): Array<Record<string, any>> {
   let optC: string | null = null
   let optD: string | null = null
   let correctOption = 'a'
+  let correctAnswer: string | null = null  // for fill_blank
+  let acceptedAnswers: string[] = []      // for fill_blank variants
+
+  const BLANK_RE = /_{3,}|\[blank\]\(blank\)|\?{3,}/i
 
   const saveCurrent = () => {
     if (questionText && questionText.length > 0) {
-      results.push({
-        question_text: questionText,
-        option_a: optA || '',
-        option_b: optB || '',
-        option_c: optC || '',
-        option_d: optD || '',
-        correct_option: correctOption,
-        marks: 0,
-        time_allocation: 0,
-      })
+      const hasOptions = !!(optA || optB || optC || optD)
+      const hasBlank = BLANK_RE.test(questionText)
+      // Detect type: if has blank AND no options, treat as fill_blank
+      if (hasBlank && !hasOptions) {
+        results.push({
+          question_text: questionText,
+          option_a: '',
+          option_b: '',
+          option_c: '',
+          option_d: '',
+          correct_option: 'a',
+          question_type: 'fill_blank',
+          correct_answer: correctAnswer || '',
+          accepted_answers: acceptedAnswers,
+          marks: 0,
+          time_allocation: 0,
+        })
+      } else {
+        results.push({
+          question_text: questionText,
+          option_a: optA || '',
+          option_b: optB || '',
+          option_c: optC || '',
+          option_d: optD || '',
+          correct_option: correctOption,
+          question_type: 'multiple_choice',
+          correct_answer: null,
+          accepted_answers: [],
+          marks: 0,
+          time_allocation: 0,
+        })
+      }
     }
     questionText = null
     optA = optB = optC = optD = null
     correctOption = 'a'
+    correctAnswer = null
+    acceptedAnswers = []
   }
 
   for (const rawLine of lines) {
@@ -154,11 +187,21 @@ function parsePastedQuestions(text: string): Array<Record<string, any>> {
     if (upper.startsWith('C.') || upper.startsWith('C)')) { optC = trimmed.substring(2).trim(); continue }
     if (upper.startsWith('D.') || upper.startsWith('D)')) { optD = trimmed.substring(2).trim(); continue }
     if (upper.startsWith('ANS')) {
-      const ansPart = trimmed.replace(/^ans(wer)?\s*:?\s*/i, '')
+      const ansPart = trimmed.replace(/^ans(wer)?\s*:?\s*/i, '').trim()
       if (ansPart.length > 0) {
         const ch = ansPart[0].toUpperCase()
-        if (ch === 'A' || ch === 'B' || ch === 'C' || ch === 'D') {
+        // If Ans: is a single letter A/B/C/D, treat as MC correct option
+        if (ansPart.length === 1 && (ch === 'A' || ch === 'B' || ch === 'C' || ch === 'D')) {
           correctOption = ch.toLowerCase()
+        } else {
+          // Otherwise treat as fill_blank answer text
+          correctAnswer = ansPart
+          // Comma-separated variants in same line: "Ans: photosynthesis, Photosynthesis"
+          if (ansPart.includes(',')) {
+            const parts = ansPart.split(',').map(s => s.trim()).filter(s => s)
+            correctAnswer = parts[0]
+            acceptedAnswers = parts.slice(1)
+          }
         }
       }
       saveCurrent()
@@ -1019,18 +1062,30 @@ export default function CbtPage() {
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
-                              <div className="grid grid-cols-2 gap-1 text-[11px]">
-                                {(['a', 'b', 'c', 'd'] as const).map(opt => {
-                                  const text = q[`option_${opt}` as keyof Question] as string
-                                  const isCorrect = q.correct_option === opt
-                                  return (
-                                    <div key={opt} className={`px-2 py-1 rounded ${isCorrect ? 'bg-green-100 text-green-700 font-medium' : 'bg-white text-gray-600'}`}>
-                                      <span className="font-semibold uppercase">{opt}.</span> {text}
-                                      {isCorrect && <CheckCircle className="inline w-3 h-3 ml-1" />}
-                                    </div>
-                                  )
-                                })}
-                              </div>
+                              {q.question_type === 'fill_blank' ? (
+                                <div className="mt-1 p-2 bg-emerald-50 border border-emerald-200 rounded">
+                                  <p className="text-[11px] font-semibold text-emerald-700"><span className="font-bold">Answer:</span> {q.correct_answer || '—'}</p>
+                                  {q.accepted_answers && q.accepted_answers.length > 0 && (
+                                    <p className="text-[10px] text-emerald-600 mt-0.5"><span className="font-bold">Accepted:</span> {q.accepted_answers.join(' · ')}</p>
+                                  )}
+                                  {q.case_sensitive && (
+                                    <p className="text-[10px] text-amber-600 mt-0.5">Case-sensitive</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-1 text-[11px]">
+                                  {(['a', 'b', 'c', 'd'] as const).map(opt => {
+                                    const text = q[`option_${opt}` as keyof Question] as string
+                                    const isCorrect = q.correct_option === opt
+                                    return (
+                                      <div key={opt} className={`px-2 py-1 rounded ${isCorrect ? 'bg-green-100 text-green-700 font-medium' : 'bg-white text-gray-600'}`}>
+                                        <span className="font-semibold uppercase">{opt}.</span> {text}
+                                        {isCorrect && <CheckCircle className="inline w-3 h-3 ml-1" />}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
                               <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-500">
                                 <span>Marks: {q.marks}</span>
                                 {q.time_allocation > 0 && <span>Time: {formatTimeAllocation(q.time_allocation)}</span>}
@@ -1078,24 +1133,40 @@ export default function CbtPage() {
                     {detailQuestions.map((q, i) => {
                       const studentAns = detailAnswers[q.id]
                       const correct = q.correct_option
-                      const isCorrect = studentAns === correct
+                      const isCorrect = q.question_type === 'fill_blank'
+                        ? !!(studentAns && q.correct_answer && studentAns.trim().toLowerCase() === q.correct_answer.trim().toLowerCase())
+                        : studentAns === correct
                       return (
                         <div key={q.id} className={`p-2.5 rounded border text-xs ${isCorrect ? 'bg-green-50 border-green-200' : (studentAns ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200')}`}>
                           <p className="font-medium text-gray-800 mb-1.5"><span className="text-gray-400">Q{i + 1}.</span> {q.question_text}</p>
-                          <div className="grid grid-cols-2 gap-1 text-[10px]">
-                            {(['a', 'b', 'c', 'd'] as const).map(opt => {
-                              const text = q['option_' + opt as keyof Question] as string
-                              const isStudentAns = studentAns === opt
-                              const isCorrectAns = correct === opt
-                              return (
-                                <div key={opt} className={`px-1.5 py-1 rounded ${isCorrectAns ? 'bg-green-200 text-green-800 font-bold' : (isStudentAns ? 'bg-red-200 text-red-800' : 'bg-white text-gray-600')}`}>
-                                  <span className="uppercase">{opt}.</span> {text}
-                                  {isCorrectAns && ' (correct)'}
-                                  {isStudentAns && !isCorrectAns && ' (your answer)'}
-                                </div>
-                              )
-                            })}
-                          </div>
+                          {q.question_type === 'fill_blank' ? (
+                            <div className="space-y-1.5 text-[10px]">
+                              <div className={`px-2 py-1.5 rounded ${isCorrect ? 'bg-green-100 text-green-800 font-semibold' : 'bg-red-100 text-red-800'}`}>
+                                <span className="font-bold">Your answer:</span> {studentAns || '(blank)'}
+                              </div>
+                              <div className="px-2 py-1.5 rounded bg-green-200 text-green-800 font-bold">
+                                <span className="font-bold">Correct answer:</span> {q.correct_answer || '—'}
+                                {q.accepted_answers && q.accepted_answers.length > 0 && (
+                                  <span className="block text-[9px] font-normal mt-0.5">Also accepted: {q.accepted_answers.join(', ')}</span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-1 text-[10px]">
+                              {(['a', 'b', 'c', 'd'] as const).map(opt => {
+                                const text = q['option_' + opt as keyof Question] as string
+                                const isStudentAns = studentAns === opt
+                                const isCorrectAns = correct === opt
+                                return (
+                                  <div key={opt} className={`px-1.5 py-1 rounded ${isCorrectAns ? 'bg-green-200 text-green-800 font-bold' : (isStudentAns ? 'bg-red-200 text-red-800' : 'bg-white text-gray-600')}`}>
+                                    <span className="uppercase">{opt}.</span> {text}
+                                    {isCorrectAns && ' (correct)'}
+                                    {isStudentAns && !isCorrectAns && ' (your answer)'}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
                         </div>
                       )
                     })}
@@ -1595,15 +1666,18 @@ function BulkImportModal({ examId, schoolId, onClose, onImported }: {
         exam_id: examId,
         school_id: schoolId,
         question_text: q.question_text,
-        option_a: q.option_a,
-        option_b: q.option_b,
-        option_c: q.option_c,
-        option_d: q.option_d,
+        option_a: q.option_a || null,
+        option_b: q.option_b || null,
+        option_c: q.option_c || null,
+        option_d: q.option_d || null,
         correct_option: q.correct_option,
         explanation: '',
         marks: q.marks || marks,
         time_allocation: q.time_allocation,
         question_order: i,
+        question_type: q.question_type || 'multiple_choice',
+        correct_answer: q.correct_answer || null,
+        accepted_answers: q.accepted_answers || [],
       }))
       const { error: inErr } = await dbProxy.from('cbt_questions').insert(payload)
       if (inErr) throw inErr
@@ -1674,11 +1748,19 @@ Ans: B</pre>
                 {parsed.map((q, i) => (
                   <div key={i} className="p-3 bg-gray-50 rounded border border-gray-200">
                     <p className="text-xs font-semibold text-gray-800">{i + 1}. {q.question_text}</p>
-                    <p className="text-[11px] text-gray-500 mt-1">A. {q.option_a}   B. {q.option_b}</p>
-                    <p className="text-[11px] text-gray-500">C. {q.option_c}   D. {q.option_d}</p>
-                    <p className="text-[11px] text-[#1A237E] font-semibold mt-1">
-                      Answer: {q.correct_option.toUpperCase()} | Marks: {q.marks}{q.time_allocation > 0 ? ` | ${formatTimeAllocation(q.time_allocation)}` : ''}
-                    </p>
+                    {q.question_type === 'fill_blank' ? (
+                      <p className="text-[11px] text-emerald-700 font-semibold mt-1">
+                        Answer: {q.correct_answer}{q.accepted_answers && q.accepted_answers.length > 0 ? ` (also: ${q.accepted_answers.join(', ')})` : ''} | Marks: {q.marks}{q.time_allocation > 0 ? ` | ${formatTimeAllocation(q.time_allocation)}` : ''}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-[11px] text-gray-500 mt-1">A. {q.option_a}   B. {q.option_b}</p>
+                        <p className="text-[11px] text-gray-500">C. {q.option_c}   D. {q.option_d}</p>
+                        <p className="text-[11px] text-[#1A237E] font-semibold mt-1">
+                          Answer: {q.correct_option.toUpperCase()} | Marks: {q.marks}{q.time_allocation > 0 ? ` | ${formatTimeAllocation(q.time_allocation)}` : ''}
+                        </p>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
