@@ -87,7 +87,7 @@ export function getClassOfDegree(schoolType: string, cgpa: number): string {
 }
 
 export function computeGrade(score: number, schoolType: string, customGrades?: GradeScale[]): { grade: string; gp: number; remark: string } {
-  const scale = getGradeScale(schoolType, customGrades)
+  const scale = [...getGradeScale(schoolType, customGrades)].sort((a, b) => b.minScore - a.minScore)
   for (const s of scale) {
     if (score >= s.minScore) {
       return { grade: s.grade, gp: s.gp, remark: s.remark }
