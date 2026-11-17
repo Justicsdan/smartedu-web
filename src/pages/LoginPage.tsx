@@ -94,7 +94,7 @@ export default function LoginPage() {
             const { data: schoolRows } = await dbProxy.from('schools').select('school_type').eq('id', schoolId)
             const st = schoolRows && schoolRows[0] ? (schoolRows[0].school_type || '') : ''
             if (HIGHER_ED_TYPES.includes(st)) {
-              target = authRole === 'school_admin' ? '/dashboard/uni/admin' : '/dashboard/uni/student'
+              target = authRole === 'school_admin' ? '/dashboard/tertiary/admin' : '/dashboard/tertiary/student'
             }
           }
         } catch {
