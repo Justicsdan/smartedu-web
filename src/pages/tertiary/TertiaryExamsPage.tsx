@@ -58,14 +58,13 @@ export default function TertiaryExamsPage() {
       const { error } = await dbProxy.from('cbt_exams').insert({
         school_id: schoolId,
         title: form.title.trim(),
-        subject_id: form.course_id, // reuse subject_id column for course_id (same UUID space)
+        course_id: form.course_id,
         class_id: null,
         duration_minutes: Number(form.duration_minutes) || 60,
         total_questions: Number(form.total_questions) || 30,
         pass_mark: Number(form.pass_mark) || 40,
         is_active: form.is_active,
         instructions: form.instructions,
-        created_by: user?.id,
       })
       if (error) throw error
       setSuccess('Exam created')
@@ -185,7 +184,7 @@ export default function TertiaryExamsPage() {
       ) : (
         <div className="space-y-3">
           {exams.map(exam => {
-            const course = courses.find(c => c.id === exam.subject_id)
+            const course = courses.find(c => c.id === exam.course_id)
             const attempts = attemptCounts[exam.id] || 0
             return (
               <div key={exam.id} className={`bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 overflow-hidden shadow-lg shadow-slate-200/40 ${exam.is_active ? 'ring-1 ring-violet-500/20' : ''}`}>

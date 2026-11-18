@@ -48,14 +48,16 @@ export default function TertiaryLiveLecturesPage() {
     try {
       const { error } = await dbProxy.from('live_classes').insert({
         school_id: schoolId,
-        subject_id: form.course_id, // reuse subject_id column for course_id (same UUID space)
+        course_id: form.course_id,
+        teacher_id: user?.id,
+        room_name: 'lecture-' + Date.now().toString(36),
         class_id: null,
         scheduled_at: new Date(form.scheduled_at).toISOString(),
         duration_minutes: Number(form.duration_minutes) || 60,
         status: 'scheduled',
-        target_audience: form.target_audience,
+        audience: form.target_audience,
         join_url: form.join_url,
-        created_by: user?.id,
+        instructions: form.instructions,
       })
       if (error) throw error
       setSuccess('Live lecture scheduled')
@@ -132,7 +134,7 @@ export default function TertiaryLiveLecturesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {lectures.map(lec => {
-            const course = courses.find(c => c.id === lec.subject_id)
+            const course = courses.find(c => c.id === lec.course_id)
             const date = new Date(lec.scheduled_at)
             const isUpcoming = date.getTime() > Date.now()
             return (
@@ -154,7 +156,7 @@ export default function TertiaryLiveLecturesPage() {
                 <div className="space-y-1.5 text-xs text-slate-600">
                   <p className="flex items-center gap-2"><Calendar size={12} /> {date.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   <p className="flex items-center gap-2"><Clock size={12} /> {lec.duration_minutes} minutes</p>
-                  <p className="flex items-center gap-2"><Users size={12} /> {lec.target_audience || 'all'}</p>
+                  <p className="flex items-center gap-2"><Users size={12} /> {lec.audience || 'all'}</p>
                 </div>
                 {lec.join_url && (
                   <a href={lec.join_url} target="_blank" rel="noopener noreferrer"
