@@ -45,6 +45,7 @@ const ADMIN_ONLY_STRIP = ['admin_password'];
 // ─── Tables with school_id column ───
 
 const SCHOOL_SCOPED_TABLES = [
+  'uni_semesters', 'uni_courses', 'uni_enrollments', 'uni_results', 'uni_profiles',
   'live_classes',
   'live_classes',
   'students', 'teachers', 'classes', 'subjects', 'class_subjects',
@@ -56,6 +57,7 @@ const SCHOOL_SCOPED_TABLES = [
 // ─── Tables where student can only see their own rows ───
 
 const STUDENT_OWNED_TABLES = [
+  'uni_enrollments', 'uni_results', 'uni_profiles',
   'scores', 'student_term_summaries', 'term_comments',
   'student_behavioural_ratings', 'attendance', 'cbt_attempts', 'ace_pace_scores', 'ace_term_reports', 'fee_assignments',
 ];
@@ -90,6 +92,11 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     assignment_submissions: ['select', 'insert', 'update', 'delete'],
   },
   school_admin: {
+    uni_semesters: ['select', 'insert', 'update', 'delete'],
+    uni_courses: ['select', 'insert', 'update', 'delete'],
+    uni_enrollments: ['select', 'insert', 'update', 'delete'],
+    uni_results: ['select', 'insert', 'update', 'delete'],
+    uni_profiles: ['select', 'insert', 'update', 'delete'],
       live_classes: ['select','insert','update','delete'],
     schools: ['select', 'update'],
     students: ['select', 'insert', 'update'],
@@ -149,6 +156,11 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     ace_term_reports: ['select', 'insert', 'update'],
   },
   student: {
+    uni_semesters: ['select'],
+    uni_courses: ['select'],
+    uni_enrollments: ['select'],
+    uni_results: ['select'],
+    uni_profiles: ['select'],
       live_classes: ['select'],
     classes: ['select'],
     subjects: ['select'],
@@ -265,6 +277,9 @@ function getAutoFilters(payload: JwtPayload, table: string): Filter[] {
       filters.push({ column: 'id', op: 'eq', value: sub });
     } else if (STUDENT_OWNED_TABLES.includes(table)) {
       filters.push({ column: 'student_id', op: 'eq', value: sub });
+    }
+    if (table === 'uni_results') {
+      filters.push({ column: 'is_published', op: 'eq', value: true });
     }
   }
   return filters;

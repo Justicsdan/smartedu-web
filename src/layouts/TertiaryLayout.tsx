@@ -5,6 +5,7 @@ import { dbProxy } from '../lib/dbProxy'
 import {
   LayoutDashboard, BookOpen, Users, ClipboardList,
   FileText, Settings, LogOut, GraduationCap, Menu,
+  Video, Megaphone, Wallet,
 } from 'lucide-react'
 
 interface NavItem { label: string; icon: any; path: string }
@@ -15,6 +16,10 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Students', icon: Users, path: '/dashboard/tertiary/admin/students' },
   { label: 'Enrollments', icon: ClipboardList, path: '/dashboard/tertiary/admin/enrollments' },
   { label: 'Results', icon: FileText, path: '/dashboard/tertiary/admin/results' },
+  { label: 'Live Lectures', icon: Video, path: '/dashboard/tertiary/admin/live-lectures' },
+  { label: 'Announcements', icon: Megaphone, path: '/dashboard/tertiary/admin/announcements' },
+  { label: 'Exams', icon: FileText, path: '/dashboard/tertiary/admin/exams' },
+  { label: 'Fees', icon: Wallet, path: '/dashboard/tertiary/admin/fees' },
   { label: 'Settings', icon: Settings, path: '/dashboard/tertiary/admin/settings' },
 ]
 
@@ -50,9 +55,9 @@ export default function TertiaryLayout() {
   useEffect(() => {
     const schoolId = user?.school_id || user?.schoolId || (isAdmin ? user?.id : '')
     if (!schoolId) return
-    dbProxy.from('schools').select('name, school_type').eq('id', schoolId).maybeSingle()
+    dbProxy.from('schools').select('name, school_type').eq('id', schoolId)
       .then(({ data }: any) => {
-        if (data) setSchoolInfo(data)
+        if (data && data[0]) setSchoolInfo(data[0])
       })
       .catch(() => {})
   }, [user, isAdmin])

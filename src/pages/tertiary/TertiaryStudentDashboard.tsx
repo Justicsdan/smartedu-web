@@ -25,6 +25,15 @@ function getGradePoint(score: number): { grade: string; gp: number; remark: stri
 }
 
 export default function UniStudentDashboard() {
+  const { user: authUser } = useAuth() as { user: any }
+  const [institutionType, setInstitutionType] = useState<string | null>(null)
+  useEffect(() => {
+    const sid = authUser?.school_id || authUser?.schoolId
+    if (!sid) return
+    dbProxy.from('schools').select('school_type').eq('id', sid)
+      .then(({ data }: any) => { if (data && data[0]) setInstitutionType(data[0].school_type || 'university') })
+      .catch(() => {})
+  }, [authUser])
   const { user } = useAuth() as { user: any }
   const studentId = user?.id || user?.student_id || user?.studentId || ''
   const schoolId = user?.school_id || user?.schoolId || ''
@@ -36,22 +45,25 @@ export default function UniStudentDashboard() {
   const [courses, setCourses] = useState<any[]>([])
   const [profile, setProfile] = useState<any>(null)
   const [enrollments, setEnrollments] = useState<any[]>([])
+  const [semesters, setSemesters] = useState<any[]>([])
 
   const loadData = useCallback(async () => {
     if (!studentId) return
     setLoading(true); setError('')
     try {
-      const [resultsRes, coursesRes, profileRes, enrollRes] = await Promise.all([
+      const [resultsRes, coursesRes, profileRes, enrollRes, semRes] = await Promise.all([
         dbProxy.from('uni_results').select('*').eq('student_id', studentId).order('created_at', { ascending: false }),
         dbProxy.from('uni_courses').select('*').eq('school_id', schoolId).order('course_code'),
         dbProxy.from('uni_profiles').select('*').eq('student_id', studentId),
         dbProxy.from('uni_enrollments').select('*').eq('student_id', studentId).eq('status', 'registered'),
+        dbProxy.from('uni_semesters').select('id, created_at').eq('school_id', schoolId),
       ])
 
       setResults(resultsRes.data || [])
       setCourses(coursesRes.data || [])
       setProfile((profileRes.data && profileRes.data[0]) || null)
       setEnrollments(enrollRes.data || [])
+      setSemesters(semRes.data || [])
     } catch (e: any) {
       setError(e?.message || 'Failed to load')
     } finally {
@@ -83,7 +95,8 @@ export default function UniStudentDashboard() {
       semesterMap[semKey].qp += qp
     }
 
-    const semKeys = Object.keys(semesterMap)
+    const semOrder = (id: string) => { const sm = semesters.find((x: any) => x.id === id); return sm ? String(sm.created_at) : '' }
+    const semKeys = Object.keys(semesterMap).sort((a, b) => semOrder(a).localeCompare(semOrder(b)))
     const lastSem = semKeys[semKeys.length - 1]
     const lastSemData = semesterMap[lastSem] || { credits: 0, qp: 0 }
     const gpa = lastSemData.credits > 0 ? lastSemData.qp / lastSemData.credits : 0
@@ -153,7 +166,7 @@ export default function UniStudentDashboard() {
             <Award size={18} strokeWidth={2.2} className="text-white" />
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{cgpa.toFixed(2)}</div>
-          <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">CGPA · {getClassOfDegree(cgpa)}</div>
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">CGPA{institutionType ? ' · ' + getClassOfDegree(institutionType, cgpa) : ''}</div>
         </div>
         <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, #3B82F6, #2563eb)', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)' }}>

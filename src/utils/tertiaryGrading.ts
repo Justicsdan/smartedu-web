@@ -96,3 +96,15 @@ export function computeGrade(score: number, schoolType: string, customGrades?: G
   const lowest = scale[scale.length - 1] || { grade: 'F', gp: 0.0, remark: 'Fail' }
   return { grade: lowest.grade, gp: lowest.gp, remark: lowest.remark }
 }
+
+// Grade plus credit-weighted quality points, for results entry and transcripts
+export function computeGradeWithUnits(
+  score: number,
+  creditUnits: number,
+  schoolType: string,
+  customGrades?: GradeScale[]
+): { grade: string; gradePoint: number; qualityPoints: number; remark: string } {
+  const { grade, gp, remark } = computeGrade(score, schoolType, customGrades)
+  const units = Number(creditUnits) || 0
+  return { grade, gradePoint: gp, qualityPoints: Math.round(gp * units * 100) / 100, remark }
+}
