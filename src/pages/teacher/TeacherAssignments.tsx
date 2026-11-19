@@ -19,6 +19,34 @@ interface Assignment {
   created_at: string
 }
 
+
+type AssignmentKind = "essay" | "short_answer" | "file_link" | "practical"
+
+function encodeAssignmentDescription(kind: AssignmentKind, wordTarget: string, body: string): string {
+  const cleanBody = body.trim()
+  const wt = Number(wordTarget)
+  const meta = { kind, wordTarget: wt > 0 ? wt : null }
+  return `[META:${JSON.stringify(meta)}]\n${cleanBody}`
+}
+
+function decodeAssignmentDescription(desc: string | null | undefined): { kind: AssignmentKind; wordTarget: number | null; body: string } {
+  const raw = String(desc || "")
+  const m = raw.match(/^\[META:(\{.*?\})\]\s*\n?([\s\S]*)$/)
+  if (!m) return { kind: "essay", wordTarget: null, body: raw }
+  try {
+    const parsed = JSON.parse(m[1])
+    const k = (["essay", "short_answer", "file_link", "practical"].includes(parsed.kind) ? parsed.kind : "essay") as AssignmentKind
+    return { kind: k, wordTarget: parsed.wordTarget ? Number(parsed.wordTarget) : null, body: m[2] || "" }
+  } catch {
+    return { kind: "essay", wordTarget: null, body: raw }
+  }
+}
+
+function wordCount(text: string | null | undefined): number {
+  const t = String(text || "").trim()
+  return t ? t.split(/\s+/).length : 0
+}
+
 interface StudentLite {
   id: string
   first_name: string
@@ -74,6 +102,9 @@ export default function TeacherAssignments() {
   const [viewSubmissions, setViewSubmissions] = useState<Assignment | null>(null)
 
   // Form state
+  const [assignmentKind, setAssignmentKind] = useState<AssignmentKind>('essay')
+  const [wordTarget, setWordTarget] = useState('300')
+  const [syncingScores, setSyncingScores] = useState(false)
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -151,7 +182,7 @@ export default function TeacherAssignments() {
         school_id: schoolId,
         teacher_id: teacherId,
         title: form.title.trim(),
-        description: form.description.trim(),
+        description: encodeAssignmentDescription(assignmentKind, wordTarget, form.description),
         class_id: form.class_id,
         subject_id: form.subject_id,
         total_marks: Number(form.total_marks) || 20,
@@ -218,17 +249,88 @@ export default function TeacherAssignments() {
   const saveGrade = async (subId: string) => {
     setSaving(true); setError('')
     try {
+      const maxMarks = Number(viewSubmissions?.total_marks) || 100
+      const rawNum = Number(gradeScore)
+      if (Number.isNaN(rawNum) || rawNum < 0 || rawNum > maxMarks) {
+        setError(`Score must be between 0 and ${maxMarks}`)
+        setSaving(false)
+        return
+      }
+      const cleanScore = rawNum
       const { error } = await dbProxy.from('assignment_submissions')
-        .update({ score: Number(gradeScore) || 0, feedback: gradeFeedback.trim() || null })
+        .update({ score: cleanScore, feedback: gradeFeedback.trim() || null })
         .eq('id', subId)
       if (error) throw error
-      setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, score: Number(gradeScore) || 0, feedback: gradeFeedback.trim() || null } : s))
+      setSubmissions(prev => prev.map(s => s.id === subId ? { ...s, score: cleanScore, feedback: gradeFeedback.trim() || null } : s))
       setGradingId(null)
       setSuccessMsg('Grade saved')
     } catch (e: any) {
       setError(e.message || 'Save failed')
     } finally {
       setSaving(false)
+    }
+  }
+
+
+  const syncGradesToScorebook = async (assignment: Assignment) => {
+    const gradedSubs = submissions.filter(sub => sub.score !== null && sub.score !== undefined)
+    if (gradedSubs.length === 0) {
+      setError('Grade at least one submission before syncing to scorebook')
+      return
+    }
+    setSyncingScores(true); setError(''); setSuccessMsg('')
+    try {
+      const [{ data: curSession }, { data: curTerm }] = await Promise.all([
+        dbProxy.from('academic_sessions').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
+        dbProxy.from('terms').select('id').eq('school_id', schoolId).eq('is_current', true).maybeSingle(),
+      ])
+      if (!curSession?.id || !curTerm?.id) {
+        throw new Error('Active academic session or term not found')
+      }
+      const { data: existingScores, error: sErr } = await dbProxy
+        .from('scores')
+        .select('id, student_id, scores_json')
+        .eq('class_id', assignment.class_id)
+        .eq('subject_id', assignment.subject_id)
+        .eq('session_id', curSession.id)
+        .eq('term_id', curTerm.id)
+      if (sErr) throw sErr
+
+      const scoreMap: Record<string, any> = {}
+      for (const row of (existingScores || [])) scoreMap[row.student_id] = row
+
+      for (const sub of gradedSubs) {
+        const val = Number(sub.score) || 0
+        const existing = scoreMap[sub.student_id]
+        const scoresJson: Record<string, any> = existing?.scores_json ? { ...existing.scores_json } : {}
+        scoresJson['Assignment'] = val
+        let total = 0
+        for (const k of Object.keys(scoresJson)) {
+          const v = scoresJson[k]
+          total += typeof v === 'number' ? v : (Number(v) || 0)
+        }
+        if (existing?.id) {
+          const { error: uErr } = await dbProxy.from('scores').update({ scores_json: scoresJson, total }).eq('id', existing.id)
+          if (uErr) throw uErr
+        } else {
+          const { error: iErr } = await dbProxy.from('scores').insert({
+            school_id: schoolId,
+            student_id: sub.student_id,
+            class_id: assignment.class_id,
+            subject_id: assignment.subject_id,
+            session_id: curSession.id,
+            term_id: curTerm.id,
+            scores_json: scoresJson,
+            total,
+          })
+          if (iErr) throw iErr
+        }
+      }
+      setSuccessMsg(`Synced ${gradedSubs.length} graded submission(s) into student score records (Assignment)`)
+    } catch (e: any) {
+      setError(e?.message || 'Failed to sync scores')
+    } finally {
+      setSyncingScores(false)
     }
   }
 
@@ -390,6 +492,24 @@ export default function TeacherAssignments() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Assignment Kind</label>
+                  <select value={assignmentKind} onChange={e => setAssignmentKind(e.target.value as AssignmentKind)}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                    <option value="essay">Essay Writing</option>
+                    <option value="short_answer">Short Answer</option>
+                    <option value="file_link">File / Link Submission</option>
+                    <option value="practical">Practical / Project</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Target Words (Optional)</label>
+                  <input type="number" min={0} value={wordTarget} onChange={e => setWordTarget(e.target.value)}
+                    placeholder="e.g., 300"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Total Marks</label>
                   <input type="number" value={form.total_marks} onChange={e => setForm({ ...form, total_marks: Number(e.target.value) })}
                     className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" />
@@ -425,7 +545,13 @@ export default function TeacherAssignments() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-base font-bold text-slate-900 truncate">Submissions — {viewSubmissions.title}</h3>
-                  <p className="text-xs text-slate-500">{submissions.length} submitted · {submissionStudents.length - submissions.length} pending</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs text-slate-500">{submissions.length} submitted · {submissionStudents.length - submissions.length} pending</p>
+                    <button type="button" onClick={() => syncGradesToScorebook(viewSubmissions)} disabled={syncingScores}
+                      className="px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold disabled:opacity-50 transition">
+                      {syncingScores ? 'Syncing...' : 'Sync Grades to Scorebook'}
+                    </button>
+                  </div>
                 </div>
               </div>
               <button onClick={() => { setViewSubmissions(null); setGradingId(null) }} className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200">
@@ -468,6 +594,7 @@ export default function TeacherAssignments() {
                         </div>
                         <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
                           {sub.submission_text || '(empty)'}
+                          <div className="mt-2 text-[11px] text-slate-400 font-medium">{wordCount(sub.submission_text)} words</div>
                         </div>
                         {sub.feedback && !isGrading && (
                           <div className="mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-100 text-xs text-emerald-800">

@@ -350,14 +350,22 @@ export default function ScoresPage() {
   }
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto space-y-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 min-h-screen">
-      <div className="flex items-start justify-between gap-4">
+    <div className="px-3 sm:px-6 lg:px-8 py-5 sm:py-7 max-w-7xl mx-auto space-y-6 bg-gradient-to-br from-slate-50 via-white to-blue-50/25 min-h-screen">
+      <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              Scorebook
+              School Admin · Scorebook
             </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider">
+              {tier} · Max {totalMax}
+            </span>
+            {isLocked && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+                <Lock size={11} /> Locked
+              </span>
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Score Entry</h1>
           <p className="text-sm text-slate-500 mt-1.5">

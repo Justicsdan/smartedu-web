@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar, ClipboardList,
   Award, Send, Settings, FileText, Wallet, Megaphone, Video, BarChart3,
   LogOut, Menu, X, ChevronLeft, School, User, Bot,
+  ClipboardCheck,
 } from 'lucide-react'
 
 function pickString(record: any, ...keys: string[]): string {
@@ -39,6 +40,7 @@ const NAV_SECTIONS = [
       { to: '/dashboard/schooladmin/scores', label: 'Enter Scores', icon: ClipboardList },
       { to: '/dashboard/schooladmin/publish', label: 'Publish Results', icon: Send },
       { to: '/dashboard/schooladmin/cbt', label: 'CBT Exams', icon: Award },
+      { to: '/dashboard/schooladmin/assignments', label: 'Assignments', icon: ClipboardList },
     ],
   },
   {
@@ -47,6 +49,7 @@ const NAV_SECTIONS = [
       { to: '/dashboard/schooladmin/fees', label: 'Fees', icon: Wallet },
       { to: '/dashboard/schooladmin/announcements', label: 'Announcements', icon: Megaphone },
       { to: '/dashboard/schooladmin/live-class', label: 'Live Class', icon: Video },
+      { to: '/dashboard/schooladmin/lesson-plans', label: 'Lesson Plans', icon: ClipboardCheck },
       { to: '/dashboard/schooladmin/credentials', label: 'Credentials', icon: FileText },
     ],
   },

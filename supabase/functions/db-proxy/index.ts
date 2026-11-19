@@ -49,6 +49,7 @@ const SCHOOL_SCOPED_TABLES = [
   'live_classes',
   'live_classes',
   'students', 'teachers', 'classes', 'subjects', 'class_subjects',
+  'lesson_plans',
   'scores', 'assignments', 'attendance', 'student_term_summaries',
   'term_comments', 'student_behavioural_ratings', 'academic_sessions',
   'terms', 'school_settings', 'audit_logs', 'announcements', 'complaints', 'assignment_submissions', 'score_locks', 'fee_types', 'fee_payments', 'fee_assignments', 'cbt_exams', 'cbt_questions', 'ace_pace_scores', 'ace_term_reports', 'fee_assignments',
@@ -89,7 +90,7 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     ace_pace_scores: ['select', 'insert', 'update', 'delete'],
     ace_term_reports: ['select', 'insert', 'update', 'delete'],
     announcements: ['select', 'insert', 'update', 'delete'],
-    assignment_submissions: ['select', 'insert', 'update', 'delete'],
+    assignment_submissions: ['select', 'insert', 'update', 'delete'],    lesson_plans: ['select', 'insert', 'update', 'delete'],
   },
   school_admin: {
     uni_semesters: ['select', 'insert', 'update', 'delete'],
@@ -125,7 +126,7 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     ace_pace_scores: ['select', 'insert', 'update', 'delete'],
     ace_term_reports: ['select', 'insert', 'update', 'delete'],
     cbt_questions: ['select', 'insert', 'update', 'delete'],
-    cbt_attempts: ['select', 'insert', 'update', 'delete'],
+    cbt_attempts: ['select', 'insert', 'update', 'delete'],    lesson_plans: ['select', 'insert', 'update', 'delete'],
   },
   teacher: {
       live_classes: ['select','insert','update','delete'],
@@ -154,7 +155,7 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     complaints: ['select', 'insert'],
     assignment_submissions: ['select', 'insert'],
     ace_pace_scores: ['select', 'insert', 'update'],
-    ace_term_reports: ['select', 'insert', 'update'],
+    ace_term_reports: ['select', 'insert', 'update'],    lesson_plans: ['select', 'insert', 'update', 'delete'],
   },
   student: {
     uni_semesters: ['select'],
@@ -196,7 +197,7 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
 // ─── RPC whitelist ───
 
 const RPC_WHITELIST: Record<string, string[]> = {
-  school_admin: ['compute_term_summaries'],
+  school_admin: ['compute_term_summaries', 'get_student_credentials', 'get_teacher_credentials'],
   super_admin: ['compute_term_summaries'],
   teacher: [],
   student: ['get_cbt_questions', 'score_cbt_attempt'],

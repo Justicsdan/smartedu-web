@@ -45,6 +45,28 @@ function timeAgo(dateVal: any): string {
 
 type SubmissionStatus = 'submitted' | 'graded' | 'overdue' | 'pending'
 
+
+function parseAssignmentMeta(desc: string): { kind: string; wordTarget: number | null; body: string } {
+  const raw = String(desc || "")
+  const match = raw.match(/^\[META:(\{.*?\})\]\s*\n?([\s\S]*)$/)
+  if (!match) return { kind: "general", wordTarget: null, body: raw }
+  try {
+    const meta = JSON.parse(match[1])
+    return {
+      kind: String(meta.kind || "general"),
+      wordTarget: meta.wordTarget ? Number(meta.wordTarget) : null,
+      body: match[2] || "",
+    }
+  } catch {
+    return { kind: "general", wordTarget: null, body: raw }
+  }
+}
+
+function countWords(text: string): number {
+  const trimmed = String(text || "").trim()
+  return trimmed ? trimmed.split(/\s+/).length : 0
+}
+
 function getSubmissionStatus(assignment: any, submission: any): SubmissionStatus {
   if (submission) {
     if (submission.feedback || submission.score !== null && submission.score !== undefined) return 'graded'
@@ -136,7 +158,8 @@ export default function StudentAssignmentsPage() {
   useEffect(() => { loadData() }, [loadData])
 
   const openSubmitModal = (a: any) => {
-    setActiveAssignment(a); setSubmitText(''); setSubmitError(''); setSubmitSuccess(''); setShowModal(true)
+    const existingSub = submissions[a.id]
+    setActiveAssignment(a); setSubmitText(existingSub?.submission_text || ''); setSubmitError(''); setSubmitSuccess(''); setShowModal(true)
   }
 
   const closeModal = () => {
@@ -157,7 +180,13 @@ export default function StudentAssignmentsPage() {
         submission_text: submitText.trim(),
         submitted_at: new Date().toISOString(),
       }
-      const { data, error: insErr } = await dbProxy.from('assignment_submissions').insert(payload).select().single()
+      const existingSub = submissions[activeAssignment.id]
+      const { data, error: insErr } = existingSub?.id
+        ? await dbProxy.from('assignment_submissions').update({
+            submission_text: submitText.trim(),
+            submitted_at: new Date().toISOString(),
+          }).eq('id', existingSub.id).select().single()
+        : await dbProxy.from('assignment_submissions').insert(payload).select().single()
       if (insErr) throw insErr
       setSubmissions((prev) => ({ ...prev, [activeAssignment.id]: data }))
       setSubmitSuccess('Submitted successfully')
@@ -233,7 +262,10 @@ export default function StudentAssignmentsPage() {
             const meta = STATUS_META[status]
             const Icon = meta.icon
             const overdue = isOverdue(a.due_date) && !submission
-            const description = pickString(a, 'description', 'instructions', 'body', 'content', 'question')
+            const rawDescription = pickString(a, 'description', 'instructions', 'body', 'content', 'question')
+            const decoded = typeof parseAssignmentMeta === "function" ? parseAssignmentMeta(rawDescription) : { kind: "general", wordTarget: null, body: rawDescription }
+            const description = decoded.body
+            const maxPts = a.max_score ?? a.total_marks ?? null
             const title = pickString(a, 'title', 'name') || 'Untitled Assignment'
             return (
               <article key={i} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
@@ -247,6 +279,9 @@ export default function StudentAssignmentsPage() {
                       <h3 className="text-base font-bold text-slate-900 tracking-tight break-words">{title}</h3>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
                         style={{ backgroundColor: meta.bg, color: meta.color }}>{meta.label}</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                        {decoded.kind.replace("_", " ")}{decoded.wordTarget ? ` · ~${decoded.wordTarget} words` : ""}
+                      </span>
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 flex-wrap">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
@@ -288,7 +323,7 @@ export default function StudentAssignmentsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-[11px] uppercase tracking-wider font-bold text-emerald-800 mb-1">Teacher Feedback</div>
                         {submission.score !== null && submission.score !== undefined && (
-                          <div className="text-sm font-bold text-emerald-900 mb-1">Score: {submission.score}{a.max_score ? ` / ${a.max_score}` : ''}</div>
+                          <div className="text-sm font-bold text-emerald-900 mb-1">Score: {submission.score}{maxPts ? ` / ${maxPts}` : ''}</div>
                         )}
                         {submission.feedback && (
                           <p className="text-sm text-emerald-900 whitespace-pre-wrap break-words leading-relaxed">{submission.feedback}</p>
@@ -298,7 +333,7 @@ export default function StudentAssignmentsPage() {
                   </div>
                 )}
 
-                {submission && !submission.feedback && (submission.score === null || submission.score === undefined) && submission.submission_text && (
+                {submission && submission.submission_text && (
                   <div className="px-4 sm:px-5 py-4 bg-blue-50/60 border-t border-blue-100">
                     <div className="flex items-start gap-2.5">
                       <User size={14} className="flex-shrink-0 mt-0.5 text-blue-700" strokeWidth={2.2} />
@@ -377,9 +412,7 @@ export default function StudentAssignmentsPage() {
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Your Answer <span className="text-red-500">*</span>
                 </label>
-                <textarea value={submitText} onChange={(e) => setSubmitText(e.target.value)} disabled={submitting} rows={6} placeholder="Type your answer here..."
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-slate-900 resize-none disabled:bg-slate-50" />
-                <div className="mt-1 text-[10px] text-slate-400 text-right">{submitText.length} characters</div>
+
               </div>
             </div>
             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">

@@ -1,8 +1,10 @@
 import TertiaryLayout from './layouts/TertiaryLayout'
 import TertiaryProtectedRoute from './components/TertiaryProtectedRoute'
 import TertiaryAdminDashboard from './pages/tertiary/TertiaryAdminDashboard'
+import TertiaryLecturerDashboard from './pages/tertiary/TertiaryLecturerDashboard'
 import TertiaryResultsEntry from './pages/tertiary/TertiaryResultsEntry'
 import TertiaryStudentDashboard from './pages/tertiary/TertiaryStudentDashboard'
+import TertiaryStudentResultsPage from './pages/tertiary/TertiaryStudentResultsPage'
 import TertiaryCoursesPage from './pages/tertiary/TertiaryCoursesPage'
 import TertiaryStudentsPage from './pages/tertiary/TertiaryStudentsPage'
 import TertiaryEnrollmentsPage from './pages/tertiary/TertiaryEnrollmentsPage'
@@ -46,6 +48,10 @@ import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard'
 import SuperAdminUsers from './pages/superadmin/SuperAdminUsers'
 import SuperAdminAuditLog from './pages/superadmin/SuperAdminAuditLog'
 import SchoolsManagement from './pages/superadmin/SchoolsManagement'
+import AdminLessonPlansPage from './pages/admin/AdminLessonPlansPage'
+import AdminAssignmentsPage from './pages/admin/AdminAssignmentsPage'
+import TeacherLessonPlansPage from './pages/teacher/TeacherLessonPlansPage'
+import TertiaryLessonPlansPage from './pages/tertiary/TertiaryLessonPlansPage'
 import TeacherScores from './pages/teacher/TeacherScores'
 import TeacherClasses from './pages/teacher/TeacherClasses'
 import TeacherAttendance from './pages/teacher/TeacherAttendance'
@@ -92,6 +98,8 @@ function App() {
           <Route path="publish" element={<PublishPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="credentials" element={<CredentialsPage />} />
+          <Route path="lesson-plans" element={<AdminLessonPlansPage />} />
+          <Route path="assignments" element={<AdminAssignmentsPage />} />
           <Route path="fees" element={<FeesPage />} />
           <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="pace-scores" element={<PaceScoresPage />} />
@@ -132,11 +140,12 @@ function App() {
           <Route path="attendance" element={<TeacherAttendance />} />
           <Route path="results" element={<TeacherDashboard />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
+          <Route path="lesson-plans" element={<TeacherLessonPlansPage />} />
           <Route path="live-class" element={<TeacherLiveClass />} />
           <Route path="publish" element={<TeacherPublish />} />
         </Route>
       
-        <Route path="/dashboard/tertiary" element={<TertiaryProtectedRoute allowedRoles={['school_admin', 'student']}><TertiaryLayout /></TertiaryProtectedRoute>}>
+        <Route path="/dashboard/tertiary" element={<TertiaryProtectedRoute allowedRoles={['school_admin', 'teacher', 'student']}><TertiaryLayout /></TertiaryProtectedRoute>}>
           <Route path="admin" element={<TertiaryAdminDashboard />} />
           <Route path="admin/courses" element={<TertiaryCoursesPage />} />
           <Route path="admin/students" element={<TertiaryStudentsPage />} />
@@ -146,8 +155,16 @@ function App() {
           <Route path="admin/announcements" element={<TertiaryAnnouncementsPage />} />
           <Route path="admin/exams" element={<TertiaryExamsPage />} />
           <Route path="admin/fees" element={<TertiaryFeesPage />} />
+          <Route path="admin/lesson-plans" element={<TertiaryLessonPlansPage />} />
           <Route path="admin/settings" element={<TertiarySettingsPage />} />
+                    <Route path="lecturer" element={<TertiaryLecturerDashboard />} />
+          <Route path="lecturer/results" element={<TertiaryResultsEntry />} />
+          <Route path="lecturer/live-lectures" element={<TertiaryLiveLecturesPage />} />
+          <Route path="lecturer/exams" element={<TertiaryExamsPage />} />
+          <Route path="lecturer/lesson-plans" element={<TertiaryLessonPlansPage />} />
+
           <Route path="student" element={<TertiaryStudentDashboard />} />
+          <Route path="student/results" element={<TertiaryStudentResultsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

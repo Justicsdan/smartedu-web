@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
+import { computeIjmbSubjectPoints } from '../../utils/tertiaryGrading'
+import type { ProgrammeType } from '../../utils/tertiaryGrading'
 import {
   Users, Plus, AlertCircle, Award, Loader2, Search,
   Trash2, Edit3, X, Save, BookOpen, IdCard, GraduationCap,
@@ -25,6 +27,7 @@ export default function TertiaryStudentsPage() {
   const [form, setForm] = useState({
     first_name: '', last_name: '', middle_name: '',
     admission_no: '', gender: 'male',
+    programme_type: 'degree' as ProgrammeType,
     matric_number: '', faculty: '', department: '', current_level: 100,
     parent_phone: '', parent_email: '',
   })
@@ -34,11 +37,11 @@ export default function TertiaryStudentsPage() {
     setLoading(true); setError('')
     try {
       const [stuRes, profRes, crsRes, enrRes, resRes] = await Promise.all([
-        dbProxy.from('students').select('id, school_id, first_name, last_name, middle_name, admission_no, gender, is_active, parent_phone, parent_email').eq('school_id', schoolId).order('first_name'),
+        dbProxy.from('students').select('id, school_id, first_name, last_name, middle_name, admission_no, gender, is_active, parent_phone, parent_email, programme_type').eq('school_id', schoolId).order('first_name'),
         dbProxy.from('uni_profiles').select('*').eq('school_id', schoolId),
-        dbProxy.from('uni_courses').select('id, course_code, course_title, credit_units, level').eq('school_id', schoolId).order('course_code'),
+        dbProxy.from('uni_courses').select('id, course_code, course_title, credit_units, level, programme_type').eq('school_id', schoolId).order('course_code'),
         dbProxy.from('uni_enrollments').select('id, student_id, course_id, status').eq('school_id', schoolId).eq('status', 'registered'),
-        dbProxy.from('uni_results').select('student_id, course_id, total_score, grade_point, quality_points, is_published').eq('school_id', schoolId),
+        dbProxy.from('uni_results').select('student_id, course_id, total_score, grade_point, quality_points, is_published, programme_type').eq('school_id', schoolId),
       ])
       setStudents(stuRes.data || [])
       setProfiles(profRes.data || [])
@@ -55,10 +58,22 @@ export default function TertiaryStudentsPage() {
   useEffect(() => { load() }, [load])
 
   const profileFor = (studentId: string) => profiles.find(p => p.student_id === studentId)
+  const studentProgrammeFor = (studentId: string): ProgrammeType => {
+    const prof = profileFor(studentId)
+    const stu = students.find(s => s.id === studentId)
+    if (prof?.programme_type === 'ijmb' || stu?.programme_type === 'ijmb') return 'ijmb'
+    return 'degree'
+  }
   const enrollCountFor = (studentId: string) => enrollments.filter(e => e.student_id === studentId).length
   const resultCountFor = (studentId: string) => results.filter(r => r.student_id === studentId).length
+
   const cgpaFor = (studentId: string) => {
-    const rs = results.filter(r => r.student_id === studentId && r.is_published)
+    const rs = results.filter(r => {
+      if (r.student_id !== studentId || !r.is_published) return false
+      const course = courses.find(c => c.id === r.course_id)
+      const isIjmbRow = r.programme_type === 'ijmb' || course?.programme_type === 'ijmb'
+      return !isIjmbRow
+    })
     if (rs.length === 0) return null
     let qp = 0, cu = 0
     for (const r of rs) {
@@ -68,6 +83,23 @@ export default function TertiaryStudentsPage() {
       cu += credits
     }
     return cu > 0 ? (qp / cu) : null
+  }
+
+  const ijmbPointsFor = (studentId: string) => {
+    const rs = results.filter(r => {
+      if (r.student_id !== studentId || !r.is_published) return false
+      const course = courses.find(c => c.id === r.course_id)
+      return r.programme_type === 'ijmb' || course?.programme_type === 'ijmb' || studentProgrammeFor(studentId) === 'ijmb'
+    })
+    if (rs.length === 0) return null
+    let pts = 0
+    for (const r of rs) {
+      const scoreNum = r.total_score != null ? Number(r.total_score) : NaN
+      if (!Number.isNaN(scoreNum)) {
+        pts += computeIjmbSubjectPoints(scoreNum).points
+      }
+    }
+    return pts
   }
 
   const filtered = students.filter(s => {
@@ -85,6 +117,7 @@ export default function TertiaryStudentsPage() {
     setForm({
       first_name: '', last_name: '', middle_name: '',
       admission_no: '', gender: 'male',
+      programme_type: 'degree',
       matric_number: '', faculty: '', department: '', current_level: 100,
       parent_phone: '', parent_email: '',
     })
@@ -93,6 +126,7 @@ export default function TertiaryStudentsPage() {
 
   const openEditForm = (s: any) => {
     const prof = profileFor(s.id)
+    const pType: ProgrammeType = prof?.programme_type === 'ijmb' || s.programme_type === 'ijmb' ? 'ijmb' : 'degree'
     setEditingId(s.id)
     setForm({
       first_name: s.first_name || '',
@@ -100,6 +134,7 @@ export default function TertiaryStudentsPage() {
       middle_name: s.middle_name || '',
       admission_no: s.admission_no || '',
       gender: (s.gender || 'male').toLowerCase(),
+      programme_type: pType,
       matric_number: prof?.matric_number || '',
       faculty: prof?.faculty || '',
       department: prof?.department || '',
@@ -111,67 +146,119 @@ export default function TertiaryStudentsPage() {
   }
 
   const handleSave = async () => {
-    if (!form.first_name.trim() || !form.last_name.trim() || !form.admission_no.trim()) {
+    const firstName = form.first_name.trim()
+    const lastName = form.last_name.trim()
+    const admissionNo = form.admission_no.trim()
+    if (!firstName || !lastName || !admissionNo) {
       setError('First name, last name, and admission number are required')
       return
     }
+    const normalizedAdm = admissionNo.toLowerCase()
+    const duplicateStudent = students.find(
+      (st: any) =>
+        st.id !== editingId &&
+        String(st.admission_no || '').trim().toLowerCase() === normalizedAdm
+    )
+    if (duplicateStudent) {
+      setError(`A student with admission number "${admissionNo}" already exists.`)
+      return
+    }
+    const matricNo = form.matric_number.trim()
+    const facultyVal = form.faculty.trim()
+    const departmentVal = form.department.trim()
+    if (matricNo) {
+      const normalizedMatric = matricNo.toLowerCase()
+      const duplicateMatric = profiles.find(
+        (prof: any) =>
+          prof.student_id !== editingId &&
+          String(prof.matric_number || '').trim().toLowerCase() === normalizedMatric
+      )
+      if (duplicateMatric) {
+        setError(`A student with matric number "${matricNo}" already exists.`)
+        return
+      }
+    }
     setError(''); setSuccess('')
+    const levelNum = Number(form.current_level) || 100
+    const profilePayload = {
+      matric_number: matricNo,
+      faculty: facultyVal,
+      department: departmentVal,
+      current_level: levelNum,
+      programme_type: form.programme_type,
+    }
     try {
       if (editingId) {
-        // Update student
-        await dbProxy.from('students').update({
-          first_name: form.first_name.trim(),
-          last_name: form.last_name.trim(),
+        const { error: stuErr } = await dbProxy.from('students').update({
+          first_name: firstName,
+          last_name: lastName,
           middle_name: form.middle_name.trim(),
-          admission_no: form.admission_no.trim(),
+          admission_no: admissionNo,
           gender: form.gender,
+          programme_type: form.programme_type,
           parent_phone: form.parent_phone,
           parent_email: form.parent_email,
         }).eq('id', editingId)
-        // Update profile (upsert)
+        if (stuErr) throw stuErr
+
         const existingProf = profileFor(editingId)
         if (existingProf?.id) {
-          await dbProxy.from('uni_profiles').update({
-            matric_number: form.matric_number.trim(),
-            faculty: form.faculty.trim(),
-            department: form.department.trim(),
-            current_level: Number(form.current_level) || 100,
-          }).eq('id', existingProf.id)
+          const { error: profUpdErr } = await dbProxy.from('uni_profiles')
+            .update(profilePayload)
+            .eq('id', existingProf.id)
+          if (profUpdErr) throw profUpdErr
         } else {
-          await dbProxy.from('uni_profiles').insert({
-            school_id: schoolId, student_id: editingId,
-            matric_number: form.matric_number.trim(),
-            faculty: form.faculty.trim(),
-            department: form.department.trim(),
-            current_level: Number(form.current_level) || 100,
-          })
+          const { error: profInsErr } = await dbProxy.from('uni_profiles')
+            .insert({
+              school_id: schoolId,
+              student_id: editingId,
+              ...profilePayload,
+            })
+          if (profInsErr) throw profInsErr
         }
         setSuccess('Student updated')
       } else {
-        // Insert student
         const { data: newStu, error: inErr } = await dbProxy.from('students').insert({
           school_id: schoolId,
-          first_name: form.first_name.trim(),
-          last_name: form.last_name.trim(),
+          first_name: firstName,
+          last_name: lastName,
           middle_name: form.middle_name.trim(),
-          admission_no: form.admission_no.trim(),
+          admission_no: admissionNo,
           gender: form.gender,
+          programme_type: form.programme_type,
           parent_phone: form.parent_phone,
           parent_email: form.parent_email,
           is_active: true,
-          pin: '0000', // default PIN
+          pin: '0000',
         })
         if (inErr) throw inErr
-        const newId = (newStu && newStu[0]) ? newStu[0].id : ''
-        if (newId) {
-          await dbProxy.from('uni_profiles').insert({
-            school_id: schoolId, student_id: newId,
-            matric_number: form.matric_number.trim(),
-            faculty: form.faculty.trim(),
-            department: form.department.trim(),
-            current_level: Number(form.current_level) || 100,
-          })
+
+        let newId = Array.isArray(newStu)
+          ? (newStu[0]?.id || '')
+          : ((newStu as any)?.id || '')
+
+        if (!newId) {
+          const { data: fetchedStu, error: lookupErr } = await dbProxy
+            .from('students')
+            .select('id')
+            .eq('school_id', schoolId)
+            .eq('admission_no', admissionNo)
+          if (lookupErr) throw lookupErr
+          newId = Array.isArray(fetchedStu)
+            ? (fetchedStu[0]?.id || '')
+            : ((fetchedStu as any)?.id || '')
         }
+
+        if (!newId) {
+          throw new Error('Student saved, but could not retrieve new student ID to create tertiary profile')
+        }
+
+        const { error: profErr } = await dbProxy.from('uni_profiles').insert({
+          school_id: schoolId,
+          student_id: newId,
+          ...profilePayload,
+        })
+        if (profErr) throw profErr
         setSuccess('Student added')
       }
       setShowForm(false)
@@ -238,6 +325,52 @@ export default function TertiaryStudentsPage() {
         </div>
       )}
 
+      {showForm && (
+        <div className="bg-white/95 rounded-2xl border border-violet-200 shadow-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-900">{editingId ? 'Edit Student' : 'New Student'}</h3>
+            <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+              <X size={16} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">First Name</label>
+              <input value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Last Name</label>
+              <input value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Admission No</label>
+              <input value={form.admission_no} onChange={e => setForm({ ...form, admission_no: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Programme Type</label>
+              <select value={form.programme_type} onChange={e => setForm({ ...form, programme_type: e.target.value as ProgrammeType })} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white">
+                <option value="degree">Degree</option>
+                <option value="ijmb">IJMB</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Matric Number</label>
+              <input value={form.matric_number} onChange={e => setForm({ ...form, matric_number: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Department</label>
+              <input value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+            <button onClick={handleSave} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold hover:bg-violet-700">
+              <Save size={14} /> Save
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, #8B5CF6, #7c3aed)', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)' }}>
@@ -296,132 +429,63 @@ export default function TertiaryStudentsPage() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filtered.map((s, i) => {
+            {filtered.map((s) => {
               const prof = profileFor(s.id)
+              const pType = studentProgrammeFor(s.id)
               const cgpa = cgpaFor(s.id)
+              const ijmbPts = ijmbPointsFor(s.id)
               const ec = enrollCountFor(s.id)
               const rc = resultCountFor(s.id)
               return (
-                <div key={s.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50/50 transition">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-violet-500/30">
-                    {s.first_name?.charAt(0) || '?'}{s.last_name?.charAt(0) || ''}
+                <div key={s.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50/50 transition">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-700 font-bold text-xs flex items-center justify-center shrink-0">
+                      {(s.first_name?.[0] || '') + (s.last_name?.[0] || '')}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-slate-900 truncate">
+                          {[s.first_name, s.middle_name, s.last_name].filter(Boolean).join(' ')}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          pType === 'ijmb' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {pType === 'ijmb' ? 'IJMB' : 'Degree'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 truncate">
+                        {s.admission_no}{prof?.matric_number ? ` · ${prof.matric_number}` : ''}{prof?.department ? ` · ${prof.department}` : ''}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{s.first_name} {s.middle_name ? s.middle_name + ' ' : ''}{s.last_name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Adm: {s.admission_no || '—'} · Matric: {prof?.matric_number || '—'} · L{prof?.current_level || 100}
-                      {prof?.department ? ` · ${prof.department}` : ''}
-                    </p>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-3 text-xs">
-                    <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold">{ec} courses</span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">{rc} results</span>
-                    {cgpa !== null && (
-                      <span className={`px-2 py-0.5 rounded-full font-bold ${(cgpa || 0) >= 2.4 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                        CGPA {Number(cgpa).toFixed(2)}
-                      </span>
+                  <div className="flex items-center gap-2 text-xs shrink-0">
+                    <span className="hidden sm:inline text-slate-500">{ec} enr · {rc} res</span>
+                    {pType === 'ijmb' ? (
+                      ijmbPts !== null && (
+                        <span className="px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-800">
+                          {ijmbPts} IJMB Pts
+                        </span>
+                      )
+                    ) : (
+                      cgpa !== null && (
+                        <span className={`px-2 py-0.5 rounded-full font-bold ${(cgpa || 0) >= 2.4 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                          CGPA {Number(cgpa).toFixed(2)}
+                        </span>
+                      )
                     )}
+                    <button onClick={() => openEditForm(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-violet-700 hover:bg-violet-50" title="Edit">
+                      <Edit3 size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50" title="Delete">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <button onClick={() => openEditForm(s)} className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-600 transition" title="Edit">
-                    <Edit3 size={15} strokeWidth={2.2} />
-                  </button>
-                  <button onClick={() => handleDelete(s.id)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 transition" title="Delete">
-                    <Trash2 size={15} strokeWidth={2.2} />
-                  </button>
                 </div>
               )
             })}
           </div>
         )}
       </div>
-
-      {showForm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
-              <h2 className="text-lg font-bold text-gray-800">{editingId ? 'Edit Student' : 'Add Student'}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
-            </div>
-            <div className="p-5 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">First Name *</label>
-                  <input value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Last Name *</label>
-                  <input value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Middle Name</label>
-                  <input value={form.middle_name} onChange={e => setForm({ ...form, middle_name: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Gender</label>
-                  <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Admission Number *</label>
-                <input value={form.admission_no} onChange={e => setForm({ ...form, admission_no: e.target.value })} placeholder="e.g. HEM/2024/001" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-              </div>
-              <div className="pt-3 mt-3 border-t border-slate-100">
-                <p className="text-xs font-bold text-violet-700 uppercase tracking-wider mb-3">Academic Profile</p>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Matric Number</label>
-                  <input value={form.matric_number} onChange={e => setForm({ ...form, matric_number: e.target.value })} placeholder="e.g. HEM/CS/22/001" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Faculty</label>
-                    <input value={form.faculty} onChange={e => setForm({ ...form, faculty: e.target.value })} placeholder="e.g. Science & Technology" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Department</label>
-                    <input value={form.department} onChange={e => setForm({ ...form, department: e.target.value })} placeholder="e.g. Computer Science" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Current Level</label>
-                    <select value={form.current_level} onChange={e => setForm({ ...form, current_level: Number(e.target.value) })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition">
-                      <option value={100}>100 Level</option>
-                      <option value={200}>200 Level</option>
-                      <option value={300}>300 Level</option>
-                      <option value={400}>400 Level</option>
-                      <option value={500}>500 Level</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-3 mt-3 border-t border-slate-100">
-                <p className="text-xs font-bold text-violet-700 uppercase tracking-wider mb-3">Parent / Guardian</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Parent Phone</label>
-                    <input value={form.parent_phone} onChange={e => setForm({ ...form, parent_phone: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Parent Email</label>
-                    <input value={form.parent_email} onChange={e => setForm({ ...form, parent_email: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100 sticky bottom-0 bg-white">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">Cancel</button>
-              <button onClick={handleSave} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white text-sm font-bold shadow-lg shadow-violet-500/30 hover:-translate-y-0.5 transition-all">
-                <Save size={16} strokeWidth={2.4} /> {editingId ? 'Save Changes' : 'Add Student'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -8,7 +8,9 @@ import {
 
 export default function TertiaryLiveLecturesPage() {
   const { user } = useAuth() as { user: any }
-  const schoolId = user?.school_id || user?.schoolId || user?.id || ''
+  const isLecturer = user?.role === 'teacher'
+  const lecturerId = user?.id || user?.teacher_id || user?.teacherId || ''
+  const schoolId = user?.school_id || user?.schoolId || (!isLecturer ? user?.id : '') || ''
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -26,10 +28,16 @@ export default function TertiaryLiveLecturesPage() {
     try {
       const [lecRes, crsRes] = await Promise.all([
         dbProxy.from('live_classes').select('*').eq('school_id', schoolId).order('scheduled_at', { ascending: false }),
-        dbProxy.from('uni_courses').select('id, course_code, course_title').eq('school_id', schoolId).order('course_code'),
+        dbProxy.from('uni_courses').select('*').eq('school_id', schoolId).order('course_code'),
       ])
       setLectures(lecRes.data || [])
-      setCourses(crsRes.data || [])
+      const rawCourses = crsRes.data || []
+      const hasAssignment = rawCourses.some((c: any) => Boolean(c.lecturer_id) || Boolean(c.teacher_id))
+      const scopedCourses =
+        isLecturer && lecturerId && hasAssignment
+          ? rawCourses.filter((c: any) => c.lecturer_id === lecturerId || c.teacher_id === lecturerId)
+          : rawCourses
+      setCourses(scopedCourses)
     } catch (e: any) {
       setError(e?.message || 'Failed to load')
     } finally {
@@ -149,9 +157,11 @@ export default function TertiaryLiveLecturesPage() {
                       <p className="text-xs text-slate-500 mt-0.5">{lec.status || 'scheduled'}</p>
                     </div>
                   </div>
-                  <button onClick={() => handleDelete(lec.id)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 transition" title="Delete">
-                    <Trash2 size={15} strokeWidth={2.2} />
-                  </button>
+                  {(!isLecturer || !lec.teacher_id || lec.teacher_id === lecturerId) && (
+                    <button onClick={() => handleDelete(lec.id)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 transition" title="Delete">
+                      <Trash2 size={15} strokeWidth={2.2} />
+                    </button>
+                  )}
                 </div>
                 <div className="space-y-1.5 text-xs text-slate-600">
                   <p className="flex items-center gap-2"><Calendar size={12} /> {date.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>

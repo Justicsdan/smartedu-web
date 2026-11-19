@@ -5,7 +5,7 @@ import { dbProxy } from '../lib/dbProxy'
 import {
   LayoutDashboard, BookOpen, Users, ClipboardList,
   FileText, Settings, LogOut, GraduationCap, Menu,
-  Video, Megaphone, Wallet,
+  Video, Megaphone, Wallet, ClipboardCheck,
 } from 'lucide-react'
 
 interface NavItem { label: string; icon: any; path: string }
@@ -20,6 +20,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Announcements', icon: Megaphone, path: '/dashboard/tertiary/admin/announcements' },
   { label: 'Exams', icon: FileText, path: '/dashboard/tertiary/admin/exams' },
   { label: 'Fees', icon: Wallet, path: '/dashboard/tertiary/admin/fees' },
+  { label: 'Lecture Plans', icon: ClipboardCheck, path: '/dashboard/tertiary/admin/lesson-plans' },
   { label: 'Settings', icon: Settings, path: '/dashboard/tertiary/admin/settings' },
 ]
 
@@ -28,6 +29,14 @@ const STUDENT_NAV: NavItem[] = [
   { label: 'My Results', icon: FileText, path: '/dashboard/tertiary/student/results' },
   { label: 'Course Registration', icon: ClipboardList, path: '/dashboard/tertiary/student/registration' },
   { label: 'Profile', icon: Users, path: '/dashboard/tertiary/student/profile' },
+]
+
+const LECTURER_NAV: NavItem[] = [
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard/tertiary/lecturer' },
+  { label: 'Results Entry', icon: FileText, path: '/dashboard/tertiary/lecturer/results' },
+  { label: 'Live Lectures', icon: Video, path: '/dashboard/tertiary/lecturer/live-lectures' },
+  { label: 'Exams', icon: ClipboardList, path: '/dashboard/tertiary/lecturer/exams' },
+  { label: 'Lecture Plans', icon: ClipboardCheck, path: '/dashboard/tertiary/lecturer/lesson-plans' },
 ]
 
 const INSTITUTION_LABELS: Record<string, string> = {
@@ -48,9 +57,11 @@ export default function TertiaryLayout() {
   const [schoolInfo, setSchoolInfo] = useState<{ name?: string; school_type?: string }>({})
 
   const isAdmin = user?.role === 'school_admin'
-  const nav = isAdmin ? ADMIN_NAV : STUDENT_NAV
+  const isLecturer = user?.role === 'teacher'
+  const nav = isAdmin ? ADMIN_NAV : isLecturer ? LECTURER_NAV : STUDENT_NAV
+  const portalLabel = isAdmin ? 'Admin' : isLecturer ? 'Lecturer Portal' : 'Student Portal'
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim()
-    || user?.name || (isAdmin ? 'Admin' : 'Student')
+    || user?.name || (isAdmin ? 'Admin' : isLecturer ? 'Lecturer' : 'Student')
 
   useEffect(() => {
     const schoolId = user?.school_id || user?.schoolId || (isAdmin ? user?.id : '')
@@ -136,7 +147,7 @@ export default function TertiaryLayout() {
               <Menu size={20} className="text-slate-700" />
             </button>
             <p className="text-sm font-bold text-slate-900">
-              {institutionLabel} {isAdmin ? 'Admin' : 'Student Portal'}
+              {institutionLabel} {portalLabel}
             </p>
           </div>
           <div className="flex items-center gap-3">

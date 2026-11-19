@@ -84,6 +84,7 @@ export default function ReportsPage() {
   const [sessionId, setSessionId] = useState('')
   const [settings, setSettings] = useState<any>(null)
   const [isAce, setIsAce] = useState(false)
+  const [isMixedMode, setIsMixedMode] = useState(false)
 
   useEffect(() => {
     if (!schoolId) return
@@ -108,7 +109,10 @@ export default function ReportsPage() {
       }
       if (settingsRes.data) {
         setSettings(settingsRes.data)
-        setIsAce((settingsRes.data.curriculum_mode || '').toLowerCase() === 'ace')
+        const mode = (settingsRes.data.curriculum_mode || 'traditional').toLowerCase()
+        const mixed = mode === 'mixed' || mode === 'both'
+        setIsMixedMode(mixed)
+        setIsAce(mode === 'ace')
         const pm = settingsRes.data.pass_mark
         setPromoThreshold(pm != null ? Number(pm) : 50)
       }
@@ -558,7 +562,7 @@ export default function ReportsPage() {
         <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full pointer-events-none"></div>
         <div className="absolute -right-4 top-8 w-24 h-24 bg-white/5 rounded-full pointer-events-none"></div>
         <div className="relative w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20"><BarChart3 size={26} className="text-white" strokeWidth={2.2} /></div>
-        <div class_="relative flex-1">
+        <div className="relative flex-1">
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-[10px] font-bold uppercase tracking-widest text-white mb-1">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
             Reports
@@ -566,11 +570,31 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold text-white tracking-tight">Reports</h1>
           <p className="text-[12px] text-white/70">Generate and download summary reports</p>
         </div>
-        <div className="relative px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20"><span className="text-[11px] font-bold text-white">{isAce ? 'ACE Mode' : 'Traditional'}</span></div>
+        <div className="flex items-center gap-2">
+          {isMixedMode && (
+            <div className="inline-flex rounded-full bg-white/15 p-0.5 border border-white/20">
+              <button
+                type="button"
+                onClick={() => { setIsAce(false); setSelectedReport('Class Term Summary'); setClassSummary(null); setListData([]) }}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition ${!isAce ? 'bg-white text-slate-900' : 'text-white/90 hover:text-white'}`}
+              >
+                Traditional
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsAce(true); setSelectedReport('Class Term Summary'); setClassSummary(null); setListData([]) }}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition ${isAce ? 'bg-white text-slate-900' : 'text-white/90 hover:text-white'}`}
+              >
+                ACE
+              </button>
+            </div>
+          )}
+          <div className="relative px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/20"><span className="text-[11px] font-bold text-white">{isMixedMode ? (isAce ? 'Mixed · ACE' : 'Mixed · Traditional') : (isAce ? 'ACE Mode' : 'Traditional')}</span></div>
+        </div>
       </div>
 
       {hasResults && !loading && (
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 p-3 mb-4 flex items-center gap-2">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
           <Download size={18} className="text-teal-700" />
           <span className="text-[13px] font-semibold text-slate-700 mr-2">Download:</span>
           <button onClick={downloadPdfReport} className="px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-[13px] font-semibold flex items-center gap-1.5 hover:bg-orange-100"><Printer size={16} /> PDF</button>
@@ -671,7 +695,7 @@ function SummaryView({ reportType, data }: { reportType: string; data: any }) {
   if (data.terms_count) cards.push({ l: 'Terms', v: data.terms_count, c: '#6B7280' })
   return (
     <div>
-      <div className="flex flex-wrap gap-3 mb-5">{cards.map((c, i) => <div key={i} className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 p-3 flex items-center gap-2.5" style={{ minWidth: 105 }}><div className="w-1 h-7 rounded" style={{ backgroundColor: c.c }} /><div><div className="text-[18px] font-bold" style={{ color: c.c }}>{c.v}</div><div className="text-[10px] text-slate-500">{c.l}</div></div></div>)}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-5">{cards.map((c, i) => <div key={i} className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm p-3.5 flex items-center gap-2.5"><div className="w-1 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: c.c }} /><div className="min-w-0"><div className="text-lg font-bold tabular-nums truncate" style={{ color: c.c }}>{c.v}</div><div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 truncate">{c.l}</div></div></div>)}</div>
       {data.student_list && data.student_list.length > 0 && (
         <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 overflow-hidden">
           <div className="bg-teal-700 text-white grid grid-cols-12 px-4 py-3 text-xs font-bold uppercase"><div className="col-span-1">#</div><div className="col-span-5">Student Name</div><div className="col-span-2 text-center">Total</div><div className="col-span-2 text-center">Average</div><div className="col-span-2 text-center">Position</div></div>
@@ -715,10 +739,10 @@ function ListView({ reportType, data }: { reportType: string; data: any[] }) {
     }
   }
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-slate-200/60 shadow-md shadow-slate-200/30 overflow-x-auto">
+    <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm overflow-x-auto">
       <table className="w-full text-sm">
-        <thead><tr className="bg-teal-700 text-white">{cols.map((c, i) => <th key={i} className="px-4 py-3 text-xs font-bold uppercase text-left whitespace-nowrap">{c}</th>)}</tr></thead>
-        <tbody>{data.map((r, i) => <tr key={i} className={'border-t border-slate-100 ' + (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}>{getRow(r, i).map((cell, j) => <td key={j} className="px-4 py-3 text-slate-900 whitespace-nowrap">{cell}</td>)}</tr>)}</tbody>
+        <thead><tr className="bg-slate-900 text-white">{cols.map((c, i) => <th key={i} className="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-left whitespace-nowrap">{c}</th>)}</tr></thead>
+        <tbody>{data.map((r, i) => <tr key={i} className={'border-t border-slate-100 hover:bg-teal-50/30 transition-colors ' + (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}>{getRow(r, i).map((cell, j) => <td key={j} className={'px-4 py-3 text-slate-900 whitespace-nowrap ' + (j >= 2 ? 'tabular-nums' : '')}>{cell}</td>)}</tr>)}</tbody>
       </table>
     </div>
   )

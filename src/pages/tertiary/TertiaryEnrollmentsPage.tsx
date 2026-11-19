@@ -182,14 +182,14 @@ export default function TertiaryEnrollmentsPage() {
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition">
               <option value="">— Select Course —</option>
               {courses.map(c => (
-                <option key={c.id} value={c.id}>{c.course_code} — {c.course_title} ({c.credit_units} cr)</option>
+                <option key={c.id} value={c.id}>{c.course_code} — {c.course_title} {c.programme_type === 'ijmb' ? '[IJMB]' : `(${c.credit_units} cr)`}</option>
               ))}
             </select>
           </div>
         </div>
         {course && (
           <div className="flex items-center gap-3 pt-2 px-1 text-xs text-slate-500">
-            <span className="inline-flex items-center gap-1.5"><BookOpen size={12} /> {course.credit_units} credit units</span>
+            <span className="inline-flex items-center gap-1.5"><BookOpen size={12} /> {course.programme_type === 'ijmb' ? 'IJMB Subject' : `${course.credit_units} credit units`}</span>
             <span className="text-slate-300">·</span>
             <span>Level {course.level}</span>
             <span className="text-slate-300">·</span>

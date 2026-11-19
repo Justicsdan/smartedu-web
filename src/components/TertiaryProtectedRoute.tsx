@@ -41,15 +41,24 @@ export default function TertiaryProtectedRoute({ children, allowedRoles }: Props
     )
   }
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const target = user.role === 'student' ? '/dashboard/student'
-      : user.role === 'teacher' ? '/dashboard/teacher'
-      : user.role === 'school_admin' ? '/dashboard/schooladmin'
-      : user.role === 'super_admin' ? '/dashboard/superadmin'
-      : '/login-method'
+    const isHigherEd = HIGHER_ED_TYPES.includes(schoolType || '')
+    const target = user.role === 'student'
+      ? (isHigherEd ? '/dashboard/tertiary/student' : '/dashboard/student')
+      : user.role === 'teacher'
+        ? (isHigherEd ? '/dashboard/tertiary/lecturer' : '/dashboard/teacher')
+        : user.role === 'school_admin'
+          ? (isHigherEd ? '/dashboard/tertiary/admin' : '/dashboard/schooladmin')
+          : user.role === 'super_admin'
+            ? '/dashboard/superadmin'
+            : '/login-method'
     return <Navigate to={target} replace />
   }
   if (!HIGHER_ED_TYPES.includes(schoolType || '')) {
-    const target = user.role === 'student' ? '/dashboard/student' : '/dashboard/schooladmin'
+    const target = user.role === 'student'
+      ? '/dashboard/student'
+      : user.role === 'teacher'
+        ? '/dashboard/teacher'
+        : '/dashboard/schooladmin'
     return <Navigate to={target} replace />
   }
   return <>{children}</>

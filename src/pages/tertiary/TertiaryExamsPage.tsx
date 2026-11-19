@@ -8,7 +8,9 @@ import {
 
 export default function TertiaryExamsPage() {
   const { user } = useAuth() as { user: any }
-  const schoolId = user?.school_id || user?.schoolId || user?.id || ''
+  const isLecturer = user?.role === 'teacher'
+  const lecturerId = user?.id || user?.teacher_id || user?.teacherId || ''
+  const schoolId = user?.school_id || user?.schoolId || (!isLecturer ? user?.id : '') || ''
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -27,10 +29,16 @@ export default function TertiaryExamsPage() {
     try {
       const [exRes, crsRes] = await Promise.all([
         dbProxy.from('cbt_exams').select('*').eq('school_id', schoolId).order('created_at', { ascending: false }),
-        dbProxy.from('uni_courses').select('id, course_code, course_title').eq('school_id', schoolId).order('course_code'),
+        dbProxy.from('uni_courses').select('*').eq('school_id', schoolId).order('course_code'),
       ])
       setExams(exRes.data || [])
-      setCourses(crsRes.data || [])
+      const rawCourses = crsRes.data || []
+      const hasAssignment = rawCourses.some((c: any) => Boolean(c.lecturer_id) || Boolean(c.teacher_id))
+      const scopedCourses =
+        isLecturer && lecturerId && hasAssignment
+          ? rawCourses.filter((c: any) => c.lecturer_id === lecturerId || c.teacher_id === lecturerId)
+          : rawCourses
+      setCourses(scopedCourses)
       // Load attempt counts
       if ((exRes.data || []).length > 0) {
         const examIds = (exRes.data || []).map((e: any) => e.id)

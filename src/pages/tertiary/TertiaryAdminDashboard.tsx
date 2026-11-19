@@ -143,7 +143,7 @@ export default function UniAdminDashboard() {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-md" style={{ background: 'linear-gradient(135deg, #F59E0B, #d97706)', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)' }}>
             <TrendingUp size={18} strokeWidth={2.2} className="text-white" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{courses.reduce((sum, c) => sum + (c.credit_units || 0), 0)}</div>
+          <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{courses.filter(c => c.programme_type !== 'ijmb').reduce((sum, c) => sum + (c.credit_units || 0), 0)}</div>
           <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-0.5">Total Credits</div>
         </div>
         <div className="group bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-4 shadow-lg shadow-slate-200/40 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
@@ -189,7 +189,7 @@ export default function UniAdminDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-900 truncate">{c.course_code} — {c.course_title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Level {c.level} · {c.semester_type === 'first' ? 'First Semester' : 'Second Semester'} · {c.credit_units} credit unit{c.credit_units !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Level {c.level} · {c.semester_type === 'first' ? 'First Semester' : 'Second Semester'} · {c.programme_type === 'ijmb' ? 'IJMB Subject' : `${c.credit_units} credit unit${c.credit_units !== 1 ? 's' : ''}`}</p>
                 </div>
                 <button onClick={() => handleDeleteCourse(c.id)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 transition" title="Delete">
                   <Trash2 size={15} strokeWidth={2.2} />

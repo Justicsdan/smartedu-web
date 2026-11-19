@@ -87,14 +87,18 @@ export default function LoginPage() {
       // For school_admin / student of a higher-ed school, route to university portal.
       // Need to fetch school_type via dbProxy using the new token.
       let target = config.dashboard
-      if (authRole === 'school_admin' || authRole === 'student') {
+      if (authRole === 'school_admin' || authRole === 'teacher' || authRole === 'student') {
         try {
           const schoolId = data.user.school_id || data.user.schoolId || data.user.id
           if (schoolId) {
             const { data: schoolRows } = await dbProxy.from('schools').select('school_type').eq('id', schoolId)
             const st = schoolRows && schoolRows[0] ? (schoolRows[0].school_type || '') : ''
             if (HIGHER_ED_TYPES.includes(st)) {
-              target = authRole === 'school_admin' ? '/dashboard/tertiary/admin' : '/dashboard/tertiary/student'
+              target = authRole === 'school_admin'
+                ? '/dashboard/tertiary/admin'
+                : authRole === 'teacher'
+                  ? '/dashboard/tertiary/lecturer'
+                  : '/dashboard/tertiary/student'
             }
           }
         } catch {

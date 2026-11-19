@@ -12,6 +12,7 @@ const DEFAULTS: Record<string, { grading_scale: string; program_type: string; ce
   monotechnic: { grading_scale: 'polytechnic_4.0', program_type: 'diploma', certification_name: 'Diploma', max_level: 200 },
   nursing_school: { grading_scale: 'nce_4.0', program_type: 'certificate', certification_name: 'RN', max_level: 200 },
   ieic: { grading_scale: 'polytechnic_4.0', program_type: 'certificate', certification_name: 'NVQ', max_level: 400 },
+  ijmb: { grading_scale: 'ijmb_points', program_type: 'ijmb', certification_name: 'IJMB', max_level: 100 },
 }
 
 export default function TertiarySettingsPage() {
@@ -156,6 +157,7 @@ export default function TertiarySettingsPage() {
             <option value="university_5.0">University (5.0 GPA — A=5, B=4, C=3, D=2, E=1, F=0)</option>
             <option value="polytechnic_4.0">Polytechnic (4.0 GPA — A=4, B=3, C=2, D=1, F=0)</option>
             <option value="nce_4.0">NCE (4.0 GPA — A=4, B=3, C=2, D=1, F=0)</option>
+            <option value="ijmb_points">IJMB (Subject Points — A=5, B=4, C=3, D=2, E=1, F=0)</option>
           </select>
         </div>
 
@@ -169,6 +171,7 @@ export default function TertiarySettingsPage() {
               <option value="nce">NCE (College of Education)</option>
               <option value="diploma">Diploma</option>
               <option value="certificate">Certificate</option>
+              <option value="ijmb">IJMB (Interim Joint Matriculations Board)</option>
             </select>
           </div>
           <div>

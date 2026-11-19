@@ -355,7 +355,7 @@ export default function ClassesPage() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Classes & Subjects</h1>
-            <p className="text-sm text-slate-500">Manage classes, subjects, and assignments</p>
+            <p className="text-sm text-slate-500">Manage classes and subjects</p>
           </div>
         </div>
 
@@ -380,9 +380,6 @@ export default function ClassesPage() {
           </button>
           <button onClick={() => setTab('subjects')} className={'flex-1 py-2.5 rounded-xl text-sm font-semibold transition ' + (tab === 'subjects' ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md shadow-violet-500/30' : 'text-slate-600 hover:bg-slate-50')}>
             Subjects ({subjects.length})
-          </button>
-          <button onClick={() => setTab('assignments')} className={'flex-1 py-2.5 rounded-xl text-sm font-semibold transition ' + (tab === 'assignments' ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-500/30' : 'text-slate-600 hover:bg-slate-50')}>
-            Assignments ({assignments.length})
           </button>
         </div>
       </div>
@@ -654,60 +651,6 @@ export default function ClassesPage() {
           </div>
         )}
 
-        {/* ASSIGNMENTS TAB */}
-        {tab === 'assignments' && (
-          <div>
-            {assignments.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                <div className="w-16 h-16 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
-                  <ClipboardList size={32} className="text-blue-400" />
-                </div>
-                <p className="text-gray-500 text-sm">No assignments created yet</p>
-                <p className="text-gray-400 text-xs mt-1">Assignments are created by teachers from their portal</p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Title</th>
-                      <th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Class</th>
-                      <th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Subject</th>
-                      <th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Marks</th>
-                      <th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Due</th>
-                      <th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Status</th>
-                      <th className="text-right text-xs font-bold text-gray-500 uppercase px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {assignments.map(a => (
-                      <tr key={a.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{a.title}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{a.class_id ? classMap[a.class_id]?.name || '-' : '-'}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{a.subject_id ? subjectMap[a.subject_id]?.name || '-' : '-'}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{a.total_marks}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{a.due_date ? new Date(a.due_date).toLocaleDateString() : '-'}</td>
-                        <td className="px-4 py-3">
-                          <span className={'px-2 py-0.5 rounded text-[10px] font-semibold ' + (a.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
-                            {a.is_published ? 'Published' : 'Draft'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => setDeleteConfirm({ type: 'Assignment', id: a.id, name: a.title })}
-                            className="w-8 h-8 rounded-lg border border-red-200 bg-red-50 flex items-center justify-center hover:bg-red-100 ml-auto"
-                          >
-                            <Trash2 size={14} className="text-red-500" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Class Modal */}

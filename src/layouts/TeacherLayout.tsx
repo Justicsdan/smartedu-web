@@ -141,6 +141,7 @@ export default function TeacherLayout() {
   navItems.push(
     { to: '/dashboard/teacher/attendance', label: 'Attendance', icon: Calendar },
     { to: '/dashboard/teacher/results', label: 'Results', icon: ClipboardList },
+    { to: '/dashboard/teacher/lesson-plans', label: 'Lesson Plans', icon: ClipboardList },
     { to: '/dashboard/teacher/announcements', label: 'Announcements', icon: Megaphone },
     { to: '/dashboard/teacher/live-class', label: 'Live Class', icon: Video },
   )

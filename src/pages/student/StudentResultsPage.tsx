@@ -81,6 +81,13 @@ export default function StudentResultsPage() {
   const [schoolInfo, setSchoolInfo] = useState<any>(null)
   const [selectedTermId, setSelectedTermId] = useState<string>('')
   const [curriculumMode, setCurriculumMode] = useState<string>('traditional')
+  const effectiveCurriculumMode = useMemo(() => {
+    if (effectiveCurriculumMode === 'ace') return 'ace'
+    if (curriculumMode === 'mixed' || curriculumMode === 'both') {
+      return (acePaceScores.length > 0 || Boolean(aceTermReport)) ? 'ace' : 'traditional'
+    }
+    return acePaceScores.length > 0 ? 'ace' : 'traditional'
+  }, [curriculumMode, acePaceScores.length, aceTermReport])
   const [acePaceScores, setAcePaceScores] = useState<any[]>([])
   const [aceTermReport, setAceTermReport] = useState<any>(null)
   const studentId = user?.id || user?.student_id || user?.studentId || ''
@@ -136,7 +143,13 @@ export default function StudentResultsPage() {
         else if (key === 'aceReports') { aceReportsData = data || []; setAceTermReport(aceReportsData[0] || null) }
         else if (key === 'terms') { setTerms(data || []); termsData = data || [] }
         else if (key === 'school') setSchoolInfo(data)
-        else if (key === 'settings') { setSettings(data); if (data?.curriculum_mode) setCurriculumMode(data.curriculum_mode) }
+        else if (key === 'settings') {
+          setSettings(data)
+          const rawMode = String(data?.curriculum_mode || 'traditional').toLowerCase()
+          if (rawMode === 'ace') setCurriculumMode('ace')
+          else if (rawMode === 'mixed' || rawMode === 'both') setCurriculumMode('mixed')
+          else setCurriculumMode('traditional')
+        }
         else if (key === 'class') setClassInfo(data)
       })
       const currentTerm = termsData.find((t: any) => t.is_current)
@@ -302,7 +315,7 @@ export default function StudentResultsPage() {
   }
 
   const handlePrint = () => {
-    if (curriculumMode === 'ace') {
+    if (effectiveCurriculumMode === 'ace') {
       handleAcePrint()
       return
     }
@@ -391,7 +404,7 @@ export default function StudentResultsPage() {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">My Results</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">{currentTermName} {curriculumMode === 'ace' && <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-violet-100 text-violet-700">ACE Mode</span>}</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">{currentTermName} {effectiveCurriculumMode === 'ace' && <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-violet-100 text-violet-700">ACE Mode</span>}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={loadAll}
@@ -399,7 +412,7 @@ export default function StudentResultsPage() {
             <RefreshCw size={14} strokeWidth={2.2} className={loading ? 'animate-spin' : ''} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
-          <button onClick={handlePrint} disabled={!currentSummary && curriculumMode !== 'ace'}
+          <button onClick={handlePrint} disabled={!currentSummary && effectiveCurriculumMode !== 'ace'}
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 transition text-white font-semibold text-sm shadow-sm disabled:opacity-50">
             <Printer size={14} strokeWidth={2.4} /><span>Print Report</span>
           </button>
@@ -409,7 +422,7 @@ export default function StudentResultsPage() {
       {(() => {
         // Build list of terms that have data (published summaries for Traditional, PACE scores or ACE reports for ACE)
         const termsWithData = new Set<string>()
-        if (curriculumMode === 'ace') {
+        if (effectiveCurriculumMode === 'ace') {
           acePaceScores.forEach((p: any) => { if (p.term_id) termsWithData.add(p.term_id) })
           // Also include terms from ace_term_reports (use the loaded aceReports data)
           // aceTermReport is already filtered, but we need all reports — let's use the raw data
@@ -465,7 +478,7 @@ export default function StudentResultsPage() {
         </div>
       )}
 
-      {curriculumMode === 'ace' ? (
+      {effectiveCurriculumMode === 'ace' ? (
         <>
           {/* ACE PACE Scores Table */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

@@ -317,6 +317,14 @@ export default function StudentDashboard() {
   const [acePaceScores, setAcePaceScores] = useState<any[]>([])
   const [aceTermReport, setAceTermReport] = useState<any>(null)
   const [curriculumMode, setCurriculumMode] = useState<string>('traditional')
+  const effectiveCurriculumMode = (() => {
+    const mode = String(curriculumMode || 'traditional').toLowerCase()
+    if (mode === 'ace') return 'ace'
+    if (mode === 'mixed' || mode === 'both') {
+      return (acePaceScores.length > 0 || Boolean(aceTermReport)) ? 'ace' : 'traditional'
+    }
+    return acePaceScores.length > 0 ? 'ace' : 'traditional'
+  })()
   const [attendance, setAttendance] = useState<any[]>([])
   const [summaries, setSummaries] = useState<any[]>([])
   const [sessionTerms, setSessionTerms] = useState<any[]>([])
@@ -391,7 +399,7 @@ export default function StudentDashboard() {
         if (key === 'class') setClassInfo(data || null)
         else if (key === 'settings') {
           setSettings(data || null)
-          if (data?.curriculum_mode) setCurriculumMode(data.curriculum_mode)
+          if (data?.curriculum_mode) setCurriculumMode(String(data.curriculum_mode).toLowerCase())
         }
         else if (key === 'scores') setScores(data || [])
         else if (key === 'attendance') setAttendance(data || [])
@@ -566,7 +574,7 @@ export default function StudentDashboard() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {curriculumMode === 'ace' ? (
+        {effectiveCurriculumMode === 'ace' ? (
           <>
             <StatCard icon={BookOpen} label="Subjects" value={String(new Set(acePaceScores.map((p: any) => p.subject_id)).size)} sub={`${subjects.length} total in class`} accent="#2563eb" />
             <StatCard icon={TrendingUp} label="PACEs Done" value={String(acePaceScores.length)} sub={aceTermReport?.is_published ? 'Published' : 'In Progress'} accent="#0891b2" />
@@ -583,7 +591,7 @@ export default function StudentDashboard() {
         )}
       </div>
 
-      {curriculumMode === 'ace' ? (
+      {effectiveCurriculumMode === 'ace' ? (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/60">
             <div className="flex items-center gap-3">
@@ -679,7 +687,7 @@ export default function StudentDashboard() {
       </div>
 
       )}
-      {curriculumMode !== 'ace' && (
+      {effectiveCurriculumMode !== 'ace' && (
       <>
       <div className="flex items-center gap-3 pt-2">
         <BarChart3 size={18} className="text-slate-700" strokeWidth={2.2} />

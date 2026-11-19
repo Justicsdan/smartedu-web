@@ -1,17 +1,64 @@
+export type ProgrammeType = 'degree' | 'ijmb'
+export const PROGRAMME_TYPES: readonly ProgrammeType[] = ['degree', 'ijmb']
+export type AssessmentSource = 'internal' | 'board'
+
 export interface GradeScale {
   grade: string
   gp: number
   remark: string
   minScore: number
+  ijmbPoints?: number
 }
 
-export function getGradeScale(schoolType: string, customGrades?: GradeScale[]): GradeScale[] {
-  // If the admin has set custom grades in the database, use them!
+export interface ComputedGradeResult {
+  grade: string
+  gp: number
+  remark: string
+  programmeType: ProgrammeType
+  ijmbPoints: number | null
+}
+
+export interface ComputedUnitGradeResult {
+  grade: string
+  gradePoint: number
+  qualityPoints: number
+  remark: string
+  programmeType: ProgrammeType
+  ijmbPoints: number | null
+  usesCreditUnits: boolean
+}
+
+export function getIjmbGradeScale(customGrades?: GradeScale[]): GradeScale[] {
+  if (customGrades && Array.isArray(customGrades) && customGrades.length > 0) {
+    return customGrades.map((g) => ({
+      ...g,
+      ijmbPoints: g.ijmbPoints ?? g.gp,
+    }))
+  }
+
+  return [
+    { grade: 'A', gp: 5.0, ijmbPoints: 5, remark: 'Distinction', minScore: 70 },
+    { grade: 'B', gp: 4.0, ijmbPoints: 4, remark: 'Very Good', minScore: 60 },
+    { grade: 'C', gp: 3.0, ijmbPoints: 3, remark: 'Credit', minScore: 50 },
+    { grade: 'D', gp: 2.0, ijmbPoints: 2, remark: 'Pass', minScore: 45 },
+    { grade: 'E', gp: 1.0, ijmbPoints: 1, remark: 'Conditional Pass', minScore: 40 },
+    { grade: 'F', gp: 0.0, ijmbPoints: 0, remark: 'Fail', minScore: 0 },
+  ]
+}
+
+export function getGradeScale(
+  schoolType: string,
+  customGrades?: GradeScale[],
+  programmeType: ProgrammeType = 'degree'
+): GradeScale[] {
+  if (programmeType === 'ijmb') {
+    return getIjmbGradeScale(customGrades)
+  }
+
   if (customGrades && Array.isArray(customGrades) && customGrades.length > 0) {
     return customGrades
   }
 
-  // Otherwise, fallback to sensible defaults based on school_type
   switch (schoolType) {
     case 'university':
     case 'college_of_agriculture':
@@ -53,7 +100,15 @@ export function getGradeScale(schoolType: string, customGrades?: GradeScale[]): 
   }
 }
 
-export function getClassOfDegree(schoolType: string, cgpa: number): string {
+export function getClassOfDegree(
+  schoolType: string,
+  cgpa: number,
+  programmeType: ProgrammeType = 'degree'
+): string {
+  if (programmeType === 'ijmb') {
+    return 'IJMB Programme'
+  }
+
   switch (schoolType) {
     case 'university':
     case 'college_of_agriculture':
@@ -86,25 +141,120 @@ export function getClassOfDegree(schoolType: string, cgpa: number): string {
   }
 }
 
-export function computeGrade(score: number, schoolType: string, customGrades?: GradeScale[]): { grade: string; gp: number; remark: string } {
-  const scale = [...getGradeScale(schoolType, customGrades)].sort((a, b) => b.minScore - a.minScore)
+export function computeGrade(
+  score: number,
+  schoolType: string,
+  customGrades?: GradeScale[],
+  programmeType: ProgrammeType = 'degree'
+): { grade: string; gp: number; remark: string } {
+  const scale = [...getGradeScale(schoolType, customGrades, programmeType)].sort(
+    (a, b) => b.minScore - a.minScore
+  )
+
+  let matched = scale[scale.length - 1] || { grade: 'F', gp: 0.0, remark: 'Fail', minScore: 0 }
   for (const s of scale) {
     if (score >= s.minScore) {
-      return { grade: s.grade, gp: s.gp, remark: s.remark }
+      matched = s
+      break
     }
   }
-  const lowest = scale[scale.length - 1] || { grade: 'F', gp: 0.0, remark: 'Fail' }
-  return { grade: lowest.grade, gp: lowest.gp, remark: lowest.remark }
+
+  if (programmeType === 'ijmb') {
+    return {
+      grade: matched.grade,
+      gp: 0.0,
+      remark: matched.remark,
+    }
+  }
+
+  return {
+    grade: matched.grade,
+    gp: matched.gp,
+    remark: matched.remark,
+  }
 }
 
-// Grade plus credit-weighted quality points, for results entry and transcripts
+export function computeIjmbSubjectPoints(
+  score: number,
+  customGrades?: GradeScale[]
+): { grade: string; points: number; remark: string } {
+  const scale = [...getIjmbGradeScale(customGrades)].sort((a, b) => b.minScore - a.minScore)
+  for (const s of scale) {
+    if (score >= s.minScore) {
+      return {
+        grade: s.grade,
+        points: s.ijmbPoints ?? Math.round(s.gp),
+        remark: s.remark,
+      }
+    }
+  }
+  const lowest = scale[scale.length - 1] || { grade: 'F', ijmbPoints: 0, gp: 0, remark: 'Fail' }
+  return {
+    grade: lowest.grade,
+    points: lowest.ijmbPoints ?? 0,
+    remark: lowest.remark,
+  }
+}
+
+export function calculateIjmbTotalPoints(subjectScores: number[], customGrades?: GradeScale[]): number {
+  return subjectScores.reduce((sum, score) => {
+    return sum + computeIjmbSubjectPoints(score, customGrades).points
+  }, 0)
+}
+
 export function computeGradeWithUnits(
   score: number,
   creditUnits: number,
   schoolType: string,
-  customGrades?: GradeScale[]
+  customGrades?: GradeScale[],
+  programmeType: ProgrammeType = 'degree'
 ): { grade: string; gradePoint: number; qualityPoints: number; remark: string } {
-  const { grade, gp, remark } = computeGrade(score, schoolType, customGrades)
+  if (programmeType === 'ijmb') {
+    const ijmb = computeIjmbSubjectPoints(score, customGrades)
+    return {
+      grade: ijmb.grade,
+      gradePoint: 0,
+      qualityPoints: 0,
+      remark: ijmb.remark,
+    }
+  }
+
+  const { grade, gp, remark } = computeGrade(score, schoolType, customGrades, 'degree')
   const units = Number(creditUnits) || 0
-  return { grade, gradePoint: gp, qualityPoints: Math.round(gp * units * 100) / 100, remark }
+  return {
+    grade,
+    gradePoint: gp,
+    qualityPoints: Math.round(gp * units * 100) / 100,
+    remark,
+  }
+}
+
+export function computeProgrammeResult(params: {
+  score: number
+  creditUnits?: number
+  schoolType: string
+  customGrades?: GradeScale[]
+  programmeType?: ProgrammeType
+  assessmentSource?: AssessmentSource
+}) {
+  const programmeType: ProgrammeType = params.programmeType ?? 'degree'
+  const assessmentSource: AssessmentSource = params.assessmentSource ?? 'internal'
+  const usesCreditUnits = programmeType === 'degree'
+  const base = computeGradeWithUnits(
+    params.score,
+    params.creditUnits ?? 0,
+    params.schoolType,
+    params.customGrades,
+    programmeType
+  )
+  const ijmbPoints =
+    programmeType === 'ijmb' ? computeIjmbSubjectPoints(params.score, params.customGrades).points : null
+
+  return {
+    ...base,
+    programmeType,
+    ijmbPoints,
+    usesCreditUnits,
+    assessmentSource,
+  }
 }

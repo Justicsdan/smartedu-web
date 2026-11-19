@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
-import { computeGradeWithUnits as computeGrade } from '../../utils/tertiaryGrading'
+import { computeProgrammeResult } from '../../utils/tertiaryGrading'
+import type { ProgrammeType } from '../../utils/tertiaryGrading'
 import {
-  FileText, Plus, AlertCircle, Award, Loader2,
-  Search, Save, ClipboardList, BookOpen,
+  FileText, AlertCircle, Award, Loader2,
+  Save, ClipboardList, BookOpen,
 } from 'lucide-react'
 
 export default function UniResultsEntry() {
   const { user } = useAuth() as { user: any }
-  const schoolId = user?.school_id || user?.schoolId || user?.id || ''
+  const schoolId = user?.school_id || user?.schoolId || (user?.role === 'school_admin' ? user?.id : '') || ''
+  const lecturerId = user?.id || user?.teacher_id || user?.teacherId || ''
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -36,7 +38,13 @@ export default function UniResultsEntry() {
         dbProxy.from('schools').select('school_type').eq('id', schoolId),
       ])
       setSemesters(semRes.data || [])
-      setCourses(courseRes.data || [])
+      const rawCourses = courseRes.data || []
+      const hasAssignment = rawCourses.some((c: any) => Boolean(c.lecturer_id) || Boolean(c.teacher_id))
+      const scopedCourses =
+        user?.role === 'teacher' && lecturerId && hasAssignment
+          ? rawCourses.filter((c: any) => c.lecturer_id === lecturerId || c.teacher_id === lecturerId)
+          : rawCourses
+      setCourses(scopedCourses)
       if (schoolRes.data && schoolRes.data[0]) setSchoolType(schoolRes.data[0].school_type || 'university')
       // Auto-select current semester if exists
       const current = (semRes.data || []).find((s: any) => s.is_current)
@@ -80,7 +88,7 @@ export default function UniResultsEntry() {
 
   useEffect(() => { loadEnrollmentsAndResults() }, [loadEnrollmentsAndResults])
 
-  // We need student names — fetch the students table for the school
+  // Fetch the students table for the school
   const [studentsMap, setStudentsMap] = useState<Record<string, any>>({})
   useEffect(() => {
     if (!schoolId) return
@@ -94,7 +102,10 @@ export default function UniResultsEntry() {
   }, [schoolId])
 
   const course = courses.find(c => c.id === selectedCourse)
-  const creditUnits = course?.credit_units || 0
+  const programmeType: ProgrammeType =
+    course?.programme_type === 'ijmb' || schoolType === 'ijmb' ? 'ijmb' : 'degree'
+  const isIjmb = programmeType === 'ijmb'
+  const creditUnits = isIjmb ? 0 : (course?.credit_units || 0)
 
   const handleSaveAll = async () => {
     if (!selectedSemester || !selectedCourse) return
@@ -110,16 +121,22 @@ export default function UniResultsEntry() {
           setSaving(false)
           return
         }
-        const { grade, gradePoint, qualityPoints } = computeGrade(score, creditUnits, schoolType)
+        const { grade, gradePoint, qualityPoints } = computeProgrammeResult({
+          score,
+          creditUnits,
+          schoolType,
+          programmeType,
+        })
         toUpsert.push({
           school_id: schoolId,
           student_id: enr.student_id,
           course_id: selectedCourse,
           semester_id: selectedSemester,
+          programme_type: programmeType,
           total_score: score,
           grade,
-          grade_point: gradePoint,
-          quality_points: qualityPoints,
+          grade_point: isIjmb ? 0 : gradePoint,
+          quality_points: isIjmb ? 0 : qualityPoints,
           recorded_by: user?.id,
           is_published: false,
         })
@@ -131,12 +148,10 @@ export default function UniResultsEntry() {
       }
       // Upsert each row — dbProxy may not support upsert with onConflict, so do delete+insert
       for (const row of toUpsert) {
-        // Delete existing result for this student+course+semester (if any)
         await dbProxy.from('uni_results').delete()
           .eq('student_id', row.student_id)
           .eq('course_id', row.course_id)
           .eq('semester_id', row.semester_id)
-        // Insert fresh
         await dbProxy.from('uni_results').insert(row)
       }
       setSuccess(`${toUpsert.length} result(s) saved`)
@@ -182,9 +197,20 @@ export default function UniResultsEntry() {
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
             Results Entry
           </span>
+          {isIjmb && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+              IJMB Mode (No GPA/Units)
+            </span>
+          )}
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">Course Results</h1>
-        <p className="text-sm text-slate-500 mt-1.5">Enter scores for enrolled students. Grade, GP and quality points auto-compute from your institution type ({schoolType}).</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">
+          {isIjmb ? 'IJMB Subject Results' : 'Course Results'}
+        </h1>
+        <p className="text-sm text-slate-500 mt-1.5">
+          {isIjmb
+            ? 'Enter scores for enrolled IJMB candidates. Letter grades and IJMB subject points (0–5) auto-compute without GPA or credit units.'
+            : `Enter scores for enrolled students. Grade, GP and quality points auto-compute from your institution type (${schoolType}).`}
+        </p>
       </div>
 
       {error && (
@@ -214,23 +240,38 @@ export default function UniResultsEntry() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">Course</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
+              {isIjmb ? 'Subject / Course' : 'Course'}
+            </label>
             <select value={selectedCourse} onChange={e => setSelectedCourse(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition">
               <option value="">— Select Course —</option>
-              {courses.map(c => (
-                <option key={c.id} value={c.id}>{c.course_code} — {c.course_title} ({c.credit_units} cr)</option>
-              ))}
+              {courses.map(c => {
+                const courseIsIjmb = c.programme_type === 'ijmb' || schoolType === 'ijmb'
+                return (
+                  <option key={c.id} value={c.id}>
+                    {c.course_code} — {c.course_title} {courseIsIjmb ? '[IJMB]' : `(${c.credit_units} cr)`}
+                  </option>
+                )
+              })}
             </select>
           </div>
         </div>
         {course && (
-          <div className="flex items-center gap-3 pt-2 px-1 text-xs text-slate-500">
-            <span className="inline-flex items-center gap-1.5"><BookOpen size={12} /> {creditUnits} credit units</span>
-            <span className="text-slate-300">·</span>
-            <span>Level {course.level}</span>
-            <span className="text-slate-300">·</span>
-            <span>{course.semester_type === 'first' ? 'First Semester' : 'Second Semester'}</span>
+          <div className="flex flex-wrap items-center gap-3 pt-2 px-1 text-xs text-slate-500">
+            {isIjmb ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-amber-700">
+                <BookOpen size={12} /> IJMB Programme (Letter Grade &amp; Points)
+              </span>
+            ) : (
+              <>
+                <span className="inline-flex items-center gap-1.5"><BookOpen size={12} /> {creditUnits} credit units</span>
+                <span className="text-slate-300">·</span>
+                <span>Level {course.level}</span>
+                <span className="text-slate-300">·</span>
+                <span>{course.semester_type === 'first' ? 'First Semester' : 'Second Semester'}</span>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -244,7 +285,9 @@ export default function UniResultsEntry() {
                 <ClipboardList size={18} strokeWidth={2.2} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">Enrolled Students</h3>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  {isIjmb ? 'Enrolled Candidates' : 'Enrolled Students'}
+                </h3>
                 <p className="text-[10px] text-slate-500">{enrollments.length} registered · scores auto-grade on save</p>
               </div>
             </div>
@@ -278,8 +321,17 @@ export default function UniResultsEntry() {
                     <th className="px-3 py-3 text-left">Adm No</th>
                     <th className="px-3 py-3 text-center w-32">Score (0–100)</th>
                     <th className="px-3 py-3 text-center w-16">Grade</th>
-                    <th className="px-3 py-3 text-center w-20">GP</th>
-                    <th className="px-3 py-3 text-center w-24">QP</th>
+                    {isIjmb ? (
+                      <>
+                        <th className="px-3 py-3 text-center w-24">IJMB Pts</th>
+                        <th className="px-3 py-3 text-center w-32">Remark</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-3 py-3 text-center w-20">GP</th>
+                        <th className="px-3 py-3 text-center w-24">QP</th>
+                      </>
+                    )}
                     <th className="px-3 py-3 text-center w-20">Status</th>
                   </tr>
                 </thead>
@@ -291,8 +343,22 @@ export default function UniResultsEntry() {
                     const raw = scoreDraft[enr.student_id] ?? ''
                     const score = Number(raw)
                     const validScore = raw !== '' && !isNaN(score) && score >= 0 && score <= 100
-                    const computed = validScore ? computeGrade(score, creditUnits, schoolType) : null
+                    const computed = validScore
+                      ? computeProgrammeResult({ score, creditUnits, schoolType, programmeType })
+                      : null
                     const existing = existingResults.find(r => r.student_id === enr.student_id)
+                    const existingComputed =
+                      !computed && existing?.total_score !== null && existing?.total_score !== undefined
+                        ? computeProgrammeResult({
+                            score: Number(existing.total_score),
+                            creditUnits,
+                            schoolType,
+                            programmeType,
+                          })
+                        : null
+                    const activeGrade = computed?.grade || existing?.grade
+                    const isPassing = activeGrade ? activeGrade !== 'F' : false
+
                     return (
                       <tr key={enr.id || i} className="hover:bg-slate-50/50 transition">
                         <td className="px-5 py-3 font-semibold text-slate-900">{name}</td>
@@ -310,24 +376,37 @@ export default function UniResultsEntry() {
                           />
                         </td>
                         <td className="px-3 py-3 text-center">
-                          {computed ? (
+                          {activeGrade ? (
                             <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
-                              computed.gradePoint > 0
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}>{computed.grade}</span>
-                          ) : existing?.grade ? (
-                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
-                              (existing.grade_point || 0) > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-                            }`}>{existing.grade}</span>
+                              computed
+                                ? (isPassing ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')
+                                : (isPassing ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600')
+                            }`}>{activeGrade}</span>
                           ) : <span className="text-slate-300">—</span>}
                         </td>
-                        <td className="px-3 py-3 text-center font-semibold text-slate-700">
-                          {computed ? computed.gradePoint.toFixed(1) : (existing?.grade_point ? Number(existing.grade_point).toFixed(1) : '—')}
-                        </td>
-                        <td className="px-3 py-3 text-center font-semibold text-slate-700">
-                          {computed ? computed.qualityPoints.toFixed(1) : (existing?.quality_points ? Number(existing.quality_points).toFixed(1) : '—')}
-                        </td>
+                        {isIjmb ? (
+                          <>
+                            <td className="px-3 py-3 text-center font-semibold text-slate-700">
+                              {computed?.ijmbPoints !== null && computed?.ijmbPoints !== undefined
+                                ? `${computed.ijmbPoints} / 5`
+                                : existingComputed?.ijmbPoints !== null && existingComputed?.ijmbPoints !== undefined
+                                  ? `${existingComputed.ijmbPoints} / 5`
+                                  : '—'}
+                            </td>
+                            <td className="px-3 py-3 text-center text-xs font-medium text-slate-600">
+                              {computed?.remark || existingComputed?.remark || '—'}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-3 py-3 text-center font-semibold text-slate-700">
+                              {computed ? computed.gradePoint.toFixed(1) : (existing?.grade_point ? Number(existing.grade_point).toFixed(1) : '—')}
+                            </td>
+                            <td className="px-3 py-3 text-center font-semibold text-slate-700">
+                              {computed ? computed.qualityPoints.toFixed(1) : (existing?.quality_points ? Number(existing.quality_points).toFixed(1) : '—')}
+                            </td>
+                          </>
+                        )}
                         <td className="px-3 py-3 text-center">
                           {existing?.is_published ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">Published</span>

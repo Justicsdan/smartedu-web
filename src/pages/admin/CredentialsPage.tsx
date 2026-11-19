@@ -105,15 +105,21 @@ export default function CredentialsPage() {
       setLoading(true)
       try {
         const [tRes, sRes, cRes] = await Promise.all([
-          dbProxy.from('teachers').select('*').eq('school_id', schoolId).order('first_name'),
-          dbProxy.from('students').select('*').eq('school_id', schoolId).order('first_name'),
+          dbProxy.rpc('get_teacher_credentials', { p_school_id: schoolId }),
+          dbProxy.rpc('get_student_credentials', { p_school_id: schoolId }),
           dbProxy.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
         ])
+        // DEBUG
+        console.log('DEBUG tRes:', tRes)
+        console.log('DEBUG sRes:', sRes)
         if (tRes.error) throw tRes.error
         if (sRes.error) throw sRes.error
         if (cRes.error) throw cRes.error
-        setTeachers((tRes.data || []) as Teacher[])
-        setStudents((sRes.data || []) as Student[])
+        // Handle both shapes: array directly OR { data: [...] }
+        const tData = Array.isArray(tRes.data) ? tRes.data : (tRes.data && Array.isArray(tRes.data.data) ? tRes.data.data : [])
+        const sData = Array.isArray(sRes.data) ? sRes.data : (sRes.data && Array.isArray(sRes.data.data) ? sRes.data.data : [])
+        setTeachers(tData as Teacher[])
+        setStudents(sData as Student[])
         setClasses(cRes.data || [])
       } catch (e: any) {
         setError(e.message || 'Failed to load')
@@ -179,10 +185,12 @@ export default function CredentialsPage() {
       if (error) throw error
 
       if (isTeacher) {
-        const { data } = await dbProxy.from('teachers').select('*').eq('id', item.id).maybeSingle()
+        const { data: all } = await dbProxy.rpc('get_teacher_credentials', { p_school_id: schoolId })
+        const data = (all || []).find((r: any) => r.id === item.id)
         if (data) setTeachers(prev => prev.map(t => t.id === item.id ? data as Teacher : t))
       } else {
-        const { data } = await dbProxy.from('students').select('*').eq('id', item.id).maybeSingle()
+        const { data: allS } = await dbProxy.rpc('get_student_credentials', { p_school_id: schoolId })
+        const data = (allS || []).find((r: any) => r.id === item.id)
         if (data) setStudents(prev => prev.map(s => s.id === item.id ? data as Student : s))
       }
       setSuccessMsg(`New ${isTeacher ? 'password' : 'PIN'} generated`)

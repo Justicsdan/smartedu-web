@@ -54,6 +54,7 @@ export default function SchoolsManagement() {
   
   const [addForm, setAddForm] = useState({
     name: '', school_code: '', school_type: 'university',
+    curriculum_mode: 'traditional',
     subscription_plan: 'standard', subscription_status: 'active',
     is_active: true, max_students: 2000, max_teachers: 100,
     admin_username: '', admin_password: generateUniquePassword(),
@@ -154,6 +155,17 @@ export default function SchoolsManagement() {
       const newSchoolId = schoolData && schoolData[0] ? schoolData[0].id : null
 
       if (newSchoolId) {
+        try {
+          await dbProxy.from('school_settings').insert([{
+            school_id: newSchoolId,
+            curriculum_mode: addForm.curriculum_mode || 'traditional',
+          }])
+        } catch {
+          // Ignore if school_settings already exists or column differs
+        }
+      }
+
+      if (newSchoolId) {
         const adminUsername = addForm.admin_username.trim() || `admin_${code.toLowerCase()}`
         await dbProxy.from('school_admins').insert([{
           username: adminUsername,
@@ -169,6 +181,7 @@ export default function SchoolsManagement() {
       setShowAddModal(false)
       setAddForm({
         name: '', school_code: '', school_type: 'university',
+        curriculum_mode: 'traditional',
         subscription_plan: 'standard', subscription_status: 'active',
         is_active: true, max_students: 2000, max_teachers: 100,
         admin_username: '', admin_password: generateUniquePassword(),
@@ -388,6 +401,18 @@ export default function SchoolsManagement() {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Curriculum Mode (Primary / Secondary)</label>
+                <select
+                  value={addForm.curriculum_mode}
+                  onChange={e => setAddForm({ ...addForm, curriculum_mode: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:border-violet-500 outline-none"
+                >
+                  <option value="traditional">Traditional (WAEC / BECE / NECO / IGCSE)</option>
+                  <option value="ace">ACE (Accelerated Christian Education)</option>
+                  <option value="mixed">Mixed (Both ACE & Traditional)</option>
+                </select>
               </div>
 
               <div className="p-4 rounded-xl bg-violet-50/60 border border-violet-100 space-y-3">

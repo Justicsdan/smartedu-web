@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { dbProxy } from '../../lib/dbProxy'
 import { useAuth } from '../../contexts/AuthContext'
+import type { ProgrammeType } from '../../utils/tertiaryGrading'
 import {
   BookOpen, GraduationCap, Plus, Trash2, Search,
   AlertCircle, CheckCircle2, X, Loader2,
@@ -9,7 +10,21 @@ import {
 type Tab = 'courses' | 'semesters'
 
 const LEVELS = [100, 200, 300, 400, 500, 600]
-const EMPTY_COURSE = { course_code: '', course_title: '', credit_units: 2, level: 100, semester_type: 'first' }
+const EMPTY_COURSE: {
+  course_code: string
+  course_title: string
+  credit_units: number
+  level: number
+  semester_type: string
+  programme_type: ProgrammeType
+} = {
+  course_code: '',
+  course_title: '',
+  credit_units: 2,
+  level: 100,
+  semester_type: 'first',
+  programme_type: 'degree',
+}
 const EMPTY_SEM = { name: '', session_name: '', semester_type: 'first', start_date: '', end_date: '' }
 
 const inputCls = 'w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100'
@@ -29,6 +44,7 @@ export default function TertiaryCoursesPage() {
   const [semesters, setSemesters] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [levelFilter, setLevelFilter] = useState('all')
+  const [programmeFilter, setProgrammeFilter] = useState<'all' | ProgrammeType>('all')
 
   const [showCourseForm, setShowCourseForm] = useState(false)
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null)
@@ -69,35 +85,58 @@ export default function TertiaryCoursesPage() {
 
   // ── Courses ──
   const openNewCourse = () => {
-    setEditingCourseId(null); setCourseForm({ ...EMPTY_COURSE }); setShowCourseForm(true); setError('')
+    setEditingCourseId(null)
+    setCourseForm({ ...EMPTY_COURSE })
+    setShowCourseForm(true)
+    setError('')
   }
 
   const openEditCourse = (c: any) => {
+    const pType: ProgrammeType = c.programme_type === 'ijmb' ? 'ijmb' : 'degree'
     setEditingCourseId(c.id)
     setCourseForm({
       course_code: c.course_code || '',
       course_title: c.course_title || '',
-      credit_units: c.credit_units ?? 2,
+      credit_units: pType === 'ijmb' ? 0 : (c.credit_units ?? 2),
       level: c.level ?? 100,
       semester_type: c.semester_type || 'first',
+      programme_type: pType,
     })
-    setShowCourseForm(true); setError('')
+    setShowCourseForm(true)
+    setError('')
+  }
+
+  const handleProgrammeTypeChange = (nextType: ProgrammeType) => {
+    setCourseForm(prev => ({
+      ...prev,
+      programme_type: nextType,
+      credit_units: nextType === 'ijmb' ? 0 : (prev.credit_units > 0 ? prev.credit_units : 2),
+    }))
   }
 
   const saveCourse = async () => {
     const code = courseForm.course_code.trim().toUpperCase()
     const title = courseForm.course_title.trim()
-    const units = Number(courseForm.credit_units)
+    const pType: ProgrammeType = courseForm.programme_type === 'ijmb' ? 'ijmb' : 'degree'
+    const units = pType === 'ijmb' ? 0 : Number(courseForm.credit_units)
+
     if (!code || !title) { setError('Course code and title are required'); return }
-    if (!Number.isInteger(units) || units < 1 || units > 10) { setError('Credit units must be a whole number from 1 to 10'); return }
+    if (pType === 'degree' && (!Number.isInteger(units) || units < 1 || units > 10)) {
+      setError('Credit units must be a whole number from 1 to 10 for degree courses')
+      return
+    }
     if (courses.some(c => c.id !== editingCourseId && (c.course_code || '').toUpperCase() === code)) {
       setError('A course with code ' + code + ' already exists'); return
     }
     setBusy(true); setError('')
     try {
       const payload = {
-        course_code: code, course_title: title, credit_units: units,
-        level: Number(courseForm.level), semester_type: courseForm.semester_type,
+        course_code: code,
+        course_title: title,
+        credit_units: units,
+        level: Number(courseForm.level),
+        semester_type: courseForm.semester_type,
+        programme_type: pType,
       }
       const res = editingCourseId
         ? await dbProxy.from('uni_courses').update(payload).eq('id', editingCourseId)
@@ -217,10 +256,18 @@ export default function TertiaryCoursesPage() {
 
   const q = search.trim().toLowerCase()
   const filtered = courses.filter(c => {
+    const pType: ProgrammeType = c.programme_type === 'ijmb' ? 'ijmb' : 'degree'
     const hit = !q || (c.course_code || '').toLowerCase().includes(q) || (c.course_title || '').toLowerCase().includes(q)
-    return hit && (levelFilter === 'all' || String(c.level) === levelFilter)
+    return (
+      hit &&
+      (levelFilter === 'all' || String(c.level) === levelFilter) &&
+      (programmeFilter === 'all' || pType === programmeFilter)
+    )
   })
-  const totalUnits = filtered.reduce((sum, c) => sum + (Number(c.credit_units) || 0), 0)
+  const degreeUnitTotal = filtered
+    .filter(c => (c.programme_type || 'degree') !== 'ijmb')
+    .reduce((sum, c) => sum + (Number(c.credit_units) || 0), 0)
+  const ijmbCount = filtered.filter(c => c.programme_type === 'ijmb').length
 
   if (loading) {
     return (
@@ -237,7 +284,7 @@ export default function TertiaryCoursesPage() {
     <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto space-y-5">
       <div>
         <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-700 to-purple-600 bg-clip-text text-transparent">Courses and Semesters</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage the course catalogue and academic semesters.</p>
+        <p className="text-sm text-slate-500 mt-1">Manage the course catalogue across Degree and IJMB programmes, plus academic semesters.</p>
       </div>
 
       {error && (
@@ -265,11 +312,16 @@ export default function TertiaryCoursesPage() {
       {tab === 'courses' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div className="flex gap-2 flex-1 max-w-xl">
-              <div className="relative flex-1">
+            <div className="flex flex-wrap gap-2 flex-1 max-w-2xl">
+              <div className="relative flex-1 min-w-[180px]">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search code or title..." className={inputCls + ' pl-9'} />
               </div>
+              <select value={programmeFilter} onChange={e => setProgrammeFilter(e.target.value as 'all' | ProgrammeType)} className={inputCls + ' w-auto'}>
+                <option value="all">All programmes</option>
+                <option value="degree">Degree</option>
+                <option value="ijmb">IJMB</option>
+              </select>
               <select value={levelFilter} onChange={e => setLevelFilter(e.target.value)} className={inputCls + ' w-auto'}>
                 <option value="all">All levels</option>
                 {LEVELS.map(l => <option key={l} value={String(l)}>{l} Level</option>)}
@@ -283,17 +335,30 @@ export default function TertiaryCoursesPage() {
               <h3 className="font-bold text-slate-900">{editingCourseId ? 'Edit Course' : 'New Course'}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Course code</label>
-                  <input value={courseForm.course_code} onChange={e => setCourseForm({ ...courseForm, course_code: e.target.value })} placeholder="e.g. CSC101" className={inputCls} />
+                  <label className={labelCls}>Programme type</label>
+                  <select
+                    value={courseForm.programme_type}
+                    onChange={e => handleProgrammeTypeChange(e.target.value as ProgrammeType)}
+                    className={inputCls}
+                  >
+                    <option value="degree">Degree (Credit Units &amp; GPA)</option>
+                    <option value="ijmb">IJMB (Letter Grades &amp; Subject Points)</option>
+                  </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Course title</label>
-                  <input value={courseForm.course_title} onChange={e => setCourseForm({ ...courseForm, course_title: e.target.value })} placeholder="Introduction to Computer Science" className={inputCls} />
+                  <label className={labelCls}>Course / Subject code</label>
+                  <input value={courseForm.course_code} onChange={e => setCourseForm({ ...courseForm, course_code: e.target.value })} placeholder={courseForm.programme_type === 'ijmb' ? 'e.g. IJMB-GOV' : 'e.g. CSC101'} className={inputCls} />
                 </div>
-                <div>
-                  <label className={labelCls}>Credit units</label>
-                  <input type="number" min={1} max={10} value={courseForm.credit_units} onChange={e => setCourseForm({ ...courseForm, credit_units: Number(e.target.value) })} className={inputCls} />
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>Course / Subject title</label>
+                  <input value={courseForm.course_title} onChange={e => setCourseForm({ ...courseForm, course_title: e.target.value })} placeholder={courseForm.programme_type === 'ijmb' ? 'Government (IJMB Subject)' : 'Introduction to Computer Science'} className={inputCls} />
                 </div>
+                {courseForm.programme_type !== 'ijmb' && (
+                  <div>
+                    <label className={labelCls}>Credit units</label>
+                    <input type="number" min={1} max={10} value={courseForm.credit_units} onChange={e => setCourseForm({ ...courseForm, credit_units: Number(e.target.value) })} className={inputCls} />
+                  </div>
+                )}
                 <div>
                   <label className={labelCls}>Level</label>
                   <select value={courseForm.level} onChange={e => setCourseForm({ ...courseForm, level: Number(e.target.value) })} className={inputCls}>
@@ -328,32 +393,49 @@ export default function TertiaryCoursesPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
                     <tr>
-                      <th className="py-3 px-4">Code</th><th className="py-3 px-4">Title</th>
-                      <th className="py-3 px-4">Units</th><th className="py-3 px-4">Level</th>
-                      <th className="py-3 px-4">Semester</th><th className="py-3 px-4 text-right">Actions</th>
+                      <th className="py-3 px-4">Code</th>
+                      <th className="py-3 px-4">Title</th>
+                      <th className="py-3 px-4">Programme</th>
+                      <th className="py-3 px-4">Units</th>
+                      <th className="py-3 px-4">Level</th>
+                      <th className="py-3 px-4">Semester</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filtered.map(c => (
-                      <tr key={c.id} className="hover:bg-violet-50/40">
-                        <td className="py-3 px-4"><span className="px-2 py-1 rounded-md bg-violet-50 text-violet-700 font-mono text-xs font-bold">{c.course_code}</span></td>
-                        <td className="py-3 px-4 font-semibold text-slate-900">{c.course_title}</td>
-                        <td className="py-3 px-4">{c.credit_units}</td>
-                        <td className="py-3 px-4">{c.level}</td>
-                        <td className="py-3 px-4 capitalize">{c.semester_type}</td>
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <button onClick={() => openEditCourse(c)} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-violet-700 hover:bg-violet-50">Edit</button>
-                          <button onClick={() => deleteCourse(c)} disabled={busy} className="ml-1 p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"><Trash2 size={15} /></button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filtered.map(c => {
+                      const isIjmbCourse = c.programme_type === 'ijmb'
+                      return (
+                        <tr key={c.id} className="hover:bg-violet-50/40">
+                          <td className="py-3 px-4"><span className="px-2 py-1 rounded-md bg-violet-50 text-violet-700 font-mono text-xs font-bold">{c.course_code}</span></td>
+                          <td className="py-3 px-4 font-semibold text-slate-900">{c.course_title}</td>
+                          <td className="py-3 px-4">
+                            {isIjmbCourse ? (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">IJMB</span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Degree</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">{isIjmbCourse ? <span className="text-slate-400">—</span> : c.credit_units}</td>
+                          <td className="py-3 px-4">{c.level}</td>
+                          <td className="py-3 px-4 capitalize">{c.semester_type}</td>
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <button onClick={() => openEditCourse(c)} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-violet-700 hover:bg-violet-50">Edit</button>
+                            <button onClick={() => deleteCourse(c)} disabled={busy} className="ml-1 p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"><Trash2 size={15} /></button>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
           {filtered.length > 0 && (
-            <p className="text-xs text-slate-500">{filtered.length} course(s), {totalUnits} total credit units</p>
+            <p className="text-xs text-slate-500">
+              {filtered.length} course(s), {degreeUnitTotal} degree credit unit(s)
+              {ijmbCount > 0 ? `, ${ijmbCount} IJMB subject(s)` : ''}
+            </p>
           )}
         </div>
       )}
