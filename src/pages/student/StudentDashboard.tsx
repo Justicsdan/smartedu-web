@@ -501,7 +501,20 @@ export default function StudentDashboard() {
   }, [attendance])
 
   const latestSummary = useMemo(() => summaries.length ? summaries[0] : null, [summaries])
-  const recentResults = useMemo(() => currentTermScores.slice(0, 5), [currentTermScores])
+  const recentResults = useMemo(() => {
+    if (currentTermScores.length > 0) return currentTermScores.slice(0, 5)
+    // If only summary exists, return a synthetic entry from the summary
+    if (latestSummary && latestSummary.total_score !== null && latestSummary.total_score !== undefined) {
+      return [{
+        synthetic: true,
+        total: latestSummary.total_score,
+        grade: latestSummary.grade,
+        term_id: latestSummary.term_id,
+        subjects_taken: latestSummary.subjects_taken,
+      }]
+    }
+    return []
+  }, [currentTermScores, latestSummary])
 
   const displayName = fullName(student) || fullName(user) || 'Student'
   const subjectMax = settings?.subject_max_score || 100
@@ -509,15 +522,31 @@ export default function StudentDashboard() {
   const schoolPrimary = settings?.primary_color || user?.primary_color || '#1e7a3c'
 
   const avgScore = useMemo(() => {
-    if (!currentTermScores.length) return 0
-    const sum = currentTermScores.reduce((s, sc) => s + (typeof sc.total === 'number' ? sc.total : 0), 0)
-    return Math.round(sum / currentTermScores.length)
-  }, [currentTermScores])
+    if (currentTermScores.length > 0) {
+      const sum = currentTermScores.reduce((s, sc) => s + (typeof sc.total === 'number' ? sc.total : 0), 0)
+      return Math.round(sum / currentTermScores.length)
+    }
+    // Fall back to published summary if no current-term scores
+    if (latestSummary && (latestSummary.total_score !== null && latestSummary.total_score !== undefined)) {
+      const subjectsTaken = latestSummary.subjects_taken || 1
+      return Math.round((latestSummary.total_score / subjectsTaken) || 0)
+    }
+    return 0
+  }, [currentTermScores, latestSummary])
 
   const attendancePct = useMemo(() => {
-    if (!attendance.length) return 0
-    return Math.round((attendanceStats.present / attendance.length) * 100)
-  }, [attendance, attendanceStats])
+    if (attendance.length > 0) {
+      return Math.round((attendanceStats.present / attendance.length) * 100)
+    }
+    // Fall back to summary
+    if (latestSummary) {
+      const present = latestSummary.days_present || 0
+      const absent = latestSummary.days_absent || 0
+      const total = present + absent
+      return total > 0 ? Math.round((present / total) * 100) : 0
+    }
+    return 0
+  }, [attendance, attendanceStats, latestSummary])
 
   if (loading) {
     return (
@@ -583,7 +612,7 @@ export default function StudentDashboard() {
           </>
         ) : (
           <>
-            <StatCard icon={BookOpen} label="Subjects" value={String(currentTermScores.length)} sub={`${subjects.length} total in class`} accent="#2563eb" />
+            <StatCard icon={BookOpen} label="Subjects" value={String(currentTermScores.length || latestSummary?.subjects_taken || 0)} sub={`${subjects.length} total in class`} accent="#2563eb" />
             <StatCard icon={TrendingUp} label="Average" value={String(avgScore)} sub={`out of ${subjectMax}`} accent="#0891b2" />
             <StatCard icon={Target} label="Attendance" value={`${attendancePct}%`} sub={`${attendanceStats.present}/${attendanceStats.total} days`} accent="#10b981" />
             <StatCard icon={Award} label="Position" value={latestSummary?.position ? `${latestSummary.position}${latestSummary.position_out_of ? `/${latestSummary.position_out_of}` : ''}` : '—'} sub={latestSummary?.grade ? `Grade ${latestSummary.grade}` : 'Not ranked'} accent="#7c3aed" />

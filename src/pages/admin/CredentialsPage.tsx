@@ -109,9 +109,6 @@ export default function CredentialsPage() {
           dbProxy.rpc('get_student_credentials', { p_school_id: schoolId }),
           dbProxy.from('classes').select('id, name, section').eq('school_id', schoolId).order('name'),
         ])
-        // DEBUG
-        console.log('DEBUG tRes:', tRes)
-        console.log('DEBUG sRes:', sRes)
         if (tRes.error) throw tRes.error
         if (sRes.error) throw sRes.error
         if (cRes.error) throw cRes.error
