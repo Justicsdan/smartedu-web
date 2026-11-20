@@ -130,6 +130,9 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     cbt_attempts: ['select', 'insert', 'update', 'delete'],    lesson_plans: ['select', 'insert', 'update', 'delete'],
   },
   teacher: {
+    uni_courses: ['select'],
+    uni_semesters: ['select'],
+    uni_programmes: ['select'],
       live_classes: ['select','insert','update','delete'],
       live_classes: ['select','insert','update','delete'],
     students: ['select'],
