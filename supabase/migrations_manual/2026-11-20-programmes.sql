@@ -1,0 +1,1 @@
+-- uni_programmes table, plus programme_id on uni_profiles and uni_courses (see chat for full SQL)

@@ -45,7 +45,7 @@ const ADMIN_ONLY_STRIP = ['admin_password'];
 // ─── Tables with school_id column ───
 
 const SCHOOL_SCOPED_TABLES = [
-  'uni_semesters', 'uni_courses', 'uni_enrollments', 'uni_results', 'uni_profiles', 'higher_institution_settings',
+  'uni_semesters', 'uni_courses', 'uni_enrollments', 'uni_results', 'uni_profiles', 'higher_institution_settings', 'uni_programmes',
   'live_classes',
   'live_classes',
   'students', 'teachers', 'classes', 'subjects', 'class_subjects',
@@ -99,6 +99,7 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
     uni_results: ['select', 'insert', 'update', 'delete'],
     uni_profiles: ['select', 'insert', 'update', 'delete'],
     higher_institution_settings: ['select', 'insert', 'update'],
+    uni_programmes: ['select', 'insert', 'update', 'delete'],
       live_classes: ['select','insert','update','delete'],
     schools: ['select', 'update'],
     students: ['select', 'insert', 'update'],
@@ -160,6 +161,7 @@ const WHITELIST: Record<string, Record<string, string[]>> = {
   student: {
     uni_semesters: ['select'],
     uni_courses: ['select'],
+    uni_programmes: ['select'],
     uni_enrollments: ['select'],
     uni_results: ['select'],
     uni_profiles: ['select'],
