@@ -3,9 +3,11 @@ import TertiaryProtectedRoute from './components/TertiaryProtectedRoute'
 import TertiaryAdminDashboard from './pages/tertiary/TertiaryAdminDashboard'
 import TertiaryLecturerDashboard from './pages/tertiary/TertiaryLecturerDashboard'
 import TertiaryResultsEntry from './pages/tertiary/TertiaryResultsEntry'
+import TertiaryPublishResultsPage from './pages/tertiary/TertiaryPublishResultsPage'
 import TertiaryStudentDashboard from './pages/tertiary/TertiaryStudentDashboard'
 import TertiaryStudentResultsPage from './pages/tertiary/TertiaryStudentResultsPage'
 import TertiaryCoursesPage from './pages/tertiary/TertiaryCoursesPage'
+import TertiaryProgrammesPage from './pages/tertiary/TertiaryProgrammesPage'
 import TertiaryStudentsPage from './pages/tertiary/TertiaryStudentsPage'
 import TertiaryEnrollmentsPage from './pages/tertiary/TertiaryEnrollmentsPage'
 import TertiarySettingsPage from './pages/tertiary/TertiarySettingsPage'
@@ -148,9 +150,11 @@ function App() {
         <Route path="/dashboard/tertiary" element={<TertiaryProtectedRoute allowedRoles={['school_admin', 'teacher', 'student']}><TertiaryLayout /></TertiaryProtectedRoute>}>
           <Route path="admin" element={<TertiaryAdminDashboard />} />
           <Route path="admin/courses" element={<TertiaryCoursesPage />} />
+          <Route path="admin/programmes" element={<TertiaryProgrammesPage />} />
           <Route path="admin/students" element={<TertiaryStudentsPage />} />
           <Route path="admin/enrollments" element={<TertiaryEnrollmentsPage />} />
           <Route path="admin/results" element={<TertiaryResultsEntry />} />
+          <Route path="admin/publish" element={<TertiaryPublishResultsPage />} />
           <Route path="admin/live-lectures" element={<TertiaryLiveLecturesPage />} />
           <Route path="admin/announcements" element={<TertiaryAnnouncementsPage />} />
           <Route path="admin/exams" element={<TertiaryExamsPage />} />

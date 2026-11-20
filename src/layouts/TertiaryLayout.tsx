@@ -12,10 +12,12 @@ interface NavItem { label: string; icon: any; path: string }
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard/tertiary/admin' },
+  { label: 'Programmes', icon: GraduationCap, path: '/dashboard/tertiary/admin/programmes' },
   { label: 'Courses', icon: BookOpen, path: '/dashboard/tertiary/admin/courses' },
   { label: 'Students', icon: Users, path: '/dashboard/tertiary/admin/students' },
   { label: 'Enrollments', icon: ClipboardList, path: '/dashboard/tertiary/admin/enrollments' },
   { label: 'Results', icon: FileText, path: '/dashboard/tertiary/admin/results' },
+  { label: 'Publish Results', icon: FileText, path: '/dashboard/tertiary/admin/publish' },
   { label: 'Live Lectures', icon: Video, path: '/dashboard/tertiary/admin/live-lectures' },
   { label: 'Announcements', icon: Megaphone, path: '/dashboard/tertiary/admin/announcements' },
   { label: 'Exams', icon: FileText, path: '/dashboard/tertiary/admin/exams' },
