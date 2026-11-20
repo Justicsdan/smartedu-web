@@ -81,15 +81,15 @@ export default function StudentResultsPage() {
   const [schoolInfo, setSchoolInfo] = useState<any>(null)
   const [selectedTermId, setSelectedTermId] = useState<string>('')
   const [curriculumMode, setCurriculumMode] = useState<string>('traditional')
+  const [acePaceScores, setAcePaceScores] = useState<any[]>([])
+  const [aceTermReport, setAceTermReport] = useState<any>(null)
   const effectiveCurriculumMode = useMemo(() => {
-    if (effectiveCurriculumMode === 'ace') return 'ace'
+    if (curriculumMode === 'ace') return 'ace'
     if (curriculumMode === 'mixed' || curriculumMode === 'both') {
       return (acePaceScores.length > 0 || Boolean(aceTermReport)) ? 'ace' : 'traditional'
     }
     return acePaceScores.length > 0 ? 'ace' : 'traditional'
   }, [curriculumMode, acePaceScores.length, aceTermReport])
-  const [acePaceScores, setAcePaceScores] = useState<any[]>([])
-  const [aceTermReport, setAceTermReport] = useState<any>(null)
   const studentId = user?.id || user?.student_id || user?.studentId || ''
   const schoolId = user?.school_id || user?.schoolId || ''
 
