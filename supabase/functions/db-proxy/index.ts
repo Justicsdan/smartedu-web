@@ -388,9 +388,20 @@ Deno.serve(async (req: Request) => {
           status: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         });
       }
-      const { data, error } = await db.rpc(rpcName!, body.rpcParams ?? {});
+      const CREDENTIAL_RPCS = ['get_student_credentials', 'get_teacher_credentials'];
+      const isCredRpc = CREDENTIAL_RPCS.includes(rpcName);
+      const rpcArgs: Record<string, unknown> = { ...(body.rpcParams ?? {}) };
+      if (isCredRpc) {
+        if (!payload.school_id) {
+          return new Response(JSON.stringify({ error: 'No school on this session' }), {
+            status: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          });
+        }
+        rpcArgs.p_school_id = payload.school_id;
+      }
+      const { data, error } = await db.rpc(rpcName!, rpcArgs);
       if (error) throw error;
-      return new Response(JSON.stringify({ data: stripSensitive(data, role) }), {
+      return new Response(JSON.stringify({ data: isCredRpc ? data : stripSensitive(data, role) }), {
         status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
       });
     }
