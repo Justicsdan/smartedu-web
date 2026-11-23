@@ -6,8 +6,8 @@
 // 4. Auto-injects student_id filter for student role
 // 5. Strips sensitive columns (pin, password, admin_password)
 
-const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL
-const ANON_KEY = (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+const SUPABASE_URL = 'https://tcjsmkhmfjigutfhjtem.supabase.co'
+const ANON_KEY = 'sb_publishable_zWDvjhEldcV8eutnlRypGA_LGpOUhkg'
 const PROXY_URL = SUPABASE_URL + '/functions/v1/db-proxy'
 
 interface Filter {
