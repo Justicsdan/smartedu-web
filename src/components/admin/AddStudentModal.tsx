@@ -15,6 +15,57 @@ interface SchoolClass {
 const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL
 const ANON_KEY = (import.meta as any).env.VITE_SUPABASE_ANON_KEY
 
+const Field = ({
+    label, value, onChange, placeholder, type = 'text', maxRows, required,
+  }: {
+    label: string
+    value: string
+    onChange: (v: string) => void
+    placeholder?: string
+    type?: string
+    maxRows?: number
+    required?: boolean
+  }) => (
+    <div>
+      <label className="text-[13px] text-gray-600 font-medium">
+        {label}{required && <span className="text-red-500"> *</span>}
+      </label>
+      {maxRows ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={maxRows}
+          placeholder={placeholder}
+          className="mt-1 w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:border-[#1A237E] focus:border-2 outline-none"
+        />
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="mt-1 w-full h-11 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:border-[#1A237E] focus:border-2 outline-none"
+        />
+      )}
+    </div>
+  )
+
+const SectionHeader = ({
+    title, icon: Icon, bg, color,
+  }: {
+    title: string
+    icon: any
+    bg: string
+    color: string
+  }) => (
+    <div className="flex items-center gap-2.5 mb-3">
+      <div className={'w-8 h-8 rounded-lg flex items-center justify-center ' + bg}>
+        <Icon size={16} className={color} />
+      </div>
+      <h3 className="text-sm font-bold text-gray-700">{title}</h3>
+    </div>
+  )
+
 export default function AddStudentModal({
   classes,
   schoolId,
@@ -130,11 +181,9 @@ export default function AddStudentModal({
         graduation_status: 'active',
       }
 
-      const { error: err } = await dbProxy
+      const { data: inserted, error: err } = await dbProxy
         .from('students')
         .insert(data)
-        .select()
-        .single()
       if (err) throw err
 
       onSaved()
@@ -143,57 +192,6 @@ export default function AddStudentModal({
       setSaving(false)
     }
   }
-
-  const Field = ({
-    label, value, onChange, placeholder, type = 'text', maxRows, required,
-  }: {
-    label: string
-    value: string
-    onChange: (v: string) => void
-    placeholder?: string
-    type?: string
-    maxRows?: number
-    required?: boolean
-  }) => (
-    <div>
-      <label className="text-[13px] text-gray-600 font-medium">
-        {label}{required && <span className="text-red-500"> *</span>}
-      </label>
-      {maxRows ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={maxRows}
-          placeholder={placeholder}
-          className="mt-1 w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:border-[#1A237E] focus:border-2 outline-none"
-        />
-      ) : (
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="mt-1 w-full h-11 px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:border-[#1A237E] focus:border-2 outline-none"
-        />
-      )}
-    </div>
-  )
-
-  const SectionHeader = ({
-    title, icon: Icon, bg, color,
-  }: {
-    title: string
-    icon: any
-    bg: string
-    color: string
-  }) => (
-    <div className="flex items-center gap-2.5 mb-3">
-      <div className={'w-8 h-8 rounded-lg flex items-center justify-center ' + bg}>
-        <Icon size={16} className={color} />
-      </div>
-      <h3 className="text-sm font-bold text-gray-700">{title}</h3>
-    </div>
-  )
 
   return (
     <div
