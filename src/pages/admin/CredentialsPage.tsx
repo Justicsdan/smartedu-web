@@ -451,7 +451,7 @@ export default function CredentialsPage() {
                       <td className="px-4 py-3">
                         {secret ? (
                           <span className="inline-flex items-center gap-1.5">
-                            <span className="text-sm font-mono text-slate-700">{'•'.repeat(secret.length > 8 ? 8 : secret.length)}</span>
+                            <span className="text-sm font-mono text-slate-700">{secret}</span>
                             {needsRegenFlag && (
                               <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-[10px] font-medium">Needs Regen</span>
                             )}
