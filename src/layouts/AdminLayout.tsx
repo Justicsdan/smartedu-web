@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { dbProxy } from '../lib/dbProxy'
 import { useAuth } from '../contexts/AuthContext'
-import ChatBotWidget from '../components/ChatBotWidget'
+const ChatBotWidget = lazy(() => import('../components/ChatBotWidget'))
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Calendar, ClipboardList,
   Award, Send, Settings, FileText, Wallet, Megaphone, Video, BarChart3,
@@ -276,12 +276,14 @@ export default function AdminLayout() {
         </footer>
       </div>
 
-      <ChatBotWidget
-        open={chatOpen}
-        onClose={() => setChatOpen(false)}
-        role="School Admin"
-        schoolContext={schoolName}
-      />
+      <Suspense fallback={null}>
+        <ChatBotWidget
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          role="School Admin"
+          schoolContext={schoolName}
+        />
+      </Suspense>
     </div>
   )
 }
