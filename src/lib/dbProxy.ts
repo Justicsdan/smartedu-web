@@ -220,6 +220,12 @@ class DbProxyBuilder {
 
       const json = await res.json()
 
+      if (res.status === 401 && (json.error === 'Invalid or expired token' || json.error === 'Missing authorization token')) {
+        localStorage.removeItem('smartedu_token')
+        localStorage.removeItem('smartedu_user')
+        window.location.href = '/login-method'
+        return { data: null, error: { message: 'Session expired. Please log in again.' } }
+      }
       if (!res.ok) {
         console.error('dbProxy error:', action, this.table, json.error || `HTTP ${res.status}`)
         return { data: null, error: { message: json.error || `HTTP ${res.status}` } }

@@ -11,3 +11,5 @@ fix_imports.py
 fix_jsx_strings.py
 fix_layout.py
 replace_emojis.py
+.vercel
+.env*
